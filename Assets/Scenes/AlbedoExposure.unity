@@ -459,14 +459,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a61a7c3f7c0d1243a0d7bd05329e2b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  exposureControl: 3
   colorGamut: {fileID: 2100000, guid: 19b22e65d66c72946a505361fc8edc25, type: 2}
-  inputTexture: {fileID: 2800000, guid: 0a16100648dbcb84180d9b8f5ff0f6ea, type: 3}
+  inputTexture: {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
   fullScreenTexture: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2, type: 2}
   secondPlane: {fileID: 1380646434}
+  HDRIList:
+  - {fileID: 2800000, guid: d5d27005e4472af4ab106ce3b2875209, type: 3}
+  - {fileID: 2800000, guid: 13b0793a5c665854f958efe67c21e386, type: 3}
+  - {fileID: 2800000, guid: 381600e2be4a860478de58d76286ccb6, type: 3}
+  - {fileID: 2800000, guid: bd000266b35516c4fbdae6c97a7001fd, type: 3}
+  - {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
   lerpRatio: 0
   dye_bleach_x: 5
   dye_bleach_y: 2
+  exposureControl: 3
   activeTransferFunction: 0
 --- !u!1 &1380646434
 GameObject:
