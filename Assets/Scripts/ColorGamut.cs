@@ -8,17 +8,13 @@ using UnityEngine.UI;
 
 public class ColorGamut : MonoBehaviour
 {
-    private float enableGamutMap;
 
     public Material colorGamut;
-    private bool useTanHCompressionFunction;
-    private RenderTexture screenGrab;
-    private float CPUMode;
     public Texture2D inputTexture;
     public Material fullScreenTexture;
-    private string logOutput = "";
-    private StringBuilder logOutputStrBuilder;
-    public GameObject secondPlane;
+    public GameObject hdriPlane;
+    public GameObject sweepPlane;
+    public Texture2D sweepTexture;
     public List<Texture2D> HDRIList;
 
     public enum ShoulderLength
@@ -29,13 +25,13 @@ public class ColorGamut : MonoBehaviour
         F_8_0,
         F_11_0
     }
-    //public float threshold = 1.0f;
     public enum LerpRatio
     {
         Aesthetic,
         Radiometric
     }
-    [Header("GGM")]
+    [Header("Dye Bleaching")]
+    public bool enableDyeBleaching;
     public LerpRatio lerpRatio;
     public float dye_bleach_x = 1.0f;
     public float dye_bleach_y = 1.0f;
@@ -44,46 +40,39 @@ public class ColorGamut : MonoBehaviour
         Per_Channel,
         Max_RGB
     }
+    [Space]
     [Range(0.01f, 20.0f)]
-    public float exposureControl;
+    public float exposure;
+    [Range(0.01f, 20.0f)]
+    public float sweepExposure;
     [Space]
     [Header("Aesthetic Function")]
     public TransferFunction activeTransferFunction;
     [Space]
 
-    //#region DIRECT_PARAMS
-    //private float m_x0 = 0.18f;      //dstParams.m_x0  min 0        max 0.5
-    //private float m_y0 = 0.18f;      //dstParams.m_y0  min 0        max 0.5
-    //private float m_x1 = 0.75f;      //dstParams.m_x1  min 0        max 1.5
-    //private float m_y1 = 0.75f;      //dstParams.m_y1  min 0        max .99999 
-    //private float m_W = 1.0f;        //dstParams.m_W   min 1        max 2.5
-    //private float m_overshootX = 0.0f;
-    //private float m_overshootY = 0.0f;
-    //#endregion
 
     private bool KeyIsUp = false;
     private bool ApplyTexture = false;
     private FullCurve dstCurve;
     private CurveParamsUser userCurveParams;
-    private Texture2D textureToSave;
+    private Texture2D hdriTextureTransformed;
+    private Texture2D sweepTextureTransformed;
     private Ggm_troyedition ggm;
     private int hdriIndex;
     private int inputTextureIdx = 0;
+    private string logOutput = "";
+    private StringBuilder logOutputStrBuilder;
+    private float CPUMode;
+    private bool useTanHCompressionFunction;
+    private RenderTexture screenGrab;
+    private float enableGamutMap;
+    private bool isSweepActive;
+
     private AnimationCurve animationCurve;
 
     private void Awake()
     {
-        //m_x0 = 0.18f;
-        //m_y0 = 0.18f;
-        //m_x1 = 0.75f;
-        //m_y1 = 0.75f;
-        //m_W = 1.0f;
-        //m_overshootX = 0.0f;
-        //m_overshootY = 0.0f;
         activeTransferFunction = TransferFunction.Max_RGB;
-
-        // GGM parameters 
-        //threshold = 1.0f;
         lerpRatio = LerpRatio.Aesthetic;
     }
 
@@ -91,7 +80,8 @@ public class ColorGamut : MonoBehaviour
     void Start()
     {
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
-        exposureControl = 1.0f;
+        exposure = 1.0f;
+        sweepExposure = 1.0f;
         useTanHCompressionFunction = false;
         enableGamutMap = 1.0f;
         CPUMode = 0.0f;
@@ -106,9 +96,12 @@ public class ColorGamut : MonoBehaviour
             Debug.LogError("HDRIs list is empty");
 
         inputTexture = HDRIList[hdriIndex];
-        textureToSave = new Texture2D(inputTexture.width, inputTexture.height);
+        hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height);
+        sweepTextureTransformed = new Texture2D(sweepTexture.width, sweepTexture.height);
         ggm = new Ggm_troyedition();
-
+        isSweepActive = false;
+        enableDyeBleaching = false;
+        //animationCurve = AnimationCurve.EaseInOut(0.0f, 0.0f, 1.0f, 1.0f);
 
         StartCoroutine("CpuGGMIterative");
     }
@@ -202,26 +195,20 @@ public class ColorGamut : MonoBehaviour
         return new Color(Mathf.Clamp01(outColor.r), Mathf.Clamp01(outColor.g), Mathf.Clamp01(outColor.b));
     }
 
-
-    public void setHDRIIndex(int index)
+    public bool getShowSweep()
     {
-        hdriIndex = index;
+        return isSweepActive;
     }
+
+    public void setShowSweep(bool isActive) 
+    {
+        isSweepActive = isActive;
+        sweepPlane.SetActive(isSweepActive);
+
+    }
+
     void Update()
     {
-        //CurveParamsDirect paramsDirect = new CurveParamsDirect();
-        //paramsDirect.m_x0 = m_x0;
-        //paramsDirect.m_y0 = m_y0;
-        //paramsDirect.m_x1 = m_x1;
-        //paramsDirect.m_y1 = m_y1;
-        //paramsDirect.m_W = m_W;
-        //paramsDirect.m_overshootX = m_overshootX;
-        //paramsDirect.m_overshootY = m_overshootY;
-
-        //Debug.Log("X0: " + m_x0 + "   Y0: " + m_y0 + "  X1: " + m_x1 + "  Y1: " + m_y1 + " W: " + m_W);
-
-        //dstCurve = FilmicToneCurve.CreateCurve(paramsDirect);
-
         if (Input.GetKeyUp(KeyCode.T))
             KeyIsUp = true;
 
@@ -230,24 +217,32 @@ public class ColorGamut : MonoBehaviour
 
     }
 
+    public AnimationCurve getAnimationCurve() 
+    {
+        return animationCurve;
+    }
     public void setAnimationCurve(AnimationCurve curve)
     {
         animationCurve = curve;
     }
 
-  
+    public void setHDRIIndex(int index)
+    {
+        hdriIndex = index;
+    }
+
     private void OnPreRender()
     {
-        secondPlane.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", textureToSave);
+        hdriPlane.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", hdriTextureTransformed);
+        sweepPlane.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", sweepTextureTransformed);
     }
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
         Graphics.Blit(src, screenGrab, fullScreenTexture);
 
-        //cpuGGM();
         colorGamut.SetTexture("_MainTex", screenGrab);
         colorGamut.SetFloat("_DoGamutMap", enableGamutMap);
-        colorGamut.SetFloat("_ExposureControl", exposureControl);
+        colorGamut.SetFloat("_ExposureControl", exposure);
         colorGamut.SetFloat("_TanHCompression", (useTanHCompressionFunction == false ? 0.0f : 1.0f));
 
         Graphics.Blit(screenGrab, dest, colorGamut);
@@ -263,9 +258,11 @@ public class ColorGamut : MonoBehaviour
                 inputTexture = HDRIList[inputTextureIdx];
             }
 
-            Color[] pixels = inputTexture.GetPixels();
+            Color[] hdriPixelArray = inputTexture.GetPixels();
+            Color[] sweepPixelArray = sweepTexture.GetPixels();
+
             int counter = 10000;
-            for (int i = 0; i < pixels.Length; i++, counter--)
+            for (int i = 0; i < hdriPixelArray.Length; i++, counter--)
             {
                 if (counter <= 0)
                 {
@@ -274,12 +271,16 @@ public class ColorGamut : MonoBehaviour
                 }
 
                 // Full dynamic range of image
-                Color col = pixels[i] * exposureControl;
+                Color hdriPixelColor = hdriPixelArray[i] * exposure;
+                Color sweepPixelColor = sweepPixelArray[i] * sweepExposure;
+                Color ratio;
 
                 // Timothy Lottes Max approach
-                float maxColor = col.maxColorComponent;
-                Color ratio = col / maxColor;
+                //float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
+                //Color ratio = hdriPixelColor / hdriMaxRGBChannel;
 
+                //float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
+                //Color sweepRatio = sweepPixelColor / sweepMaxRGBChannel;
                 // Primary Grade, guardrails
                 // Clip scene values outside our max range
                 // Dye bleaching
@@ -292,58 +293,79 @@ public class ColorGamut : MonoBehaviour
                 //    new_bleached_color = col + additive_light
                 //    ratio = new_bleached_color / maxColor
 
-                //float lerp_ratio = 0.0f;
-                //if (col.r > dye_bleach_x || col.g > dye_bleach_x || col.b > dye_bleach_x)
-                //{
-                //    if (lerpRatio == LerpRatio.Aesthetic)
-                //    {
-                //        // Y ratio
-                //        lerp_ratio = (dstCurve.Eval(maxColor) - 1.0f) / (dye_bleach_y - 1.0f);
-                //    }
-                //    else
-                //    {
-                //        // X ratio
-                //        lerp_ratio = (maxColor - dye_bleach_x) / (animationCurve[3].time - dye_bleach_x);
-                //    }
+                if (enableDyeBleaching == true)
+                {
+                    float lerp_ratio = 0.0f;
+                    if (hdriPixelColor.r > dye_bleach_x || hdriPixelColor.g > dye_bleach_x || hdriPixelColor.b > dye_bleach_x)
+                    {
+                        float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
 
-                //    Color remaining_space = new Color(maxColor - col.r, maxColor - col.g, maxColor - col.b);
-                //    Color additive_light = lerp_ratio * remaining_space;
-                //    Color new_bleached_color = col + additive_light;
-                //    ratio = new_bleached_color / maxColor;
-                //}
+                        if (lerpRatio == LerpRatio.Aesthetic)
+                        {
+                            // Y ratio
+                            lerp_ratio = (dstCurve.Eval(hdriMaxRGBChannel) - 1.0f) / (dye_bleach_y - 1.0f);
+                        }
+                        else
+                        {
+                            // X ratio
+                            lerp_ratio = (hdriMaxRGBChannel - dye_bleach_x) / (animationCurve[3].time - dye_bleach_x);
+                        }
+
+                        Color remaining_space = new Color(hdriMaxRGBChannel - hdriPixelColor.r, hdriMaxRGBChannel - hdriPixelColor.g, hdriMaxRGBChannel - hdriPixelColor.b);
+                        Color additive_light = lerp_ratio * remaining_space;
+                        Color new_bleached_color = hdriPixelColor + additive_light;
+                        ratio = new_bleached_color / hdriMaxRGBChannel;
+                    }
+                }
 
                 //col = newGGM(col, 1.0f);
                 if (animationCurve != null)
                 {
                     // Secondary Nuance Grade, guardrails
-                    if (col.r > animationCurve[3].time || col.g > animationCurve[3].time || col.b > animationCurve[3].time)
+                    if (hdriPixelColor.r > animationCurve[3].time || hdriPixelColor.g > animationCurve[3].time || hdriPixelColor.b > animationCurve[3].time)
                     {
-                        col.r = animationCurve[3].time;
-                        col.g = animationCurve[3].time;
-                        col.b = animationCurve[3].time;
+                        hdriPixelColor.r = animationCurve[3].time;
+                        hdriPixelColor.g = animationCurve[3].time;
+                        hdriPixelColor.b = animationCurve[3].time;
+                    }
+                    if (sweepPixelColor.r > animationCurve[3].time || sweepPixelColor.g > animationCurve[3].time || sweepPixelColor.b > animationCurve[3].time)
+                    {
+                        sweepPixelColor.r = animationCurve[3].time;
+                        sweepPixelColor.g = animationCurve[3].time;
+                        sweepPixelColor.b = animationCurve[3].time;
                     }
 
                     // Timothy Lottes Max approach
-                    maxColor = col.maxColorComponent;
-                    ratio = col / maxColor;
-
+                    float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
+                    ratio = hdriPixelColor / hdriMaxRGBChannel;
+                    float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
+                    Color sweepRatio = sweepPixelColor / sweepMaxRGBChannel;
                     //float luma = Vector3.Dot(new Vector3(col.r, col.g, col.b), new Vector3(0.2126f, 0.7152f, 0.0722f));
 
-                    // Hable's transfer function
+                    // Transfer function
                     if (KeyIsUp || activeTransferFunction == TransferFunction.Max_RGB)
                     {
-                        maxColor = dstCurve.Eval(maxColor);
+                        hdriMaxRGBChannel = animationCurve.Evaluate(hdriMaxRGBChannel);
                         //maxColor = animationCurve.Evaluate(luma);
-                        col = maxColor * ratio;
+                        hdriPixelColor = hdriMaxRGBChannel * ratio;
+
+                        sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
+                        sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
 
                         activeTransferFunction = TransferFunction.Max_RGB;
+
                     }
                     else
                     {
                         activeTransferFunction = TransferFunction.Per_Channel;
-                        col.r = animationCurve.Evaluate(col.r);
-                        col.g = animationCurve.Evaluate(col.g);
-                        col.b = animationCurve.Evaluate(col.b);
+                        hdriPixelColor.r = animationCurve.Evaluate(hdriPixelColor.r);
+                        hdriPixelColor.g = animationCurve.Evaluate(hdriPixelColor.g);
+                        hdriPixelColor.b = animationCurve.Evaluate(hdriPixelColor.b);
+
+                        sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
+                        sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
+                        sweepPixelColor.b = animationCurve.Evaluate(sweepPixelColor.b);
+
                         //col.r = dstCurve.Eval(col.r);
                         //col.g = dstCurve.Eval(col.g);
                         //col.b = dstCurve.Eval(col.b);
@@ -352,12 +374,17 @@ public class ColorGamut : MonoBehaviour
                     // GGM - Here doesn't make sense 
                     //col = newGGM(col, 1.0f);
 
-                    pixels[i] = new Color(Mathf.Pow(col.r, 1.0f / 2.2f), Mathf.Pow(col.g, 1.0f / 2.2f), Mathf.Pow(col.b, 1.0f / 2.2f), 1.0f);
+                    hdriPixelArray[i] = new Color(Mathf.Pow(hdriPixelColor.r, 1.0f / 2.2f), Mathf.Pow(hdriPixelColor.g, 1.0f / 2.2f), Mathf.Pow(hdriPixelColor.b, 1.0f / 2.2f), 1.0f);
+                    sweepPixelArray[i] = new Color(Mathf.Pow(sweepPixelColor.r, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.g, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.b, 1.0f / 2.2f), 1.0f);
+
                 }
             }
 
-            textureToSave.SetPixels(pixels);
-            textureToSave.Apply();
+            hdriTextureTransformed.SetPixels(hdriPixelArray);
+            hdriTextureTransformed.Apply();
+
+            sweepTextureTransformed.SetPixels(sweepPixelArray);
+            sweepTextureTransformed.Apply();
         }
     }
 
