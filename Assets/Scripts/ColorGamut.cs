@@ -9,9 +9,9 @@ using UnityEngine.UI;
 public class ColorGamut : MonoBehaviour
 {
 
-    public Material colorGamut;
+    public Material colorGamutMat;
     public Texture2D inputTexture;
-    public Material fullScreenTexture;
+    public Material fullScreenTextureMat;
     public GameObject hdriPlane;
     public GameObject sweepPlane;
     public Texture2D sweepTexture;
@@ -238,14 +238,14 @@ public class ColorGamut : MonoBehaviour
     }
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        Graphics.Blit(src, screenGrab, fullScreenTexture);
+        Graphics.Blit(src, screenGrab, fullScreenTextureMat);
 
-        colorGamut.SetTexture("_MainTex", screenGrab);
-        colorGamut.SetFloat("_DoGamutMap", enableGamutMap);
-        colorGamut.SetFloat("_ExposureControl", exposure);
-        colorGamut.SetFloat("_TanHCompression", (useTanHCompressionFunction == false ? 0.0f : 1.0f));
+        colorGamutMat.SetTexture("_MainTex", screenGrab);
+        colorGamutMat.SetFloat("_DoGamutMap", enableGamutMap);
+        colorGamutMat.SetFloat("_ExposureControl", exposure);
+        colorGamutMat.SetFloat("_TanHCompression", (useTanHCompressionFunction == false ? 0.0f : 1.0f));
 
-        Graphics.Blit(screenGrab, dest, colorGamut);
+        Graphics.Blit(screenGrab, dest, colorGamutMat);
     }
 
     IEnumerator CpuGGMIterative()
