@@ -376,6 +376,8 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   - component: {fileID: 963194229}
+  - component: {fileID: 963194230}
+  - component: {fileID: 963194231}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -459,9 +461,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a61a7c3f7c0d1243a0d7bd05329e2b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  colorGamut: {fileID: 2100000, guid: 19b22e65d66c72946a505361fc8edc25, type: 2}
+  colorGamutMat: {fileID: 0}
   inputTexture: {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
-  fullScreenTexture: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2, type: 2}
+  fullScreenTextureMat: {fileID: 0}
   hdriPlane: {fileID: 1380646434}
   sweepPlane: {fileID: 1048242420}
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
@@ -478,6 +480,37 @@ MonoBehaviour:
   exposure: 0.01
   sweepExposure: 0
   activeTransferFunction: 0
+--- !u!114 &963194230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b4ce7ed36a574d7a8b12de7736b62ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  colorGradingMat: {fileID: 2100000, guid: 2093b6b71017042388fc0c11f863b22b, type: 2}
+  fullscreenMat: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2, type: 2}
+  colorLUT: {fileID: 2800000, guid: 992233de78b824671bc5963e8c2aff83, type: 3}
+  inputTexture: {fileID: 2800000, guid: 3c923583b0d3a4561a4f72c4d3b45bc8, type: 3}
+  secondPlane: {fileID: 1380646434}
+--- !u!114 &963194231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55ef5f57a8d5bd5469a2d538256d74f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fullScreenTextureMat: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2,
+    type: 2}
 --- !u!1 &1048242420
 GameObject:
   m_ObjectHideFlags: 0
