@@ -241,11 +241,11 @@ public class ColorGamut : MonoBehaviour
         Graphics.Blit(src, screenGrab, fullScreenTextureMat);
 
         colorGamutMat.SetTexture("_MainTex", screenGrab);
-        colorGamutMat.SetFloat("_DoGamutMap", enableGamutMap);
-        colorGamutMat.SetFloat("_ExposureControl", exposure);
-        colorGamutMat.SetFloat("_TanHCompression", (useTanHCompressionFunction == false ? 0.0f : 1.0f));
+        //colorGamutMat.SetFloat("_DoGamutMap", enableGamutMap);
+        //colorGamutMat.SetFloat("_ExposureControl", exposure);
+        //colorGamutMat.SetFloat("_TanHCompression", (useTanHCompressionFunction == false ? 0.0f : 1.0f));
 
-        Graphics.Blit(screenGrab, dest, colorGamutMat);
+        Graphics.Blit(screenGrab, dest);
     }
 
     IEnumerator CpuGGMIterative()
@@ -335,19 +335,34 @@ public class ColorGamut : MonoBehaviour
                         sweepPixelColor.b = animationCurve[3].time;
                     }
 
-                    // Timothy Lottes Max approach
+                    // Calculate Pixel max color and ratio
                     float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
                     ratio = hdriPixelColor / hdriMaxRGBChannel;
+                    
+                    // Calculate Sweep max color and ratio
                     float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
                     Color sweepRatio = sweepPixelColor / sweepMaxRGBChannel;
-                    //float luma = Vector3.Dot(new Vector3(col.r, col.g, col.b), new Vector3(0.2126f, 0.7152f, 0.0722f));
+
 
                     // Transfer function
-                    if (KeyIsUp || activeTransferFunction == TransferFunction.Max_RGB)
+                    if (activeTransferFunction == TransferFunction.Max_RGB)
                     {
                         hdriMaxRGBChannel = animationCurve.Evaluate(hdriMaxRGBChannel);
-                        //maxColor = animationCurve.Evaluate(luma);
                         hdriPixelColor = hdriMaxRGBChannel * ratio;
+                        // New approach
+                        float maxDynamicRange = animationCurve[3].time; // The x axis max value on the curve
+                        float bleachStartPoint = TimeFromValue(animationCurve, 1.0f);   // Intersect of x on Y = 1
+
+                        if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint)
+                        {
+                            float bleachingRange = maxDynamicRange - bleachStartPoint;
+                            float bleachingRatio = (hdriPixelColor.maxColorComponent - bleachStartPoint) / bleachingRange;
+
+                            Vector3 outputColor = Vector3.Lerp(new Vector3(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b), new Vector3(maxDynamicRange, maxDynamicRange, maxDynamicRange), bleachingRatio);
+                            hdriPixelColor.r = outputColor.x;
+                            hdriPixelColor.g = outputColor.y;
+                            hdriPixelColor.b = outputColor.z;
+                        }
 
                         sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
                         sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
@@ -365,10 +380,6 @@ public class ColorGamut : MonoBehaviour
                         sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
                         sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
                         sweepPixelColor.b = animationCurve.Evaluate(sweepPixelColor.b);
-
-                        //col.r = dstCurve.Eval(col.r);
-                        //col.g = dstCurve.Eval(col.g);
-                        //col.b = dstCurve.Eval(col.b);
                     }
 
                     // GGM - Here doesn't make sense 
@@ -389,7 +400,31 @@ public class ColorGamut : MonoBehaviour
     }
 
 
-
+    static float TimeFromValue(AnimationCurve c, float value, float precision = 1e-6f)
+    {
+        float minTime = c.keys[0].time;
+        float maxTime = c.keys[c.keys.Length - 1].time;
+        float best = (maxTime + minTime) / 2;
+        float bestVal = c.Evaluate(best);
+        int it = 0;
+        const int maxIt = 1000;
+        float sign = Mathf.Sign(c.keys[c.keys.Length - 1].value - c.keys[0].value);
+        while (it < maxIt && Mathf.Abs(minTime - maxTime) > precision)
+        {
+            if ((bestVal - value) * sign > 0)
+            {
+                maxTime = best;
+            }
+            else
+            {
+                minTime = best;
+            }
+            best = (maxTime + minTime) / 2;
+            bestVal = c.Evaluate(best);
+            it++;
+        }
+        return best;
+    }
 
     Color newGGM(Color RGB, float compressionThreshold)
     {

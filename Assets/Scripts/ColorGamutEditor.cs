@@ -40,8 +40,8 @@ public class ColorGamutEditor : Editor
         midGreyY = 0.18f;
         shoulderStartX = 0.75f;
         shoulderStartY = 0.75f;
-        shoulderEndX = 1.0f;
-        shoulderEndY = 1.0f;
+        shoulderEndX = 15.0f;
+        shoulderEndY = 1.25f;
 
         p0 = new Keyframe(originX, originY);
         p1 = new Keyframe(midGreyX, midGreyY);

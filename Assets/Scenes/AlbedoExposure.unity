@@ -461,14 +461,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a61a7c3f7c0d1243a0d7bd05329e2b6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  colorGamutMat: {fileID: 0}
+  colorGamutMat: {fileID: 2100000, guid: 763f07c427001ba4ebdbae681f8e2e40, type: 2}
   inputTexture: {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
-  fullScreenTextureMat: {fileID: 0}
+  fullScreenTextureMat: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2,
+    type: 2}
   hdriPlane: {fileID: 1380646434}
   sweepPlane: {fileID: 1048242420}
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
   HDRIList:
-  - {fileID: 2800000, guid: ef40d13d0abe42c4fb9c656c0b5b2147, type: 3}
+  - {fileID: 2800000, guid: 6295d22fff47dc947897fe29b496fc01, type: 3}
   - {fileID: 2800000, guid: bedbb785de66cdb4c8b507ef388afa93, type: 3}
   - {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
   - {fileID: 2800000, guid: bd000266b35516c4fbdae6c97a7001fd, type: 3}
@@ -495,7 +496,7 @@ MonoBehaviour:
   colorGradingMat: {fileID: 2100000, guid: 2093b6b71017042388fc0c11f863b22b, type: 2}
   fullscreenMat: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2, type: 2}
   colorLUT: {fileID: 2800000, guid: 992233de78b824671bc5963e8c2aff83, type: 3}
-  inputTexture: {fileID: 2800000, guid: 3c923583b0d3a4561a4f72c4d3b45bc8, type: 3}
+  inputTexture: {fileID: 2800000, guid: 37aba1c0db59f0b4e99910c06f289fa9, type: 3}
   secondPlane: {fileID: 1380646434}
 --- !u!114 &963194231
 MonoBehaviour:
@@ -711,7 +712,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1462539631
 MonoBehaviour:
   m_ObjectHideFlags: 0
