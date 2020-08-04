@@ -236,7 +236,7 @@ public class ColorGamut : MonoBehaviour
     private void OnPreRender()
     {
         hdriPlane.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", hdriTextureTransformed);
-        sweepPlane.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", sweepTextureTransformed);
+        //sweepPlane.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", sweepTextureTransformed);
     }
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
@@ -261,7 +261,7 @@ public class ColorGamut : MonoBehaviour
             }
 
             Color[] hdriPixelArray = inputTexture.GetPixels();
-            Color[] sweepPixelArray = sweepTexture.GetPixels();
+            //Color[] sweepPixelArray = sweepTexture.GetPixels();
 
             int counter = 10000;
             for (int i = 0; i < hdriPixelArray.Length; i++, counter--)
@@ -274,12 +274,8 @@ public class ColorGamut : MonoBehaviour
 
                 // Full dynamic range of image
                 Color hdriPixelColor = hdriPixelArray[i] * exposure;
-                Color sweepPixelColor = sweepPixelArray[i] * sweepExposure;
+                //Color sweepPixelColor = sweepPixelArray[i] * sweepExposure;
                 Color ratio;
-
-                // Timothy Lottes Max approach
-                //float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
-                //Color ratio = hdriPixelColor / hdriMaxRGBChannel;
 
                 //float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
                 //Color sweepRatio = sweepPixelColor / sweepMaxRGBChannel;
@@ -295,30 +291,30 @@ public class ColorGamut : MonoBehaviour
                 //    new_bleached_color = col + additive_light
                 //    ratio = new_bleached_color / maxColor
 
-                if (enableDyeBleaching == true)
-                {
-                    float lerp_ratio = 0.0f;
-                    if (hdriPixelColor.r > dye_bleach_x || hdriPixelColor.g > dye_bleach_x || hdriPixelColor.b > dye_bleach_x)
-                    {
-                        float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
+                //if (enableDyeBleaching == true)
+                //{
+                //    float lerp_ratio = 0.0f;
+                //    if (hdriPixelColor.r > dye_bleach_x || hdriPixelColor.g > dye_bleach_x || hdriPixelColor.b > dye_bleach_x)
+                //    {
+                //        float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
 
-                        if (lerpRatio == LerpRatio.Aesthetic)
-                        {
-                            // Y ratio
-                            lerp_ratio = (dstCurve.Eval(hdriMaxRGBChannel) - 1.0f) / (dye_bleach_y - 1.0f);
-                        }
-                        else
-                        {
-                            // X ratio
-                            lerp_ratio = (hdriMaxRGBChannel - dye_bleach_x) / (animationCurve[3].time - dye_bleach_x);
-                        }
+                //        if (lerpRatio == LerpRatio.Aesthetic)
+                //        {
+                //            // Y ratio
+                //            lerp_ratio = (dstCurve.Eval(hdriMaxRGBChannel) - 1.0f) / (dye_bleach_y - 1.0f);
+                //        }
+                //        else
+                //        {
+                //            // X ratio
+                //            lerp_ratio = (hdriMaxRGBChannel - dye_bleach_x) / (animationCurve[3].time - dye_bleach_x);
+                //        }
 
-                        Color remaining_space = new Color(hdriMaxRGBChannel - hdriPixelColor.r, hdriMaxRGBChannel - hdriPixelColor.g, hdriMaxRGBChannel - hdriPixelColor.b);
-                        Color additive_light = lerp_ratio * remaining_space;
-                        Color new_bleached_color = hdriPixelColor + additive_light;
-                        ratio = new_bleached_color / hdriMaxRGBChannel;
-                    }
-                }
+                //        Color remaining_space = new Color(hdriMaxRGBChannel - hdriPixelColor.r, hdriMaxRGBChannel - hdriPixelColor.g, hdriMaxRGBChannel - hdriPixelColor.b);
+                //        Color additive_light = lerp_ratio * remaining_space;
+                //        Color new_bleached_color = hdriPixelColor + additive_light;
+                //        ratio = new_bleached_color / hdriMaxRGBChannel;
+                //    }
+                //}
 
                 //col = newGGM(col, 1.0f);
                 if (animationCurve != null)
@@ -330,22 +326,20 @@ public class ColorGamut : MonoBehaviour
                         hdriPixelColor.g = animationCurve[3].time;
                         hdriPixelColor.b = animationCurve[3].time;
                     }
-                    if (sweepPixelColor.r > animationCurve[3].time || sweepPixelColor.g > animationCurve[3].time || sweepPixelColor.b > animationCurve[3].time)
-                    {
-                        sweepPixelColor.r = animationCurve[3].time;
-                        sweepPixelColor.g = animationCurve[3].time;
-                        sweepPixelColor.b = animationCurve[3].time;
-                    }
+                    //if (sweepPixelColor.r > animationCurve[3].time || sweepPixelColor.g > animationCurve[3].time || sweepPixelColor.b > animationCurve[3].time)
+                    //{
+                    //    sweepPixelColor.r = animationCurve[3].time;
+                    //    sweepPixelColor.g = animationCurve[3].time;
+                    //    sweepPixelColor.b = animationCurve[3].time;
+                    //}
 
                     // Calculate Pixel max color and ratio
-                    // R: 0.4  G:0.5  B:5.5
-                    float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent; // B: 5.5
-                    ratio = hdriPixelColor / hdriMaxRGBChannel; // 0.4/5.5
+                    float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent; 
+                    ratio = hdriPixelColor / hdriMaxRGBChannel; 
                     
                     // Calculate Sweep max color and ratio
-                    float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
-                    Color sweepRatio = sweepPixelColor / sweepMaxRGBChannel;
-
+                    //float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
+                    //Color sweepRatio = sweepPixelColor / sweepMaxRGBChannel;
 
                     // Transfer function
                     if (activeTransferFunction == TransferFunction.Max_RGB)
@@ -357,30 +351,26 @@ public class ColorGamut : MonoBehaviour
                         if (isBleachingActive)
                         {
                             //Debug.Log("IsBleaching Active");
-                            // R: 0.4  G:0.5  B:5.5
                             if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint)
                             {
                                 float bleachingRange = maxDynamicRange - bleachStartPoint;
                                 float bleachingRatio = (hdriPixelColor.maxColorComponent - bleachStartPoint) / bleachingRange;
 
-                                // R: 0.4  G:0.5  B:5.5
                                 Vector3 outputColor = Vector3.Lerp(new Vector3(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b), new Vector3(maxDynamicRange, maxDynamicRange, maxDynamicRange), bleachingRatio);
                                 hdriPixelColor.r = outputColor.x;
                                 hdriPixelColor.g = outputColor.y;
                                 hdriPixelColor.b = outputColor.z;
 
                                 ratio = hdriPixelColor / hdriMaxRGBChannel;
-                                // R: 0.0  G:15.5  B:15.5
                             }
                         }
-                        // R: 15.0  G:15.0  B:15.0
                         // Get Y curve value
                         float hdriYMaxValue = Mathf.Min(animationCurve.Evaluate(hdriMaxRGBChannel), 1.0f);
                         hdriPixelColor = hdriYMaxValue * ratio;
 
                         // Sweep texture
-                        sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
-                        sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
+                        //sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
+                        //sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
 
                         activeTransferFunction = TransferFunction.Max_RGB;
 
@@ -392,16 +382,16 @@ public class ColorGamut : MonoBehaviour
                         hdriPixelColor.g = animationCurve.Evaluate(hdriPixelColor.g);
                         hdriPixelColor.b = animationCurve.Evaluate(hdriPixelColor.b);
 
-                        sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
-                        sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
-                        sweepPixelColor.b = animationCurve.Evaluate(sweepPixelColor.b);
+                        //sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
+                        //sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
+                        //sweepPixelColor.b = animationCurve.Evaluate(sweepPixelColor.b);
                     }
 
                     // GGM - Here doesn't make sense 
                     //col = newGGM(col, 1.0f);
 
                     hdriPixelArray[i] = new Color(Mathf.Pow(hdriPixelColor.r, 1.0f / 2.2f), Mathf.Pow(hdriPixelColor.g, 1.0f / 2.2f), Mathf.Pow(hdriPixelColor.b, 1.0f / 2.2f), 1.0f);
-                    sweepPixelArray[i] = new Color(Mathf.Pow(sweepPixelColor.r, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.g, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.b, 1.0f / 2.2f), 1.0f);
+                    //sweepPixelArray[i] = new Color(Mathf.Pow(sweepPixelColor.r, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.g, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.b, 1.0f / 2.2f), 1.0f);
 
                 }
             }
@@ -409,8 +399,8 @@ public class ColorGamut : MonoBehaviour
             hdriTextureTransformed.SetPixels(hdriPixelArray);
             hdriTextureTransformed.Apply();
 
-            sweepTextureTransformed.SetPixels(sweepPixelArray);
-            sweepTextureTransformed.Apply();
+            //sweepTextureTransformed.SetPixels(sweepPixelArray);
+            //sweepTextureTransformed.Apply();
         }
     }
 
