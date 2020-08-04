@@ -12,14 +12,14 @@ public class Screenshot : MonoBehaviour
     void Start()
     {
         textureToSave = new Texture2D(Screen.width, Screen.height, TextureFormat.RGBAHalf, false);
-        screenGrab = new RenderTexture(Screen.width, Screen.height, 0);
+        screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf);
     }
 
     void Update()
     {
         if (Input.GetKeyUp(KeyCode.T)) 
         {
-            saveScreenshot("ExRImage" + Time.realtimeSinceStartup + ".exr");
+            saveScreenshot("ExRImage_" + Time.realtimeSinceStartup + ".exr");
         }
     }
 

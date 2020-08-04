@@ -31,7 +31,7 @@ public class ColorGamutEditor : Editor
 
     private int hdriIndex = 0;
     private bool enableSliders = false;
-
+    private bool enableBleaching = true;
     public void OnEnable()
     {
         originX = 0.0f;
@@ -77,6 +77,7 @@ public class ColorGamutEditor : Editor
         
         bool showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableSliders = EditorGUILayout.Toggle("Enable Sliders", enableSliders);
+        enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
         originX     = EditorGUILayout.Slider("x0", originX, 0.0f, 10.0f);
         originY     = EditorGUILayout.Slider("y0", originY, 0.0f, 10.0f);
         midGreyX    = EditorGUILayout.Slider("Mid Grey X", midGreyX, 0.0f, 1.5f);
@@ -135,6 +136,7 @@ public class ColorGamutEditor : Editor
         colorGamut.setHDRIIndex(hdriIndex);
         colorGamut.setAnimationCurve(filmicCurve);
         colorGamut.setShowSweep(showSweep);
+        colorGamut.setBleaching(enableBleaching);
 
         base.serializedObject.ApplyModifiedProperties();
     }

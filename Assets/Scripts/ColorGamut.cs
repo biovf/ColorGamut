@@ -67,6 +67,7 @@ public class ColorGamut : MonoBehaviour
     private RenderTexture screenGrab;
     private float enableGamutMap;
     private bool isSweepActive;
+    private bool isBleachingActive;
 
     private AnimationCurve animationCurve;
 
@@ -79,6 +80,7 @@ public class ColorGamut : MonoBehaviour
 
     void Start()
     {
+        isBleachingActive = true;
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
         exposure = 1.0f;
         sweepExposure = 1.0f;
@@ -336,8 +338,9 @@ public class ColorGamut : MonoBehaviour
                     }
 
                     // Calculate Pixel max color and ratio
-                    float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
-                    ratio = hdriPixelColor / hdriMaxRGBChannel;
+                    // R: 0.4  G:0.5  B:5.5
+                    float hdriMaxRGBChannel = hdriPixelColor.maxColorComponent; // B: 5.5
+                    ratio = hdriPixelColor / hdriMaxRGBChannel; // 0.4/5.5
                     
                     // Calculate Sweep max color and ratio
                     float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
@@ -347,23 +350,35 @@ public class ColorGamut : MonoBehaviour
                     // Transfer function
                     if (activeTransferFunction == TransferFunction.Max_RGB)
                     {
-                        hdriMaxRGBChannel = animationCurve.Evaluate(hdriMaxRGBChannel);
-                        hdriPixelColor = hdriMaxRGBChannel * ratio;
                         // New approach
                         float maxDynamicRange = animationCurve[3].time; // The x axis max value on the curve
                         float bleachStartPoint = TimeFromValue(animationCurve, 1.0f);   // Intersect of x on Y = 1
 
-                        if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint)
+                        if (isBleachingActive)
                         {
-                            float bleachingRange = maxDynamicRange - bleachStartPoint;
-                            float bleachingRatio = (hdriPixelColor.maxColorComponent - bleachStartPoint) / bleachingRange;
+                            //Debug.Log("IsBleaching Active");
+                            // R: 0.4  G:0.5  B:5.5
+                            if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint)
+                            {
+                                float bleachingRange = maxDynamicRange - bleachStartPoint;
+                                float bleachingRatio = (hdriPixelColor.maxColorComponent - bleachStartPoint) / bleachingRange;
 
-                            Vector3 outputColor = Vector3.Lerp(new Vector3(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b), new Vector3(maxDynamicRange, maxDynamicRange, maxDynamicRange), bleachingRatio);
-                            hdriPixelColor.r = outputColor.x;
-                            hdriPixelColor.g = outputColor.y;
-                            hdriPixelColor.b = outputColor.z;
+                                // R: 0.4  G:0.5  B:5.5
+                                Vector3 outputColor = Vector3.Lerp(new Vector3(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b), new Vector3(maxDynamicRange, maxDynamicRange, maxDynamicRange), bleachingRatio);
+                                hdriPixelColor.r = outputColor.x;
+                                hdriPixelColor.g = outputColor.y;
+                                hdriPixelColor.b = outputColor.z;
+
+                                ratio = hdriPixelColor / hdriMaxRGBChannel;
+                                // R: 0.0  G:15.5  B:15.5
+                            }
                         }
+                        // R: 15.0  G:15.0  B:15.0
+                        // Get Y curve value
+                        float hdriYMaxValue = Mathf.Min(animationCurve.Evaluate(hdriMaxRGBChannel), 1.0f);
+                        hdriPixelColor = hdriYMaxValue * ratio;
 
+                        // Sweep texture
                         sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
                         sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
 
@@ -399,7 +414,10 @@ public class ColorGamut : MonoBehaviour
         }
     }
 
-
+    public void setBleaching(bool inIsBleachingActive) 
+    {
+        isBleachingActive = inIsBleachingActive;
+    }
     static float TimeFromValue(AnimationCurve c, float value, float precision = 1e-6f)
     {
         float minTime = c.keys[0].time;
