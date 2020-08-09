@@ -191,7 +191,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5.92, y: 0.32, z: -9.52}
+  m_LocalPosition: {x: 0, y: 0, z: -8.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -217,11 +217,11 @@ MonoBehaviour:
   sweepPlane: {fileID: 1048242420}
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
   HDRIList:
-  - {fileID: 2800000, guid: 5f33ad6cf070e4d2482d24f1d34c1312, type: 3}
   - {fileID: 2800000, guid: bedbb785de66cdb4c8b507ef388afa93, type: 3}
+  - {fileID: 2800000, guid: d573e668cebd549a6897b51fcfd303cc, type: 3}
   - {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
   - {fileID: 2800000, guid: bd000266b35516c4fbdae6c97a7001fd, type: 3}
-  - {fileID: 2800000, guid: 31b2f0f274714624ea704f37624dca58, type: 3}
+  - {fileID: 2800000, guid: 38869bc2cc4d02842a5b31cbece41e05, type: 3}
   enableDyeBleaching: 0
   lerpRatio: 0
   dye_bleach_x: 5
@@ -438,7 +438,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1380646434}
   m_LocalRotation: {x: 0.00000014901161, y: -0.7071068, z: 0.7071068, w: 0.00000014901161}
-  m_LocalPosition: {x: -6, y: 0.29, z: 0.4}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 2, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}

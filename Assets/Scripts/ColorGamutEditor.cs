@@ -74,10 +74,10 @@ public class ColorGamutEditor : Editor
         if(hdriNames != null && hdriNames.Count > 0)
             hdriIndex = EditorGUILayout.Popup("HDRI to use", hdriIndex, hdriNames.ToArray());
 
-        
         bool showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
-        enableSliders = EditorGUILayout.Toggle("Enable Sliders", enableSliders);
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
+
+        enableSliders = EditorGUILayout.Toggle("Enable Sliders", enableSliders);
         originX     = EditorGUILayout.Slider("x0", originX, 0.0f, 10.0f);
         originY     = EditorGUILayout.Slider("y0", originY, 0.0f, 10.0f);
         midGreyX    = EditorGUILayout.Slider("Mid Grey X", midGreyX, 0.0f, 1.5f);

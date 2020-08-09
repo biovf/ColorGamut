@@ -19,8 +19,20 @@ public class Screenshot : MonoBehaviour
     {
         if (Input.GetKeyUp(KeyCode.T)) 
         {
-            saveScreenshot("ExRImage_" + Time.realtimeSinceStartup + ".exr");
+            string fileName = "ExRImage_" + Time.realtimeSinceStartup + ".exr";
+            Debug.Log("Saving screenshot " + fileName);
+            saveScreenshot(fileName);
         }
+        Color TheColorPicked;
+        if (Input.GetMouseButtonDown(0))
+        {
+            Color[] pixels = toTexture2D(screenGrab).GetPixels();
+            textureToSave.SetPixels(pixels);
+            textureToSave.Apply();
+            TheColorPicked = textureToSave.GetPixel((int)Input.mousePosition.x, (int)Input.mousePosition.y);
+            Debug.Log(TheColorPicked.ToString());
+        }
+
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)

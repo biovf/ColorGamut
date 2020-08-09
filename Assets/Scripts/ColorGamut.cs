@@ -68,8 +68,10 @@ public class ColorGamut : MonoBehaviour
     private float enableGamutMap;
     private bool isSweepActive;
     private bool isBleachingActive;
+    private Texture2D textureToSave;
 
     private AnimationCurve animationCurve;
+    Color[] hdriPixelArray;
 
     private void Awake()
     {
@@ -81,7 +83,8 @@ public class ColorGamut : MonoBehaviour
     void Start()
     {
         isBleachingActive = true;
-        screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+        screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
+        screenGrab.Create();
         exposure = 1.0f;
         sweepExposure = 1.0f;
         useTanHCompressionFunction = false;
@@ -98,13 +101,14 @@ public class ColorGamut : MonoBehaviour
             Debug.LogError("HDRIs list is empty");
 
         inputTexture = HDRIList[hdriIndex];
-        hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height);
+        hdriTextureTransformed  = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
+        textureToSave           = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
         sweepTextureTransformed = new Texture2D(sweepTexture.width, sweepTexture.height);
         ggm = new Ggm_troyedition();
         isSweepActive = false;
         enableDyeBleaching = false;
         //animationCurve = AnimationCurve.EaseInOut(0.0f, 0.0f, 1.0f, 1.0f);
-
+        hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
         StartCoroutine("CpuGGMIterative");
     }
 
@@ -217,8 +221,32 @@ public class ColorGamut : MonoBehaviour
         if (Input.GetKeyUp(KeyCode.Y))
             KeyIsUp = false;
 
-    }
+        if (Input.GetMouseButtonDown(0))
+        {
+            //Color[] pixels = toTexture2D(screenGrab).GetPixels();
+            //textureToSave.SetPixels(pixels);
+            //textureToSave.Apply();
+            int xCoord = (int)Input.mousePosition.x;
+            int yCoord = (int)Input.mousePosition.y;
+            Color initialHDRIColor  = inputTexture.GetPixel(xCoord, yCoord);
+            Color finalHDRIColor    = hdriTextureTransformed.GetPixel(xCoord, yCoord);
 
+            Debug.Log("Inital \tEXR color: " + initialHDRIColor.ToString());
+            Debug.Log("Exposed\tEXR color: " + (initialHDRIColor * exposure).ToString());
+            Debug.Log("Final  \tEXR color: " + finalHDRIColor.ToString());
+            Debug.Log("--------------------------------------------------------------------------------");
+        }
+    }
+    Texture2D toTexture2D(RenderTexture rTex)
+    {
+        Texture2D tex = new Texture2D(rTex.width, rTex.height, TextureFormat.RGBAHalf, false);
+        RenderTexture.active = rTex;
+        tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
+        tex.Apply();
+        RenderTexture.active = null;
+
+        return tex;
+    }
     public AnimationCurve getAnimationCurve() 
     {
         return animationCurve;
@@ -247,7 +275,7 @@ public class ColorGamut : MonoBehaviour
         //colorGamutMat.SetFloat("_ExposureControl", exposure);
         //colorGamutMat.SetFloat("_TanHCompression", (useTanHCompressionFunction == false ? 0.0f : 1.0f));
 
-        Graphics.Blit(screenGrab, dest);
+        Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
     }
 
     IEnumerator CpuGGMIterative()
@@ -260,15 +288,16 @@ public class ColorGamut : MonoBehaviour
                 inputTexture = HDRIList[inputTextureIdx];
             }
 
-            Color[] hdriPixelArray = inputTexture.GetPixels();
+            hdriPixelArray = inputTexture.GetPixels();
             //Color[] sweepPixelArray = sweepTexture.GetPixels();
 
-            int counter = 10000;
-            for (int i = 0; i < hdriPixelArray.Length; i++, counter--)
+            int counter = 1000;
+            int hdriPixelArrayLen = hdriPixelArray.Length;
+            for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
             {
                 if (counter <= 0)
                 {
-                    counter = 10000;
+                    counter = 1000;
                     yield return new WaitForEndOfFrame();
                 }
 
@@ -351,7 +380,7 @@ public class ColorGamut : MonoBehaviour
                         if (isBleachingActive)
                         {
                             //Debug.Log("IsBleaching Active");
-                            if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint || hdriPixelColor.r > bleachStartPoint)
+                            if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.g > bleachStartPoint || hdriPixelColor.b > bleachStartPoint)
                             {
                                 float bleachingRange = maxDynamicRange - bleachStartPoint;
                                 float bleachingRatio = (hdriPixelColor.maxColorComponent - bleachStartPoint) / bleachingRange;
@@ -392,7 +421,6 @@ public class ColorGamut : MonoBehaviour
 
                     hdriPixelArray[i] = new Color(Mathf.Pow(hdriPixelColor.r, 1.0f / 2.2f), Mathf.Pow(hdriPixelColor.g, 1.0f / 2.2f), Mathf.Pow(hdriPixelColor.b, 1.0f / 2.2f), 1.0f);
                     //sweepPixelArray[i] = new Color(Mathf.Pow(sweepPixelColor.r, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.g, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.b, 1.0f / 2.2f), 1.0f);
-
                 }
             }
 
