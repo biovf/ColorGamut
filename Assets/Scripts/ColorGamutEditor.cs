@@ -32,6 +32,7 @@ public class ColorGamutEditor : Editor
     private int hdriIndex = 0;
     private bool enableSliders = false;
     private bool enableBleaching = true;
+    AnimationCurve animationCurve;
     public void OnEnable()
     {
         originX = 0.0f;
@@ -52,9 +53,79 @@ public class ColorGamutEditor : Editor
         filmicCurve = new AnimationCurve(keyframes);
 
         hdriNames = new List<string>();
+
+        //Keyframe logP0 = new Keyframe(originX, originY);
+        //Keyframe logP1 = new Keyframe((midGreyX),       (midGreyY));
+        //Keyframe logP2 = new Keyframe((shoulderStartX), (shoulderStartY));
+        //Keyframe logP3 = new Keyframe((shoulderEndX),   (shoulderEndY));
+
+        //Keyframe[] tempKeys = new Keyframe[] { logP0, logP1, logP2, logP3 };
+        animationCurve = createAnimationCurve();//new AnimationCurve(tempKeys);//AnimationCurve.EaseInOut(0.0f, 0.0f, 1.0f, 1.0f);
+        //animationCurve.SmoothTangents(1, 2.0f);
+        CurveTest curve = new CurveTest();
+        curve.linearSection(new Vector2(0.18f, 0.18f), 1.5f);
     }
 
-  
+    float TimeFromValue(AnimationCurve curve, float value, float precision = 1e-6f)
+    {
+        float minTime = curve.keys[0].time;
+        float maxTime = curve.keys[curve.keys.Length - 1].time;
+        float best = (maxTime + minTime) / 2;
+        float bestVal = curve.Evaluate(best);
+        int it = 0;
+        const int maxIt = 1000;
+        float sign = Mathf.Sign(curve.keys[curve.keys.Length - 1].value - curve.keys[0].value);
+        while (it < maxIt && Mathf.Abs(minTime - maxTime) > precision)
+        {
+            if ((bestVal - value) * sign > 0)
+            {
+                maxTime = best;
+            }
+            else
+            {
+                minTime = best;
+            }
+            best = (maxTime + minTime) / 2;
+            bestVal = curve.Evaluate(best);
+            it++;
+        }
+        return best;
+    }
+
+
+    public AnimationCurve createAnimationCurve() 
+    {
+
+        //Calculate slope in middle linear section
+        //    Create linear curve (-10, -10) to (10, 10)
+        //    Evaluate curve and get
+ 
+
+        Keyframe p0 = new Keyframe(originX, originY);
+        Keyframe p1 = new Keyframe(midGreyX - 0.1f, midGreyY - 0.1f);
+        Keyframe p2  = new Keyframe(midGreyX, midGreyY); //midGrey
+        Keyframe p3 = new Keyframe(shoulderStartX, shoulderStartY);
+        Keyframe p4 = new Keyframe(shoulderEndX, shoulderEndY);
+        Keyframe[] tempKeys = new Keyframe[] { p0, p1, p2, p3, p4 };
+
+        AnimationCurve linearCurve01 = AnimationCurve.Linear(p0.time, p0.value, p1.time, p1.value);
+        AnimationCurve linearCurve12 = AnimationCurve.Linear(p1.time, p1.value, p2.time, p2.value);
+        AnimationCurve linearCurve23 = AnimationCurve.Linear(p2.time, p2.value, p3.time, p3.value);
+
+        tempKeys[0].outTangent   = linearCurve01[0].outTangent;
+        tempKeys[1].inTangent    = linearCurve01[0].outTangent;
+        tempKeys[1].outTangent   = linearCurve12[0].outTangent;
+        tempKeys[2].inTangent    = linearCurve12[0].outTangent;
+        tempKeys[2].outTangent   = linearCurve23[0].outTangent;
+        tempKeys[3].inTangent    = linearCurve23[0].outTangent;
+
+        animationCurve = new AnimationCurve(tempKeys);
+        float Yintersect = TimeFromValue(animationCurve, 1.0f);
+        animationCurve.AddKey(Yintersect, 1.0f);
+        return animationCurve;
+    }
+
+
     public override void OnInspectorGUI() 
     {
         colorGamut = (ColorGamut)target;
@@ -86,6 +157,11 @@ public class ColorGamutEditor : Editor
         shoulderStartY  = EditorGUILayout.Slider("Shoulder Start Y", shoulderStartY, 0.0f, 10.5f);
         shoulderEndX    = EditorGUILayout.Slider("Shoulder End X", shoulderEndX, 0.0f, 40.5f);
         shoulderEndY    = EditorGUILayout.Slider("Shoulder End Y", shoulderEndY, 0.0f, 40.5f);
+
+        //Debug.Log("3 " + animationCurve.keys[3].outTangent + " " + animationCurve.keys[3].outWeight);
+        //Debug.Log("4 " + animationCurve.keys[4].outTangent + " " + animationCurve.keys[4].outWeight);
+
+
         //Debug.Log("Origin X " + originX);
         //writeBackValues(originX, originY, midGreyX, midGreyY, shoulderStartX, shoulderStartY,
         //    shoulderEndX, shoulderEndY);
@@ -108,7 +184,7 @@ public class ColorGamutEditor : Editor
         //keyframes[2].outTangent = linearCurve23[0].outTangent;
         //keyframes[3].inTangent = linearCurve23[0].outTangent;
 
-    
+
         if (enableSliders)
         {
             Keyframe[] keys = filmicCurve.keys;
@@ -125,8 +201,8 @@ public class ColorGamutEditor : Editor
         }
         filmicCurve = EditorGUILayout.CurveField("Filmic Curve", filmicCurve);
 
-        //AnimationCurve animationCurve = AnimationCurve.EaseInOut(0.0f, 0.0f, 1.0f, 1.0f);
-        //EditorGUILayout.CurveField(" Curve", animationCurve);
+        
+        EditorGUILayout.CurveField(" Curve", animationCurve);
 
         writeBackValues(filmicCurve.keys[0].time, filmicCurve.keys[0].value,
                         filmicCurve.keys[1].time, filmicCurve.keys[1].value,
