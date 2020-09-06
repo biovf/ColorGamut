@@ -59,4 +59,16 @@ public class Bezier : MonoBehaviour
 
         return p;
     }
+
+    Vector2 CalculateQudraticBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2)
+    {
+        float u = 1 - t;
+        float uu = u * u;
+        float tt = t * t;
+        Vector2 res = uu * p0;
+        res += 2 * u * t * p1;
+        res += tt * p2;
+        
+        return res;
+    }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using MathNet.Numerics;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 [CustomEditor(typeof(ColorGamut))]
@@ -7,7 +8,6 @@ public class ColorGamutEditor : Editor
 {
     ColorGamut colorGamut;
     public AnimationCurve filmicCurve;
-
     [Header("Curve Parameters")]
     #region DIRECT_PARAMS
     public float originX        ;
@@ -33,6 +33,8 @@ public class ColorGamutEditor : Editor
     private bool enableSliders = false;
     private bool enableBleaching = true;
     AnimationCurve animationCurve;
+    private Vector2[] controlPoints;
+
     public void OnEnable()
     {
         originX = 0.0f;
@@ -53,17 +55,13 @@ public class ColorGamutEditor : Editor
         filmicCurve = new AnimationCurve(keyframes);
 
         hdriNames = new List<string>();
+        animationCurve = createAnimationCurve();
 
-        //Keyframe logP0 = new Keyframe(originX, originY);
-        //Keyframe logP1 = new Keyframe((midGreyX),       (midGreyY));
-        //Keyframe logP2 = new Keyframe((shoulderStartX), (shoulderStartY));
-        //Keyframe logP3 = new Keyframe((shoulderEndX),   (shoulderEndY));
-
-        //Keyframe[] tempKeys = new Keyframe[] { logP0, logP1, logP2, logP3 };
-        animationCurve = createAnimationCurve();//new AnimationCurve(tempKeys);//AnimationCurve.EaseInOut(0.0f, 0.0f, 1.0f, 1.0f);
-        //animationCurve.SmoothTangents(1, 2.0f);
         CurveTest curve = new CurveTest();
-        curve.linearSection(new Vector2(0.18f, 0.18f), 1.5f);
+        controlPoints = curve.createCurveControlPoints(new Vector2(0.18f, 0.18f), 1.5f);
+        List<float> xValues = new List<float>() { controlPoints[2].x - float.Epsilon, controlPoints[6].x/ 2.0f, controlPoints[6].x};
+        List<Vector2> controlPs = new List<Vector2>(controlPoints);
+        List<float> results = curve.calcTfromXquadratic(xValues, controlPs);
     }
 
     float TimeFromValue(AnimationCurve curve, float value, float precision = 1e-6f)
@@ -125,6 +123,32 @@ public class ColorGamutEditor : Editor
         return animationCurve;
     }
 
+    
+    void OnSceneGUI()
+    {
+        //Debug.Log("Drawing?");
+
+        Vector2 p0 = controlPoints[0];
+        Vector2 p1 = controlPoints[1];
+        Vector2 p2 = controlPoints[2];
+        Vector2 p3 = controlPoints[3];
+        Vector2 p4 = controlPoints[4];     
+        Vector2 p5 = controlPoints[5];
+        Vector2 p6 = controlPoints[6];
+        
+        //Handles.DrawLine(new Vector3(p0.x, p0.y), new Vector3(p1.x, p1.y));
+        //Handles.DrawLine(new Vector3(p1.x, p1.y), new Vector3(p2.x, p2.y));
+        //Handles.DrawLine(new Vector3(p2.x, p2.y), new Vector3(p3.x, p3.y));
+        //Handles.DrawLine(new Vector3(p3.x, p3.y), new Vector3(p4.x, p4.y));
+        //Handles.DrawLine(new Vector3(p4.x, p4.y), new Vector3(p5.x, p5.y));
+        //Handles.DrawLine(new Vector3(p5.x, p5.y), new Vector3(p6.x, p6.y));
+
+        Handles.DrawLine(new Vector3(p0.x, p0.y), new Vector3(p2.x, p2.y));
+        Handles.DrawLine(new Vector3(p2.x, p2.y), new Vector3(p4.x, p4.y));
+        Handles.DrawLine(new Vector3(p4.x, p4.y), new Vector3(p6.x, p6.y));
+        Handles.DrawWireCube(new Vector3(rootValue, p0.y), new Vector3(0.001f, 0.001f));
+
+    }
 
     public override void OnInspectorGUI() 
     {
@@ -158,31 +182,7 @@ public class ColorGamutEditor : Editor
         shoulderEndX    = EditorGUILayout.Slider("Shoulder End X", shoulderEndX, 0.0f, 40.5f);
         shoulderEndY    = EditorGUILayout.Slider("Shoulder End Y", shoulderEndY, 0.0f, 40.5f);
 
-        //Debug.Log("3 " + animationCurve.keys[3].outTangent + " " + animationCurve.keys[3].outWeight);
-        //Debug.Log("4 " + animationCurve.keys[4].outTangent + " " + animationCurve.keys[4].outWeight);
-
-
-        //Debug.Log("Origin X " + originX);
-        //writeBackValues(originX, originY, midGreyX, midGreyY, shoulderStartX, shoulderStartY,
-        //    shoulderEndX, shoulderEndY);
-
-        //p0 = new Keyframe(originX, originY);
-        //p1 = new Keyframe(midGreyX, midGreyY);
-        //p2 = new Keyframe(shoulderStartX, shoulderStartY);
-        //p3 = new Keyframe(shoulderEndX, shoulderEndY);
-
-        //AnimationCurve linearCurve01 = AnimationCurve.Linear(p0.time, p0.value, p1.time, p1.value);
-        //AnimationCurve linearCurve12 = AnimationCurve.Linear(p1.time, p1.value, p2.time, p2.value);
-        //AnimationCurve linearCurve23 = AnimationCurve.Linear(p2.time, p2.value, p3.time, p3.value);
-        //AnimationCurve linearCurve34 = AnimationCurve.Linear(p3.time, p3.value, p3.time * 2.0f, p3.value * 2.0f);
-
-        //keyframes = new Keyframe[] { p0, p1, p2, p3 };
-        //keyframes[0].outTangent = linearCurve01[0].outTangent;
-        //keyframes[1].inTangent = linearCurve01[0].outTangent;
-        //keyframes[1].outTangent = linearCurve12[0].outTangent;
-        //keyframes[2].inTangent = linearCurve12[0].outTangent;
-        //keyframes[2].outTangent = linearCurve23[0].outTangent;
-        //keyframes[3].inTangent = linearCurve23[0].outTangent;
+        // drawCurve();
 
 
         if (enableSliders)
@@ -215,6 +215,46 @@ public class ColorGamutEditor : Editor
         colorGamut.setBleaching(enableBleaching);
 
         base.serializedObject.ApplyModifiedProperties();
+    }
+    void CheckCurveRT(int width, int height)
+    {
+        if (m_CurveTex == null || !m_CurveTex.IsCreated() || m_CurveTex.width != width || m_CurveTex.height != height)
+        {
+            //CoreUtils.Destroy(m_CurveTex);
+            m_CurveTex = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
+            m_CurveTex.hideFlags = HideFlags.HideAndDontSave;
+        }
+    }
+    Rect m_CurveRect;
+    RenderTexture m_CurveTex;
+    public Material curveWidgetMat;
+
+    void drawCurve()
+    {
+         EditorGUILayout.Space();
+
+        // Reserve GUI space
+        using (new GUILayout.HorizontalScope())
+        {
+            GUILayout.Space(EditorGUI.indentLevel * 15f);
+            m_CurveRect = GUILayoutUtility.GetRect(128, 80);
+        }
+
+        if (Event.current.type == EventType.Repaint)
+        {
+            // Prepare curve data
+            // curveWidgetMat.SetVector(HDShaderIDs._Variants, new Vector4(alpha, m_HableCurve.whitePoint, 0f, 0f));
+
+            CheckCurveRT((int)m_CurveRect.width, (int)m_CurveRect.height);
+
+            var oldRt = RenderTexture.active;
+            Graphics.Blit(null, m_CurveTex, curveWidgetMat);
+            RenderTexture.active = oldRt;
+
+            GUI.DrawTexture(m_CurveRect, m_CurveTex);
+
+            Handles.DrawSolidRectangleWithOutline(m_CurveRect, Color.clear, Color.white * 0.4f);
+        }
     }
 
     void setSliderValues(float inTmpOriginX, float inTmpOriginY, float inTmpMidGreyX, float inTmpMidGreyY, float inTmpShoulderStartX,

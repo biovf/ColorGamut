@@ -23,10 +23,10 @@ public class BezierPathEditor : Editor
     /// </summary>
     private void DrawBezierPath()
     {
-                                                                                // Loops through all BezierPoints (without last point if path not closed)
+        // Loops through all BezierPoints (without last point if path not closed)
         for (int bezierPointNumber = 0; bezierPointNumber < bezierPath.bezierPoints.Count - (bezierPath.closed ? 0 : 1); bezierPointNumber++)
         {
-                                                                                // Loops through calculated points(except last) in current BezierPoint and draws a line between current and next calculated point
+            // Loops through calculated points(except last) in current BezierPoint and draws a line between current and next calculated point
             for (int iteration = 0; iteration < bezierPath.bezierPoints[bezierPointNumber].points.Count - 1; iteration++)
                 Handles.DrawLine(bezierPath.transform.TransformPoint(bezierPath.bezierPoints[bezierPointNumber].points[iteration]),
                     bezierPath.transform.TransformPoint(bezierPath.bezierPoints[bezierPointNumber].points[iteration + 1]));
