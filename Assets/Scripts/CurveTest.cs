@@ -80,6 +80,49 @@ public class CurveTest
         // Create bezier curve for shoulder
     }
 
+    public List<float> calcYfromXQuadratic(List<float> xValues, List<float> tValues, List<Vector2> controlPoints)
+    {
+        
+        if (xValues.Count <= 0 || tValues.Count <= 0 || xValues.Count != tValues.Count)
+        {
+            Debug.Log("Input array of x values or t values have mismatched lengths ");
+            return null;
+        }
+        List<float> yValues = new List<float>();
+        Vector2[] controlPointsArray = new Vector2[]{ controlPoints[0], controlPoints[1], controlPoints[2],
+            controlPoints[2], controlPoints[3], controlPoints[4],
+            controlPoints[4], controlPoints[5], controlPoints[6]};
+
+        double[] coefficients = new double[3];
+        for (int index = 0; index < xValues.Count; index++)
+        {
+            for (int i = 0; i < controlPointsArray.Length - 1 ; i += 3)
+            {
+                Vector2 p0 = controlPointsArray[0 + i];
+                Vector2 p1 = controlPointsArray[1 + i];
+                Vector2 p2 = controlPointsArray[2 + i];
+
+                if (p0.x <= xValues[index] && xValues[index] <= p2.x)
+                {
+                    float yVal = (
+                        ((Mathf.Pow(1.0f - tValues[index], 2.0f) * p0.y) +
+                        (2.0f * (1.0f - tValues[index]) * tValues[index] * p1.y) +
+                        (Mathf.Pow(tValues[index], 2.0f) * p2.y)));
+                    yValues.Add(yVal);
+                }
+            }
+        }
+        return yValues;
+        
+    }
+
+    public float getYfromX(float xValue, float tValue)
+    {
+        
+        
+    }
+
+
     public List<float> calcTfromXquadratic(List<float> xValues, List<Vector2> controlPoints)
     {
         List<float> rootsLst = new List<float>();
