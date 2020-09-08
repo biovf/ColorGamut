@@ -30,11 +30,15 @@ public class ColorGamutEditor : Editor
     private List<string> hdriNames;
 
     private int hdriIndex = 0;
+    private float rootValue;
+
     private bool enableSliders = false;
     private bool enableBleaching = true;
+    private bool isMultiThreaded = true;
+    
     AnimationCurve animationCurve;
     private Vector2[] controlPoints;
-
+    
     public void OnEnable()
     {
         originX = 0.0f;
@@ -126,8 +130,6 @@ public class ColorGamutEditor : Editor
     
     void OnSceneGUI()
     {
-        //Debug.Log("Drawing?");
-
         Vector2 p0 = controlPoints[0];
         Vector2 p1 = controlPoints[1];
         Vector2 p2 = controlPoints[2];
@@ -171,7 +173,8 @@ public class ColorGamutEditor : Editor
 
         bool showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
-
+        isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
+        
         enableSliders = EditorGUILayout.Toggle("Enable Sliders", enableSliders);
         originX     = EditorGUILayout.Slider("x0", originX, 0.0f, 10.0f);
         originY     = EditorGUILayout.Slider("y0", originY, 0.0f, 10.0f);
@@ -181,9 +184,6 @@ public class ColorGamutEditor : Editor
         shoulderStartY  = EditorGUILayout.Slider("Shoulder Start Y", shoulderStartY, 0.0f, 10.5f);
         shoulderEndX    = EditorGUILayout.Slider("Shoulder End X", shoulderEndX, 0.0f, 40.5f);
         shoulderEndY    = EditorGUILayout.Slider("Shoulder End Y", shoulderEndY, 0.0f, 40.5f);
-
-        // drawCurve();
-
 
         if (enableSliders)
         {
@@ -201,7 +201,6 @@ public class ColorGamutEditor : Editor
         }
         filmicCurve = EditorGUILayout.CurveField("Filmic Curve", filmicCurve);
 
-        
         EditorGUILayout.CurveField(" Curve", animationCurve);
 
         writeBackValues(filmicCurve.keys[0].time, filmicCurve.keys[0].value,
@@ -213,6 +212,7 @@ public class ColorGamutEditor : Editor
         colorGamut.setAnimationCurve(filmicCurve);
         colorGamut.setShowSweep(showSweep);
         colorGamut.setBleaching(enableBleaching);
+        colorGamut.setIsMultiThreaded(isMultiThreaded);
 
         base.serializedObject.ApplyModifiedProperties();
     }

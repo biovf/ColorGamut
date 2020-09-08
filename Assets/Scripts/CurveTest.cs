@@ -116,11 +116,11 @@ public class CurveTest
         
     }
 
-    public float getYfromX(float xValue, float tValue)
-    {
-        
-        
-    }
+    // public float getYfromX(float xValue, float tValue)
+    // {
+    //     
+    //     
+    // }
 
 
     public List<float> calcTfromXquadratic(List<float> xValues, List<Vector2> controlPoints)
