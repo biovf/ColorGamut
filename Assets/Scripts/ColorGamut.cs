@@ -170,41 +170,65 @@
         private Texture2D textureToSave;
         private RenderTexture screenGrab;
 
-        private Ggm_troyedition ggm;
+        // private Ggm_troyedition ggm;
         private AnimationCurve animationCurve;
         private Color[] hdriPixelArray;
         private Vector2[] animationCurveLUT;
         private string logOutput = "";
         
+        // Parametric curve variables
+        private CurveTest parametricCurve;
+        private Vector2[] controlPoints;
+        private List<float> tValues;
+        private float minDynamicRange;
+        private float maxDynamicRange;
+
         private void Awake()
         {
-            activeTransferFunction = TransferFunction.Max_RGB;
             lerpRatio = LerpRatio.Aesthetic;
+            activeTransferFunction = TransferFunction.Max_RGB;
         }
-
-
+        
         void Start()
         {
-            isBleachingActive = true;
-            screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
-            screenGrab.Create();
             exposure = 1.0f;
             sweepExposure = 1.0f;
-
             hdriIndex = 0;
 
+            isBleachingActive = true;
+            isSweepActive     = false;
+            enableDyeBleaching = false;
+            
+            // ggm = new Ggm_troyedition();
+
+            // Parametric curve
+            Vector2 greyPoint = new Vector2(0.18f, 0.18f);
+            Vector2 origin = new Vector2(Mathf.Pow(2.0f, -6.0f) * 0.18f, 0.0f);
+            minDynamicRange = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
+            maxDynamicRange = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
+
+            parametricCurve = new CurveTest();
+            controlPoints = parametricCurve.createCurveControlPoints(greyPoint, 2.2f, origin);
+            List<float> xValues = new List<float>(1024);
+            for (int i = 0; i < 1024; i++)
+            {
+                xValues.Add(i * 0.01171f);
+            }
+
+            tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+                
             if (HDRIList == null)
                 Debug.LogError("HDRIs list is empty");
 
-            inputTexture = HDRIList[hdriIndex];
+            inputTexture  = HDRIList[hdriIndex];
+            
+            hdriPixelArray          = new Color[inputTexture.width * inputTexture.height];
             hdriTextureTransformed  = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
             textureToSave           = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
             sweepTextureTransformed = new Texture2D(sweepTexture.width, sweepTexture.height);
-            ggm = new Ggm_troyedition();
-            isSweepActive = false;
-            enableDyeBleaching = false;
-            //animationCurve = AnimationCurve.EaseInOut(0.0f, 0.0f, 1.0f, 1.0f);
-            hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
+            screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
+            screenGrab.Create();
+            
             StartCoroutine("CpuGGMIterative");
         }
         
@@ -238,7 +262,7 @@
         }
 
    
-        IEnumerator CpuGGMIterative()
+        private IEnumerator CpuGGMIterative()
         {
             int counter = maxIterationsPerFrame;
             int hdriPixelArrayLen = 0;
@@ -370,7 +394,13 @@
                                 }
 
                                 // Get Y curve value
-                                hdriYMaxValue = Mathf.Min(animationCurve.Evaluate(hdriMaxRGBChannel), 1.0f);
+                                // hdriYMaxValue = Mathf.Min(animationCurve.Evaluate(hdriMaxRGBChannel), 1.0f);
+                                List<float> xVal = new List<float>();
+                                xVal.Add(hdriMaxRGBChannel);
+                                List<float> yValues = parametricCurve.calcYfromXQuadratic(xVal, tValues, new List<Vector2>(controlPoints));
+                                if(yValues.Count > 0)
+                                    hdriYMaxValue = Mathf.Min(yValues[0], 1.0f);
+
                                 hdriPixelColor = hdriYMaxValue * ratio;
 
                                 // Sweep texture
@@ -556,11 +586,11 @@
             return best;
         }
 
-        Color newGGM(Color RGB, float compressionThreshold)
-        {
-            Vector3 result = ggm.the_ggm(new Vector3(RGB.r, RGB.g, RGB.b), new Vector3(compressionThreshold, compressionThreshold, compressionThreshold));
-            return new Color(result.x, result.y, result.z);
-        }
+        // Color newGGM(Color RGB, float compressionThreshold)
+        // {
+        //     Vector3 result = ggm.the_ggm(new Vector3(RGB.r, RGB.g, RGB.b), new Vector3(compressionThreshold, compressionThreshold, compressionThreshold));
+        //     return new Color(result.x, result.y, result.z);
+        // }
 
         bool all(bool[] x)       // bvec can be bvec2, bvec3 or bvec4
         {

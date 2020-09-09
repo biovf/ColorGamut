@@ -9,6 +9,10 @@ using Vector2 = UnityEngine.Vector2;
 //using MathNet;
 public class CurveTest
 {
+    public CurveTest()
+    {
+    }
+
     float mix(float a, float b, float t)
     {
         // degree 1
@@ -30,23 +34,22 @@ public class CurveTest
 
     }
 
-    // we want m to vary between 0.3 and 4.5
-    public Vector2[] createCurveControlPoints(Vector2 greyPoint, float slope)
+    // we want m/slope to vary between 0.3 and 4.5
+    public Vector2[] createCurveControlPoints(Vector2 greyPoint, float slope, Vector2 origin)
     {
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the origin, control point and final point of a quadratic Bezier curve
         // We will design our curve from 3 separate Bezier curves: toe, middle linear section, shoulder
-        Vector2 toeP0Coords = new Vector2(0.0f, 0.0f);    // origin of plot
-        Vector2 toeP1Coords = new Vector2(0.0f, 0.0f);    // We don't know where it will be yet
+        Vector2 toeP0Coords = origin;                                // origin of plot
+        Vector2 toeP1Coords = new Vector2(0.0f, 0.0f);        // We don't know where it will be yet
         Vector2 toeP2Coords = new Vector2(0.0f, 0.085f);
         Vector2 midP1Coords = new Vector2(0.0f, 0.0f);        // Unknown
         Vector2 shP0Coords = greyPoint;
-        Vector2 shP1Coords = new Vector2(0.0f, 1.0f);        // Unknown
+        Vector2 shP1Coords = new Vector2(0.0f, 1.0f);         // Unknown
         Vector2 shP2Coords = new Vector2(1.5f, 1.0f);
         
         // calculate y intersection when y = 0
         float b = calculateLineYIntercept(greyPoint.x, greyPoint.y, slope);
-        // Debug.Log("b = " + b.ToString());
         float xP1Coord = calculateLineX(0.0f, b, slope);
         // Calculate the coords for P1 which we want to be 
         toeP1Coords.y = float.Epsilon;
@@ -57,33 +60,33 @@ public class CurveTest
         midP1Coords = (shP0Coords + toeP2Coords) / 2.0f;
         // calculate shoulder's P1 which amounts to knowing the x value when y = 1.0 
         shP1Coords.x = calculateLineX(shP1Coords.y, b, slope);
-        // Debug.Log("At Y = 1.0 the coord X = " + shP1Coords.x.ToString());
         
-        
+        // Create bezier curve for toe      P0: toeP0Coords   P1: toeP1Coords   P2: toeP2Coords
         controlPoints[0] = toeP0Coords;
         controlPoints[1] = toeP1Coords;
         controlPoints[2] = toeP2Coords;
+        // Create bezier for middle section P0: toeP2Coords   P1: midP1Coords   P2: shP0Coords
         controlPoints[3] = midP1Coords;
+        // Create bezier curve for shoulder P0: shP0Coords    P1: shP1Coords    P2: shP2Coords
         controlPoints[4] = shP0Coords;
         controlPoints[5] = shP1Coords;
         controlPoints[6] = shP2Coords;
 
-        for (int i = 0; i < controlPoints.Length; i++)
-        {
-            Debug.Log("P" + i + " " + controlPoints[i].ToString("G4"));
-        }
+        // for (int i = 0; i < controlPoints.Length; i++)
+        // {
+        //     Debug.Log("P" + i + " " + controlPoints[i].ToString("G4"));
+        // }
         
         return controlPoints;
 
-        // Create bezier curve for toe
-        // Create bezier for middle section
-        // Create bezier curve for shoulder
+     
     }
 
+    // @TODO Refactor to use fixed arrays as inputs instead of Lists
     public List<float> calcYfromXQuadratic(List<float> xValues, List<float> tValues, List<Vector2> controlPoints)
     {
         
-        if (xValues.Count <= 0 || tValues.Count <= 0 || xValues.Count != tValues.Count)
+        if (xValues.Count <= 0 || tValues.Count <= 0 /*|| xValues.Count != tValues.Count*/)
         {
             Debug.Log("Input array of x values or t values have mismatched lengths ");
             return null;

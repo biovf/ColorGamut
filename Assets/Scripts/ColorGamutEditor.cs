@@ -62,7 +62,7 @@ public class ColorGamutEditor : Editor
         animationCurve = createAnimationCurve();
 
         CurveTest curve = new CurveTest();
-        controlPoints = curve.createCurveControlPoints(new Vector2(0.18f, 0.18f), 1.5f);
+        controlPoints = curve.createCurveControlPoints(new Vector2(0.18f, 0.18f), 1.5f, Vector2.zero);
         List<float> xValues = new List<float>() { controlPoints[2].x - float.Epsilon, controlPoints[6].x/ 2.0f, controlPoints[6].x};
         List<Vector2> controlPs = new List<Vector2>(controlPoints);
         List<float> results = curve.calcTfromXquadratic(xValues, controlPs);
