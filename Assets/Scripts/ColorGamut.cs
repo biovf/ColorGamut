@@ -182,6 +182,9 @@
         private List<float> tValues;
         private float minDynamicRange;
         private float maxDynamicRange;
+        private Vector2 origin;
+        private Vector2 greyPoint;
+        private float slope;
 
         private void Awake()
         {
@@ -202,20 +205,22 @@
             // ggm = new Ggm_troyedition();
 
             // Parametric curve
-            Vector2 greyPoint = new Vector2(0.18f, 0.18f);
-            Vector2 origin = new Vector2(Mathf.Pow(2.0f, -6.0f) * 0.18f, 0.0f);
+            greyPoint = new Vector2(0.18f, 0.18f);
+            origin = new Vector2(Mathf.Pow(2.0f, -6.0f) * 0.18f, 0.0f);
+            slope = 2.2f;
             minDynamicRange = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
             maxDynamicRange = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
-
-            parametricCurve = new CurveTest();
-            controlPoints = parametricCurve.createCurveControlPoints(greyPoint, 2.2f, origin);
-            List<float> xValues = new List<float>(1024);
-            for (int i = 0; i < 1024; i++)
-            {
-                xValues.Add(i * 0.01171f);
-            }
-
-            tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+            
+            createParametricCurve(greyPoint, origin);
+            // parametricCurve = new CurveTest();
+            // controlPoints = parametricCurve.createCurveControlPoints(greyPoint, 2.2f, origin);
+            //
+            // List<float> xValues = new List<float>(1024);
+            // for (int i = 0; i < 1024; i++)
+            // {
+            //     xValues.Add(i * 0.01171f);
+            // }
+            // tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
                 
             if (HDRIList == null)
                 Debug.LogError("HDRIs list is empty");
@@ -230,6 +235,30 @@
             screenGrab.Create();
             
             StartCoroutine("CpuGGMIterative");
+        }
+
+        void createParametricCurve(Vector2 greyPoint, Vector2 origin)
+        {
+            parametricCurve = new CurveTest();
+            controlPoints = parametricCurve.createCurveControlPoints(greyPoint, slope, origin);
+            
+            List<float> xValues = new List<float>(1024);
+            for (int i = 0; i < 1024; i++)
+            {
+                xValues.Add(i * 0.01171f);
+            }
+            tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+        }
+        public void setParametricCurveValues( float inSlope, float originPointX, float originPointY, 
+                                               float greyPointX, float greyPointY)
+        {
+            this.slope = inSlope;
+            this.origin.x = originPointX;
+            this.origin.y = originPointY;
+            this.greyPoint.x = greyPointX;
+            this.greyPoint.y = greyPointY;
+
+            createParametricCurve(greyPoint, origin);
         }
         
         void Update()
@@ -395,12 +424,16 @@
 
                                 // Get Y curve value
                                 // hdriYMaxValue = Mathf.Min(animationCurve.Evaluate(hdriMaxRGBChannel), 1.0f);
+                                
                                 List<float> xVal = new List<float>();
                                 xVal.Add(hdriMaxRGBChannel);
                                 List<float> yValues = parametricCurve.calcYfromXQuadratic(xVal, tValues, new List<Vector2>(controlPoints));
                                 if(yValues.Count > 0)
                                     hdriYMaxValue = Mathf.Min(yValues[0], 1.0f);
-
+                                
+                                
+                                
+                                
                                 hdriPixelColor = hdriYMaxValue * ratio;
 
                                 // Sweep texture

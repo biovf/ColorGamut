@@ -19,6 +19,15 @@ public class ColorGamutEditor : Editor
     public float shoulderEndX   ;
     public float shoulderEndY;
     #endregion
+    
+    #region Parametric Curve Parameters
+    public float slope;
+    public float originPointX;
+    public float originPointY;
+    public float greyPointX;
+    public float greyPointY;
+    
+    #endregion
 
     private Keyframe[] keyframes;
     private Keyframe p0;
@@ -34,7 +43,7 @@ public class ColorGamutEditor : Editor
 
     private bool enableSliders = false;
     private bool enableBleaching = true;
-    private bool isMultiThreaded = true;
+    private bool isMultiThreaded = false;
     
     AnimationCurve animationCurve;
     private Vector2[] controlPoints;
@@ -66,6 +75,13 @@ public class ColorGamutEditor : Editor
         List<float> xValues = new List<float>() { controlPoints[2].x - float.Epsilon, controlPoints[6].x/ 2.0f, controlPoints[6].x};
         List<Vector2> controlPs = new List<Vector2>(controlPoints);
         List<float> results = curve.calcTfromXquadratic(xValues, controlPs);
+        
+        // New parametric curve
+        slope = 2.2f;
+        originPointX = Mathf.Pow(2.0f, -6.0f) * 0.18f;
+        originPointY = 0.0f;
+        greyPointX = 0.18f;
+        greyPointY = 0.18f;
     }
 
     float TimeFromValue(AnimationCurve curve, float value, float precision = 1e-6f)
@@ -185,6 +201,12 @@ public class ColorGamutEditor : Editor
         shoulderEndX    = EditorGUILayout.Slider("Shoulder End X", shoulderEndX, 0.0f, 40.5f);
         shoulderEndY    = EditorGUILayout.Slider("Shoulder End Y", shoulderEndY, 0.0f, 40.5f);
 
+        slope = EditorGUILayout.Slider("Slope", slope, 0.3f, 4.5f);
+        originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
+        originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
+        greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
+        greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
+        
         if (enableSliders)
         {
             Keyframe[] keys = filmicCurve.keys;
@@ -213,9 +235,13 @@ public class ColorGamutEditor : Editor
         colorGamut.setShowSweep(showSweep);
         colorGamut.setBleaching(enableBleaching);
         colorGamut.setIsMultiThreaded(isMultiThreaded);
+        colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
 
         base.serializedObject.ApplyModifiedProperties();
     }
+
+  
+
     void CheckCurveRT(int width, int height)
     {
         if (m_CurveTex == null || !m_CurveTex.IsCreated() || m_CurveTex.width != width || m_CurveTex.height != height)

@@ -46,14 +46,14 @@ public class CurveTest
         Vector2 midP1Coords = new Vector2(0.0f, 0.0f);        // Unknown
         Vector2 shP0Coords = greyPoint;
         Vector2 shP1Coords = new Vector2(0.0f, 1.0f);         // Unknown
-        Vector2 shP2Coords = new Vector2(1.5f, 1.0f);
+        Vector2 shP2Coords = new Vector2(12.0f, 1.0f);
         
         // calculate y intersection when y = 0
         float b = calculateLineYIntercept(greyPoint.x, greyPoint.y, slope);
+        // Calculate the coords for P1 in the first segment
         float xP1Coord = calculateLineX(0.0f, b, slope);
-        // Calculate the coords for P1 which we want to be 
         toeP1Coords.y = float.Epsilon;
-        toeP1Coords.x = xP1Coord;//(toeP1Coords.y - b) / slope;
+        toeP1Coords.x = xP1Coord;
         // Calculate the toe's P2 using an already known Y value and the equation y = mx + b 
         toeP2Coords.x = (toeP2Coords.y - b) / slope;
         // Calculate the middle linear's section (x, y) coords
@@ -92,7 +92,8 @@ public class CurveTest
             return null;
         }
         List<float> yValues = new List<float>();
-        Vector2[] controlPointsArray = new Vector2[]{ controlPoints[0], controlPoints[1], controlPoints[2],
+        Vector2[] controlPointsArray = new Vector2[]{ 
+            controlPoints[0], controlPoints[1], controlPoints[2],
             controlPoints[2], controlPoints[3], controlPoints[4],
             controlPoints[4], controlPoints[5], controlPoints[6]};
 
@@ -165,7 +166,7 @@ public class CurveTest
                     }
                     if (tmpRoot >= 0.0 && tmpRoot <= 10000)
                     {
-                        Debug.Log("X value " + xValues[index] + " Adding " + tmpRoot);
+                        // Debug.Log("X value " + xValues[index] + " Adding " + tmpRoot);
                         rootsLst.Add(tmpRoot);
                         tmpRoot = -1.0f;
                         break;
