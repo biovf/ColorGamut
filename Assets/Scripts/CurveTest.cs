@@ -46,7 +46,7 @@ public class CurveTest
         Vector2 midP1Coords = new Vector2(0.0f, 0.0f);        // Unknown
         Vector2 shP0Coords = greyPoint;
         Vector2 shP1Coords = new Vector2(0.0f, 1.0f);         // Unknown
-        Vector2 shP2Coords = new Vector2(12.0f, 1.0f);
+        Vector2 shP2Coords = new Vector2(12.0f, 1.5f);
         
         // calculate y intersection when y = 0
         float b = calculateLineYIntercept(greyPoint.x, greyPoint.y, slope);
@@ -71,12 +71,7 @@ public class CurveTest
         controlPoints[4] = shP0Coords;
         controlPoints[5] = shP1Coords;
         controlPoints[6] = shP2Coords;
-
-        // for (int i = 0; i < controlPoints.Length; i++)
-        // {
-        //     Debug.Log("P" + i + " " + controlPoints[i].ToString("G4"));
-        // }
-        
+   
         return controlPoints;
 
      
@@ -86,7 +81,7 @@ public class CurveTest
     public List<float> calcYfromXQuadratic(List<float> xValues, List<float> tValues, List<Vector2> controlPoints)
     {
         
-        if (xValues.Count <= 0 || tValues.Count <= 0 /*|| xValues.Count != tValues.Count*/)
+        if (xValues.Count <= 0 || tValues.Count <= 0 || xValues.Count > tValues.Count)
         {
             Debug.Log("Input array of x values or t values have mismatched lengths ");
             return null;
@@ -108,6 +103,7 @@ public class CurveTest
 
                 if (p0.x <= xValues[index] && xValues[index] <= p2.x)
                 {
+                    
                     float yVal = (
                         ((Mathf.Pow(1.0f - tValues[index], 2.0f) * p0.y) +
                         (2.0f * (1.0f - tValues[index]) * tValues[index] * p1.y) +
@@ -157,6 +153,7 @@ public class CurveTest
                     coefficients[2] = p0.x - (2.0f * p1.x) + p2.x;
 
                     Complex[] roots = FindRoots.Polynomial(coefficients);
+                    // check if it is complex
                     for (int idx = 0; idx < roots.Length; idx++)
                     {
                         if (tmpRoot < 0.0f || roots[idx].Real < tmpRoot)
@@ -164,6 +161,7 @@ public class CurveTest
                             tmpRoot = (float)roots[idx].Real;
                         }
                     }
+                    // @TODO - Check if 10000 does not inhibit the radiometric range
                     if (tmpRoot >= 0.0 && tmpRoot <= 10000)
                     {
                         // Debug.Log("X value " + xValues[index] + " Adding " + tmpRoot);

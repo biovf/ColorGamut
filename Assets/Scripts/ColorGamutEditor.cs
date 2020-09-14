@@ -200,6 +200,8 @@ public class ColorGamutEditor : Editor
         shoulderStartY  = EditorGUILayout.Slider("Shoulder Start Y", shoulderStartY, 0.0f, 10.5f);
         shoulderEndX    = EditorGUILayout.Slider("Shoulder End X", shoulderEndX, 0.0f, 40.5f);
         shoulderEndY    = EditorGUILayout.Slider("Shoulder End Y", shoulderEndY, 0.0f, 40.5f);
+        EditorGUILayout.Space();
+        EditorGUILayout.Space();
 
         slope = EditorGUILayout.Slider("Slope", slope, 0.3f, 4.5f);
         originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
