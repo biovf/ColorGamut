@@ -248,7 +248,18 @@
                 xValues.Add(i * 0.01171f);
             }
             tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+
+        //float[] temp = new float[1024];
+        //xValues.CopyTo(temp, 1);
+        List<float> xVals = new List<float>(xValues);
+        xVals.RemoveAt(xVals.Count - 1);
+        List<float> yValues = parametricCurve.calcYfromXQuadratic(xVals, tValues, new List<Vector2>(controlPoints));
+        for (int i = 0; i < yValues.Count; i++)
+        {
+            Debug.Log("index " + i + "\t X: " + xVals[i].ToString() + "\t Y: " + yValues[i].ToString() + "\t T: " + tValues[i].ToString());
         }
+
+    }
         public void setParametricCurveValues( float inSlope, float originPointX, float originPointY, 
                                                float greyPointX, float greyPointY)
         {
