@@ -44,6 +44,7 @@ public class ColorGamutEditor : Editor
     private bool enableSliders = false;
     private bool enableBleaching = true;
     private bool isMultiThreaded = false;
+    private bool enableOldGamutMap = false;
     
     AnimationCurve animationCurve;
     private Vector2[] controlPoints;
@@ -70,16 +71,16 @@ public class ColorGamutEditor : Editor
         hdriNames = new List<string>();
         animationCurve = createAnimationCurve();
 
-        CurveTest curve = new CurveTest();
-        controlPoints = curve.createCurveControlPoints(new Vector2(0.18f, 0.18f), 1.5f, Vector2.zero);
-        List<float> xValues = new List<float>() { controlPoints[2].x - float.Epsilon, controlPoints[6].x/ 2.0f, controlPoints[6].x};
-        List<Vector2> controlPs = new List<Vector2>(controlPoints);
-        List<float> results = curve.calcTfromXquadratic(xValues, controlPs);
+        // CurveTest curve = new CurveTest();
+        // controlPoints = curve.createCurveControlPoints(new Vector2(0.18f, 0.18f), 1.5f, Vector2.zero);
+        // List<float> xValues = new List<float>() { controlPoints[2].x - float.Epsilon, controlPoints[6].x/ 2.0f, controlPoints[6].x};
+        // List<Vector2> controlPs = new List<Vector2>(controlPoints);
+        // List<float> results = curve.calcTfromXquadratic(xValues, controlPs);
         
         // New parametric curve
         slope = 2.2f;
         originPointX = Mathf.Pow(2.0f, -6.0f) * 0.18f;
-        originPointY = 0.0f;
+        originPointY = 0.00001f;
         greyPointX = 0.18f;
         greyPointY = 0.18f;
     }
@@ -190,6 +191,7 @@ public class ColorGamutEditor : Editor
         bool showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
+        enableOldGamutMap = EditorGUILayout.Toggle("Enable Old Gamut Map", enableOldGamutMap);
         
         enableSliders = EditorGUILayout.Toggle("Enable Sliders", enableSliders);
         originX     = EditorGUILayout.Slider("x0", originX, 0.0f, 10.0f);
@@ -238,7 +240,8 @@ public class ColorGamutEditor : Editor
         colorGamut.setBleaching(enableBleaching);
         colorGamut.setIsMultiThreaded(isMultiThreaded);
         colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
-
+        colorGamut.setEnableOldGamutMap(enableOldGamutMap);
+        
         base.serializedObject.ApplyModifiedProperties();
     }
 

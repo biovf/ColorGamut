@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using MathNet.Numerics;
+using Unity.Collections;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 
@@ -52,7 +53,7 @@ public class CurveTest
         float b = calculateLineYIntercept(greyPoint.x, greyPoint.y, slope);
         // Calculate the coords for P1 in the first segment
         float xP1Coord = calculateLineX(0.0f, b, slope);
-        toeP1Coords.y = float.Epsilon;
+        toeP1Coords.y = 0.001f;//float.Epsilon;
         toeP1Coords.x = xP1Coord;
         // Calculate the toe's P2 using an already known Y value and the equation y = mx + b 
         toeP2Coords.x = (toeP2Coords.y - b) / slope;
@@ -92,7 +93,6 @@ public class CurveTest
             controlPoints[2], controlPoints[3], controlPoints[4],
             controlPoints[4], controlPoints[5], controlPoints[6]};
 
-        double[] coefficients = new double[3];
         for (int index = 0; index < xValues.Count; index++)
         {
             for (int i = 0; i < controlPointsArray.Length - 1 ; i += 3)
@@ -100,21 +100,56 @@ public class CurveTest
                 Vector2 p0 = controlPointsArray[0 + i];
                 Vector2 p1 = controlPointsArray[1 + i];
                 Vector2 p2 = controlPointsArray[2 + i];
-
-                if (p0.x <= xValues[index] && xValues[index] <= p2.x)
+                float xValue = xValues[index];
+                
+                if (p0.x <= xValue && xValue <= p2.x)
                 {
-                    
-                    float yVal = (
-                        ((Mathf.Pow(1.0f - tValues[index], 2.0f) * p0.y) +
-                        (2.0f * (1.0f - tValues[index]) * tValues[index] * p1.y) +
-                        (Mathf.Pow(tValues[index], 2.0f) * p2.y)));
+                    float tValue = tValues[index];
+                    float yVal = (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+                                 (2.0f * (1.0f - tValue) * tValue * p1.y) +
+                                 (Mathf.Pow(tValue, 2.0f) * p2.y);
                     yValues.Add(yVal);
-                }
+                    break;
+                } 
+                // else if (i > 3)
+                // {
+                //     Debug.Log("Y should have been added " + xValue.ToString());
+                // }
             }
         }
         return yValues;
         
     }
+    
+    // public float calcYfromXQuadratic(float xValue, NativeArray<float> tValues, NativeArray<Vector2> controlPoints)
+    // {
+    //     float yValues = 0.0f;
+    //     Vector2[] controlPointsArray = new Vector2[]{ 
+    //         controlPoints[0], controlPoints[1], controlPoints[2],
+    //         controlPoints[2], controlPoints[3], controlPoints[4],
+    //         controlPoints[4], controlPoints[5], controlPoints[6]};
+    //
+    //     for (int index = 0; index < tValues.Length; index++)
+    //     {
+    //         for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
+    //         {
+    //             Vector2 p0 = controlPointsArray[0 + i];
+    //             Vector2 p1 = controlPointsArray[1 + i];
+    //             Vector2 p2 = controlPointsArray[2 + i];
+    //
+    //             if (p0.x <= xValue && xValue <= p2.x)
+    //             {
+    //                 float tValue = tValues[index];
+    //                 float yVal = (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+    //                              (2.0f * (1.0f - tValue) * tValue * p1.y) +
+    //                              (Mathf.Pow(tValue, 2.0f) * p2.y);
+    //                 
+    //                 return yValues;
+    //             }
+    //         }
+    //     }
+    //     return yValues;
+    // }
 
     // public float getYfromX(float xValue, float tValue)
     // {
@@ -162,13 +197,16 @@ public class CurveTest
                         }
                     }
                     // @TODO - Check if 10000 does not inhibit the radiometric range
-                    if (tmpRoot >= 0.0 && tmpRoot <= 10000)
+                    if (tmpRoot >= 0.0 && tmpRoot <= 1.0)
                     {
-                        // Debug.Log("X value " + xValues[index] + " Adding " + tmpRoot);
+                        // Debug.Log("X: " + xValues[index] + " \\t Root: " + tmpRoot);
                         rootsLst.Add(tmpRoot);
                         tmpRoot = -1.0f;
                         break;
                     }
+                } else if (i > 3)
+                {
+                    Debug.Log("Root should have been added");
                 }
             }
         }
