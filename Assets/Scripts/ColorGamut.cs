@@ -1,6 +1,7 @@
 ﻿    using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Text;
     using UnityEngine;
@@ -9,6 +10,7 @@
     using Unity.Collections;
     using Unity.Jobs;
     using UnityEngine.Assertions.Comparers;
+    using Debug = UnityEngine.Debug;
 
 
     struct OldGamutMapJob : IJobParallelFor
@@ -332,7 +334,7 @@
         private Vector2 origin;
         private Vector2 greyPoint;
         private float slope;
-
+        private List<float> xValues;
         private void Awake()
         {
             lerpRatio = LerpRatio.Aesthetic;
@@ -356,7 +358,20 @@
             minDynamicRange = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
             maxDynamicRange = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
             createParametricCurve(greyPoint, origin);
-          
+          /***
+           * Run Tests here
+           */
+          // List<float> xVal = new List<float>()
+          // {
+          //     0.886f, 0.896f, 1.001f, // values are mapping to 0.181, 0.181, 0.181
+          //     0.087f, 0.173f, 0.335f, // values are mapping to 0.000, 0.085, 0.181
+          //     0.040f, 0.097f, 0.207f, // values are mapping to 0.000, 0.000, 0.181
+          // };
+          //
+          // List<float> yValues = parametricCurve.calcYfromXQuadratic(xVal, tValues,
+          //     new List<Vector2>(controlPoints), xValues);
+        
+            
             if (HDRIList == null)
                 Debug.LogError("HDRIs list is empty");
 
@@ -377,32 +392,22 @@
             parametricCurve = new CurveTest();
             controlPoints = parametricCurve.createCurveControlPoints(greyPoint, slope, origin);
             
-            List<float> xValues = new List<float>(1024);
-            for (int i = 1; i <= 1024; i++)
-            {
-                xValues.Add(i * 0.01171f);
-            }
+            xValues = initialiseIntervalOfXValues(4096, 12.0f);
             tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+        }
 
-        //float[] temp = new float[1024];
-        //xValues.CopyTo(temp, 1);
-        // List<float> xVals = new List<float>(xValues);
-        // xVals.RemoveAt(xVals.Count - 1);
-        // List<float> yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
-        // StringBuilder debugLog = new StringBuilder();
-        // foreach (var controlPoint in controlPoints)
-        // {
-        //     debugLog.Append(controlPoint.ToString("G8") + " \n ");
-        // }
-        
-        // for (int i = 0; i < yValues.Count; i++)
-        // {
-        //     debugLog.Append("index " + i + "  \t X: " + xValues[i].ToString("G8") + "\t Y: " + yValues[i].ToString("G8") +
-        //                     "\t T: " + tValues[i].ToString("G8") + "\n ");
-        //     // Debug.Log("index " + i + "\t X: " + xVals[i].ToString() + "\t Y: " + yValues[i].ToString() + "\t T: " + tValues[i].ToString());
-        // }
-        // Debug.Log(debugLog.ToString());
-    }
+        public List<float> initialiseIntervalOfXValues(int dimension, float maxRange)
+        {
+            List<float> xValues = new List<float>(dimension);
+            float step = maxRange / (float) dimension;
+            for (int i = 1; i <= dimension; i++)
+            {
+                xValues.Add(i * step);
+            }
+
+            return xValues;
+        }
+
         public void setParametricCurveValues( float inSlope, float originPointX, float originPointY, 
                                                float greyPointX, float greyPointY)
         {
@@ -542,7 +547,7 @@
                 }
                 else
                 {
-                    StringBuilder strBuilder = new StringBuilder();
+                    // StringBuilder strBuilder = new StringBuilder();
                     counter = maxIterationsPerFrame;
                     
                     for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
@@ -629,6 +634,41 @@
                                         hdriYMaxValue = Mathf.Min(yValues[0], 1.0f);
                                         // strBuilder.Append("i: " + i + " Y: " + hdriYMaxValue.ToString() + "\n ");
                                     }
+                                    
+                                     float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
+                                        new List<Vector2>(controlPoints));
+                                     if(yValue < 0.0f || yValue > 1.0f)
+                                         Debug.Log("Values are out of range " + yValue);
+                                     
+                                     hdriYMaxValue = Mathf.Min(yValue, 1.0f);
+                                     
+                                    // List<float> xVal = new List<float>();
+                                    // List<float> yVal = new List<float>();
+                                    // List<float> zVal = new List<float>();
+                                    // xVal.Add(hdriPixelColor.r);
+                                    // yVal.Add(hdriPixelColor.g);
+                                    // zVal.Add(hdriPixelColor.b);
+                                    // strBuilder.Append("Color before: " + hdriPixelColor.ToString());
+                                    // List<float> yValues = parametricCurve.calcYfromXQuadratic(xVal, tValues,
+                                    //     new List<Vector2>(controlPoints));
+                                    // if (yValues.Count > 0)
+                                    // {
+                                    //     hdriPixelColor.r = Mathf.Min(yValues[0], 1.0f);
+                                    // }
+                                    // yValues = parametricCurve.calcYfromXQuadratic(yVal, tValues,
+                                    //     new List<Vector2>(controlPoints));
+                                    // if (yValues.Count > 0)
+                                    // {
+                                    //     hdriPixelColor.g = Mathf.Min(yValues[0], 1.0f);
+                                    // }
+                                    //  yValues = parametricCurve.calcYfromXQuadratic(zVal, tValues,
+                                    //     new List<Vector2>(controlPoints));
+                                    // if (yValues.Count > 0)
+                                    // {
+                                    //     hdriPixelColor.b = Mathf.Min(yValues[0], 1.0f);
+                                    // }
+                                    // strBuilder.Append("Color after: " + hdriPixelColor.ToString() + " \n");
+
                                 }
 
                                 hdriPixelColor = hdriYMaxValue * ratio;
@@ -660,7 +700,8 @@
                     }
                     hdriTextureTransformed.SetPixels(hdriPixelArray);
                     hdriTextureTransformed.Apply();
-                    Debug.Log(strBuilder.ToString());
+                    // Debug.Log("--------------------------------------------------------***********--------------------------------------------------------\n \n \n");
+                    // Debug.Log(strBuilder.ToString());
                 }
                 //sweepTextureTransformed.SetPixels(sweepPixelArray);
                 //sweepTextureTransformed.Apply();
@@ -708,6 +749,32 @@
         {
             return animationCurve;
         }
+
+        public Vector2[] getControlPoints()
+        {
+            if (controlPoints == null || controlPoints.Length == 0)
+            {
+                greyPoint = new Vector2(0.18f, 0.18f);
+                origin = new Vector2(Mathf.Pow(2.0f, -6.0f) * 0.18f, 0.00001f);
+                slope = 2.2f;
+                minDynamicRange = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
+                maxDynamicRange = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
+                createParametricCurve(greyPoint, origin);
+            }
+            
+            return controlPoints;
+        }
+
+        public List<float> getTValues()
+        {
+            return tValues;
+        }
+
+        public CurveTest getParametricCurve()
+        {
+            return parametricCurve;
+        }
+
         public void setAnimationCurve(AnimationCurve curve)
         {
             animationCurve = curve;

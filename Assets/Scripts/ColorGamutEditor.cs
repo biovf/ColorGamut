@@ -147,6 +147,8 @@ public class ColorGamutEditor : Editor
     
     void OnSceneGUI()
     {
+        colorGamut = (ColorGamut)target;
+        Vector2[] controlPoints = colorGamut.getControlPoints();
         Vector2 p0 = controlPoints[0];
         Vector2 p1 = controlPoints[1];
         Vector2 p2 = controlPoints[2];
@@ -161,12 +163,28 @@ public class ColorGamutEditor : Editor
         //Handles.DrawLine(new Vector3(p3.x, p3.y), new Vector3(p4.x, p4.y));
         //Handles.DrawLine(new Vector3(p4.x, p4.y), new Vector3(p5.x, p5.y));
         //Handles.DrawLine(new Vector3(p5.x, p5.y), new Vector3(p6.x, p6.y));
-
-        Handles.DrawLine(new Vector3(p0.x, p0.y), new Vector3(p2.x, p2.y));
-        Handles.DrawLine(new Vector3(p2.x, p2.y), new Vector3(p4.x, p4.y));
-        Handles.DrawLine(new Vector3(p4.x, p4.y), new Vector3(p6.x, p6.y));
-        Handles.DrawWireCube(new Vector3(rootValue, p0.y), new Vector3(0.001f, 0.001f));
-
+        //
+        // Handles.DrawLine(new Vector3(p0.x, p0.y), new Vector3(p2.x, p2.y));
+        // Handles.DrawLine(new Vector3(p2.x, p2.y), new Vector3(p4.x, p4.y));
+        // Handles.DrawLine(new Vector3(p4.x, p4.y), new Vector3(p6.x, p6.y));
+        // Handles.DrawWireCube(new Vector3(rootValue, p0.y), new Vector3(0.001f, 0.001f));
+        CurveTest parametricCurve = colorGamut.getParametricCurve();
+        List<float> tValues = colorGamut.getTValues();
+        List<float> xValues = colorGamut.initialiseIntervalOfXValues(4096, 12.0f);//new List<float>(1024);
+        // for (int i = 1; i <= 1024; i++)
+        // {
+        //     xValues.Add(i * 0.01171f);
+        // }
+        List<Vector3> debugPoints = new List<Vector3>();
+        List<float> yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
+                new List<Vector2>(controlPoints));
+        
+        for (int i = 0; i < xValues.Count; i++)
+        {
+            debugPoints.Add(new Vector3(xValues[i], yValues[i]));    
+        }
+        Handles.DrawPolyLine(debugPoints.ToArray());
+        
     }
 
     public override void OnInspectorGUI() 
@@ -205,7 +223,7 @@ public class ColorGamutEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.Space();
 
-        slope = EditorGUILayout.Slider("Slope", slope, 0.3f, 4.5f);
+        slope = EditorGUILayout.Slider("Slope", slope, 1.02f, 4.5f);
         originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
         originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
         greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
@@ -247,52 +265,52 @@ public class ColorGamutEditor : Editor
 
   
 
-    void CheckCurveRT(int width, int height)
-    {
-        if (m_CurveTex == null || !m_CurveTex.IsCreated() || m_CurveTex.width != width || m_CurveTex.height != height)
-        {
-            //CoreUtils.Destroy(m_CurveTex);
-            m_CurveTex = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
-            m_CurveTex.hideFlags = HideFlags.HideAndDontSave;
-        }
-    }
-    Rect m_CurveRect;
-    RenderTexture m_CurveTex;
-    public Material curveWidgetMat;
-
-    void drawCurve()
-    {
-         EditorGUILayout.Space();
-
-        // Reserve GUI space
-        using (new GUILayout.HorizontalScope())
-        {
-            GUILayout.Space(EditorGUI.indentLevel * 15f);
-            m_CurveRect = GUILayoutUtility.GetRect(128, 80);
-        }
-
-        if (Event.current.type == EventType.Repaint)
-        {
-            // Prepare curve data
-            // curveWidgetMat.SetVector(HDShaderIDs._Variants, new Vector4(alpha, m_HableCurve.whitePoint, 0f, 0f));
-
-            CheckCurveRT((int)m_CurveRect.width, (int)m_CurveRect.height);
-
-            var oldRt = RenderTexture.active;
-            Graphics.Blit(null, m_CurveTex, curveWidgetMat);
-            RenderTexture.active = oldRt;
-
-            GUI.DrawTexture(m_CurveRect, m_CurveTex);
-
-            Handles.DrawSolidRectangleWithOutline(m_CurveRect, Color.clear, Color.white * 0.4f);
-        }
-    }
-
-    void setSliderValues(float inTmpOriginX, float inTmpOriginY, float inTmpMidGreyX, float inTmpMidGreyY, float inTmpShoulderStartX,
-      float inTmpShoulderStartY, float inShoulderEndX, float inShoulderEndY)
-    { 
-        
-    }
+    // void CheckCurveRT(int width, int height)
+    // {
+    //     if (m_CurveTex == null || !m_CurveTex.IsCreated() || m_CurveTex.width != width || m_CurveTex.height != height)
+    //     {
+    //         //CoreUtils.Destroy(m_CurveTex);
+    //         m_CurveTex = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
+    //         m_CurveTex.hideFlags = HideFlags.HideAndDontSave;
+    //     }
+    // }
+    // Rect m_CurveRect;
+    // RenderTexture m_CurveTex;
+    // public Material curveWidgetMat;
+    //
+    // void drawCurve()
+    // {
+    //      EditorGUILayout.Space();
+    //
+    //     // Reserve GUI space
+    //     using (new GUILayout.HorizontalScope())
+    //     {
+    //         GUILayout.Space(EditorGUI.indentLevel * 15f);
+    //         m_CurveRect = GUILayoutUtility.GetRect(128, 80);
+    //     }
+    //
+    //     if (Event.current.type == EventType.Repaint)
+    //     {
+    //         // Prepare curve data
+    //         // curveWidgetMat.SetVector(HDShaderIDs._Variants, new Vector4(alpha, m_HableCurve.whitePoint, 0f, 0f));
+    //
+    //         CheckCurveRT((int)m_CurveRect.width, (int)m_CurveRect.height);
+    //
+    //         var oldRt = RenderTexture.active;
+    //         Graphics.Blit(null, m_CurveTex, curveWidgetMat);
+    //         RenderTexture.active = oldRt;
+    //
+    //         GUI.DrawTexture(m_CurveRect, m_CurveTex);
+    //
+    //         Handles.DrawSolidRectangleWithOutline(m_CurveRect, Color.clear, Color.white * 0.4f);
+    //     }
+    // }
+    //
+    // void setSliderValues(float inTmpOriginX, float inTmpOriginY, float inTmpMidGreyX, float inTmpMidGreyY, float inTmpShoulderStartX,
+    //   float inTmpShoulderStartY, float inShoulderEndX, float inShoulderEndY)
+    // { 
+    //     
+    // }
 
     void writeBackValues(float inOriginX, float inOriginY, float inMidGreyX, float inMidGreyY, float inShoulderStartX,
       float inShoulderStartY, float inShoulderEndX, float inShoulderEndY)

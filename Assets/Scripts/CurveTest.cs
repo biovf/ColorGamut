@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -7,7 +8,7 @@ using Unity.Collections;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 
-//using MathNet;
+
 public class CurveTest
 {
     public CurveTest()
@@ -35,7 +36,7 @@ public class CurveTest
 
     }
 
-    // we want m/slope to vary between 0.3 and 4.5
+    // we want m/slope to vary between 1.02 and 4.5
     public Vector2[] createCurveControlPoints(Vector2 greyPoint, float slope, Vector2 origin)
     {
         Vector2[] controlPoints = new Vector2[7];
@@ -62,31 +63,36 @@ public class CurveTest
         // calculate shoulder's P1 which amounts to knowing the x value when y = 1.0 
         shP1Coords.x = calculateLineX(shP1Coords.y, b, slope);
         
-        // Create bezier curve for toe      P0: toeP0Coords   P1: toeP1Coords   P2: toeP2Coords
+        // Create bezier curve for toe
+        // P0: toeP0Coords   P1: toeP1Coords   P2: toeP2Coords
         controlPoints[0] = toeP0Coords;
         controlPoints[1] = toeP1Coords;
         controlPoints[2] = toeP2Coords;
-        // Create bezier for middle section P0: toeP2Coords   P1: midP1Coords   P2: shP0Coords
+        
+        // Create bezier for middle section
+        // P0: toeP2Coords   P1: midP1Coords   P2: shP0Coords
         controlPoints[3] = midP1Coords;
-        // Create bezier curve for shoulder P0: shP0Coords    P1: shP1Coords    P2: shP2Coords
+        
+        // Create bezier curve for shoulder
+        // P0: shP0Coords    P1: shP1Coords    P2: shP2Coords
         controlPoints[4] = shP0Coords;
         controlPoints[5] = shP1Coords;
         controlPoints[6] = shP2Coords;
    
         return controlPoints;
-
-     
     }
 
-    // @TODO Refactor to use fixed arrays as inputs instead of Lists
-    public List<float> calcYfromXQuadratic(List<float> xValues, List<float> tValues, List<Vector2> controlPoints)
+    
+   
+    
+    public List<float> calcYfromXQuadratic(List<float> xValues, List<float> tValues, List<Vector2> controlPoints, List<float> preCalcXValues = null)
     {
-        
         if (xValues.Count <= 0 || tValues.Count <= 0 || xValues.Count > tValues.Count)
         {
             Debug.Log("Input array of x values or t values have mismatched lengths ");
             return null;
         }
+
         List<float> yValues = new List<float>();
         Vector2[] controlPointsArray = new Vector2[]{ 
             controlPoints[0], controlPoints[1], controlPoints[2],
@@ -101,25 +107,119 @@ public class CurveTest
                 Vector2 p1 = controlPointsArray[1 + i];
                 Vector2 p2 = controlPointsArray[2 + i];
                 float xValue = xValues[index];
-                
+                List<float> lst = new List<float>();
+                lst.Add(xValue);
                 if (p0.x <= xValue && xValue <= p2.x)
                 {
-                    float tValue = tValues[index];
+                    List<float> tValueLst = calcTfromXquadratic(lst, new List<Vector2>(controlPoints));
+                    float tValue = tValueLst[0];
+                    
+                    int idx = 0;
+                    if (preCalcXValues != null)
+                    {
+                        float xVal = ClosestTo(preCalcXValues, xValue, out idx);
+                    }
+                    float tmp = tValues[idx];
+                    
+                    //float tValue = tValues[index];
                     float yVal = (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
                                  (2.0f * (1.0f - tValue) * tValue * p1.y) +
                                  (Mathf.Pow(tValue, 2.0f) * p2.y);
                     yValues.Add(yVal);
                     break;
-                } 
-                // else if (i > 3)
-                // {
-                //     Debug.Log("Y should have been added " + xValue.ToString());
-                // }
+                }
             }
         }
         return yValues;
-        
     }
+    public static float ClosestTo(List<float> list, float target, out int index)
+    {
+        // NB Method will return int.MaxValue for a sequence containing no elements.
+        // Apply any defensive coding here as necessary.
+        var closest = float.MaxValue;
+        var minDifference = float.MaxValue;
+        var outIndex = 0;
+        for (int i = 0; i < list.Count; i++)
+        {
+            var difference = Math.Abs((float)list[i] - target);
+            if (minDifference > difference)
+            {
+                minDifference = (float)difference;
+                closest = list[i];
+                outIndex = i;
+            }
+        }
+
+        index = outIndex;
+        return closest;
+    }
+    public float getYCoordinate(float inputXValue, List<float> xValues, List<float> tValues, List<Vector2> controlPoints)
+    {
+        if (xValues.Count <= 0 || tValues.Count <= 0 || xValues.Count > tValues.Count)
+        {
+            Debug.Log("Input array of x values or t values have mismatched lengths ");
+            return -1.0f;
+        }
+
+        Vector2[] controlPointsArray = new Vector2[]{ 
+            controlPoints[0], controlPoints[1], controlPoints[2],
+            controlPoints[2], controlPoints[3], controlPoints[4],
+            controlPoints[4], controlPoints[5], controlPoints[6]};
+        
+        for (int i = 0; i < controlPointsArray.Length - 1 ; i += 3)
+        {
+            Vector2 p0 = controlPointsArray[0 + i];
+            Vector2 p1 = controlPointsArray[1 + i];
+            Vector2 p2 = controlPointsArray[2 + i];
+            
+            if (p0.x <= inputXValue && inputXValue <= p2.x)
+            {
+                // Search closest x value to xValue and grab its index in the array too
+                // The array index is used to lookup the tValue
+                int idx = 0;
+                ClosestTo(xValues, inputXValue, out idx);
+                float tValue = tValues[idx];
+                
+                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+                             (2.0f * (1.0f - tValue) * tValue * p1.y) +
+                             (Mathf.Pow(tValue, 2.0f) * p2.y);
+            }
+        }
+        
+        return -1.0f;
+    }
+    
+    // public float generateYCoordinate(float xValue, List<float> tValues, List<Vector2> controlPoints)
+    // {
+    //     if ( tValues.Count <= 0)
+    //     {
+    //         Debug.LogError("T values array is empty ");
+    //         return -1.0f;
+    //     }
+    //
+    //     Vector2[] controlPointsArray = new Vector2[]{ 
+    //         controlPoints[0], controlPoints[1], controlPoints[2],
+    //         controlPoints[2], controlPoints[3], controlPoints[4],
+    //         controlPoints[4], controlPoints[5], controlPoints[6]};
+    //     
+    //     for (int i = 0; i < controlPointsArray.Length - 1 ; i += 3)
+    //     {
+    //         Vector2 p0 = controlPointsArray[0 + i];
+    //         Vector2 p1 = controlPointsArray[1 + i];
+    //         Vector2 p2 = controlPointsArray[2 + i];
+    //         
+    //         if (p0.x <= xValue && xValue <= p2.x)
+    //         {
+    //             float tValue = tValues.OrderBy(v => Math.Abs((float)v - xValue)).First();
+    //             return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+    //                          (2.0f * (1.0f - tValue) * tValue * p1.y) +
+    //                          (Mathf.Pow(tValue, 2.0f) * p2.y);
+    //         }
+    //     }
+    //     
+    //     return -1.0f;
+    // }
+    
     
     // public float calcYfromXQuadratic(float xValue, NativeArray<float> tValues, NativeArray<Vector2> controlPoints)
     // {
@@ -149,12 +249,6 @@ public class CurveTest
     //         }
     //     }
     //     return yValues;
-    // }
-
-    // public float getYfromX(float xValue, float tValue)
-    // {
-    //     
-    //     
     // }
 
 
@@ -199,15 +293,11 @@ public class CurveTest
                     // @TODO - Check if 10000 does not inhibit the radiometric range
                     if (tmpRoot >= 0.0 && tmpRoot <= 1.0)
                     {
-                        // Debug.Log("X: " + xValues[index] + " \\t Root: " + tmpRoot);
                         rootsLst.Add(tmpRoot);
                         tmpRoot = -1.0f;
                         break;
                     }
-                } else if (i > 3)
-                {
-                    Debug.Log("Root should have been added");
-                }
+                } 
             }
         }
         return rootsLst;
