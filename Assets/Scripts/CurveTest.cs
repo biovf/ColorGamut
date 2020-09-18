@@ -13,23 +13,14 @@
     {
         
         public CurveTest()
-        {
-        }
+        {}
 
         float mix(float a, float b, float t)
         {
             // degree 1
             return a * (1.0f - t) + b * t;
         }
-
-        float BezierQuadratic(float A, float B, float C, float t)
-        { 
-            // degree 2
-            float AB = mix(A, B, t);
-            float BC = mix(B, C, t);
-            return mix(AB, BC, t);
-        }
-
+        
         // Given two points of a line, calculate the x coordinate of a point P given its Y coordinate 
         public float calculateXCoord(Vector2 p1, Vector2 p2, float y) 
         {
@@ -82,9 +73,6 @@
        
             return controlPoints;
         }
-
-        
-       
         
         public List<float> calcYfromXQuadratic(List<float> inXCoords, List<float> tValues, List<Vector2> controlPoints, 
                                                 List<float> preCalcXValues = null)
