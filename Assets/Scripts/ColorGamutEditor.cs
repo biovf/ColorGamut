@@ -169,20 +169,37 @@ public class ColorGamutEditor : Editor
         // Handles.DrawLine(new Vector3(p4.x, p4.y), new Vector3(p6.x, p6.y));
         // Handles.DrawWireCube(new Vector3(rootValue, p0.y), new Vector3(0.001f, 0.001f));
      
-        // CurveTest parametricCurve = colorGamut.getParametricCurve();
-        // List<float> tValues = colorGamut.getTValues();
-        // List<float> xValues = colorGamut.initialiseXCoordsInRange(4096, 12.0f);//new List<float>(1024);
-        //
-        // List<Vector3> debugPoints = new List<Vector3>();
-        // List<float> yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
-        //         new List<Vector2>(controlPoints));
-        //
-        // for (int i = 0; i < xValues.Count; i++)
-        // {
-        //     debugPoints.Add(new Vector3(xValues[i], yValues[i]));    
-        // }
-        // Handles.DrawPolyLine(debugPoints.ToArray());
+        // Draw X axis
+        Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(12.0f, 0.0f));
+        // Draw Y axis
+        Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f));
+        // Draw X = 1 line
+        Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f);
+        // Draw Y = 1 line
+        Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(12.0f, 1.0f), 4.0f);
         
+        
+        CurveTest parametricCurve = colorGamut.getParametricCurve();
+        List<float> tValues = colorGamut.getTValues();
+        List<float> xValues = colorGamut.initialiseXCoordsInRange(4096, 12.0f);
+        
+        List<Vector3> debugPoints = new List<Vector3>();
+        List<float> yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
+                new List<Vector2>(controlPoints));
+      
+        for (int i = 0; i < xValues.Count; i++)
+        {
+            debugPoints.Add(new Vector3(xValues[i], yValues[i]));    
+        }
+        
+        
+        Handles.DrawPolyLine(debugPoints.ToArray());
+        Vector3 cubeSize = new Vector3(0.01f, 0.01f, 0.01f);
+        Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeSize);
+        Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeSize);
+        Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeSize);
+
+
     }
 
     public override void OnInspectorGUI() 
@@ -310,41 +327,41 @@ public class ColorGamutEditor : Editor
     //     
     // }
 
-    void writeBackValues(float inOriginX, float inOriginY, float inMidGreyX, float inMidGreyY, float inShoulderStartX,
-      float inShoulderStartY, float inShoulderEndX, float inShoulderEndY)
-    {
-        if (inOriginX != originX)
-        {
-            originX = inOriginX;
-        }
-        if (inOriginY != originY)
-        {
-            originY = inOriginY;
-        }
-        if (inMidGreyX != midGreyX)
-        {
-            midGreyX = inMidGreyX;
-        }
-        if (inMidGreyY != midGreyY)
-        {
-            midGreyY = inMidGreyY;
-        }
-        if (inShoulderStartX != shoulderStartX)
-        {
-            shoulderStartX = inShoulderStartX;
-        }
-        if (inShoulderStartY != shoulderStartY)
-        {
-            shoulderStartY = inShoulderStartY;
-        }
-        if (inShoulderEndX != shoulderEndX)
-        {
-            shoulderEndX = inShoulderEndX;
-        }
-        if (inShoulderEndY != shoulderEndY)
-        {
-            shoulderEndY = inShoulderEndY;
-        }
-    }
+    // void writeBackValues(float inOriginX, float inOriginY, float inMidGreyX, float inMidGreyY, float inShoulderStartX,
+    //   float inShoulderStartY, float inShoulderEndX, float inShoulderEndY)
+    // {
+    //     if (inOriginX != originX)
+    //     {
+    //         originX = inOriginX;
+    //     }
+    //     if (inOriginY != originY)
+    //     {
+    //         originY = inOriginY;
+    //     }
+    //     if (inMidGreyX != midGreyX)
+    //     {
+    //         midGreyX = inMidGreyX;
+    //     }
+    //     if (inMidGreyY != midGreyY)
+    //     {
+    //         midGreyY = inMidGreyY;
+    //     }
+    //     if (inShoulderStartX != shoulderStartX)
+    //     {
+    //         shoulderStartX = inShoulderStartX;
+    //     }
+    //     if (inShoulderStartY != shoulderStartY)
+    //     {
+    //         shoulderStartY = inShoulderStartY;
+    //     }
+    //     if (inShoulderEndX != shoulderEndX)
+    //     {
+    //         shoulderEndX = inShoulderEndX;
+    //     }
+    //     if (inShoulderEndY != shoulderEndY)
+    //     {
+    //         shoulderEndY = inShoulderEndY;
+    //     }
+    // }
 
 }

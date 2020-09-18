@@ -867,12 +867,6 @@
                     return best;
                 }
 
-                // Color newGGM(Color RGB, float compressionThreshold)
-                // {
-                //     Vector3 result = ggm.the_ggm(new Vector3(RGB.r, RGB.g, RGB.b), new Vector3(compressionThreshold, compressionThreshold, compressionThreshold));
-                //     return new Color(result.x, result.y, result.z);
-                // }
-
                 bool all(bool[] x)       // bvec can be bvec2, bvec3 or bvec4
                 {
                     bool result = true;
