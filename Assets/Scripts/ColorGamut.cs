@@ -113,8 +113,6 @@
                     }
                 }
             }
-
-            
             struct GamutMapJob : IJobParallelFor
             {
                 public NativeArray<Color> hdriPixelArray;
@@ -260,13 +258,10 @@
                 }
             }
             
-
             public class ColorGamut : MonoBehaviour
             {
                 public Material colorGamutMat;
-                public Texture2D inputTexture;
                 public Material fullScreenTextureMat;
-                public GameObject hdriPlane;
                 public GameObject sweepPlane;
                 public Texture2D sweepTexture;
                 public List<Texture2D> HDRIList;
@@ -287,6 +282,8 @@
                 public TransferFunction activeTransferFunction;
                 [Space]
                 
+                private Texture2D inputTexture;
+
                 private bool isSweepActive;
                 private bool isBleachingActive;
                 private bool isMultiThreaded = true;
@@ -310,15 +307,20 @@
                 private string logOutput = "";
                 
                 // Parametric curve variables
+             
+                private float slope;
+                private Vector2 origin;
                 private CurveTest parametricCurve;
                 private Vector2[] controlPoints;
                 private List<float> tValues;
-                private float minDynamicRange;
-                private float maxDynamicRange;
-                private Vector2 origin;
+                private float minRadiometricValue;
+                private float maxRadiometricValue;
+                private float maxDisplayValue;
+                private float minDisplayValue;
+                
                 private Vector2 greyPoint;
-                private float slope;
                 private List<float> xValues;
+                private int curveValuesLen;
 
                 private enum ColorRange
                 {
@@ -330,7 +332,6 @@
                 
                 private void Awake()
                 {
-           
                     activeTransferFunction = TransferFunction.Max_RGB;
                 }
                 
@@ -347,10 +348,12 @@
                     // Parametric curve
                     slope = 2.2f;
                     greyPoint = new Vector2(0.18f, 0.18f);
-                    origin = new Vector2(Mathf.Pow(2.0f, -6.0f) * 0.18f, 0.00001f);
-                    minDynamicRange = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
-                    maxDynamicRange = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
+                    minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
+                    maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
+                    origin = new Vector2(minRadiometricValue, 0.00001f);
+                    curveValuesLen = 4096;
                     createParametricCurve(greyPoint, origin);
+                    
                   /***
                    * Run Tests here
                    */
@@ -376,16 +379,19 @@
                     sweepTextureTransformed = new Texture2D(sweepTexture.width, sweepTexture.height);
                     screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
                     screenGrab.Create();
-                    
-                    StartCoroutine("CpuGGMIterative");
+
+                    if (Application.isPlaying)
+                    {
+                        StartCoroutine("CpuGGMIterative");
+                    }
                 }
 
                 void createParametricCurve(Vector2 greyPoint, Vector2 origin)
                 {
-                    parametricCurve = new CurveTest();
-                    controlPoints = parametricCurve.createCurveControlPoints(origin, greyPoint, slope);
+                    parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
+                    controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
                     
-                    xValues = initialiseXCoordsInRange(4096, 12.0f);
+                    xValues = initialiseXCoordsInRange(curveValuesLen, Mathf.Round(maxRadiometricValue));
                     tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
                 }
 
@@ -399,6 +405,16 @@
                     }
 
                     return xValues;
+                }
+
+                public void getParametricCurveValues(out float inSlope, out float originPointX, out float originPointY,
+                    out float greyPointX, out float greyPointY)
+                {
+                    inSlope = slope;
+                    originPointX = origin.x;
+                    originPointY = origin.y;
+                    greyPointX = greyPoint.x;
+                    greyPointY = greyPoint.y;
                 }
 
                 public void setParametricCurveValues( float inSlope, float originPointX, float originPointY, 
@@ -551,7 +567,6 @@
                                 hdriPixelColor = hdriPixelArray[i] * exposure;
                                 //Color sweepPixelColor = sweepPixelArray[i] * sweepExposure;
                                 ratio = Color.black;
-                                float maxRadiometricValue = 12.0f;
                                 // Secondary Nuance Grade, guardrails
                                     if (hdriPixelColor.r > maxRadiometricValue || hdriPixelColor.g > maxRadiometricValue ||
                                         hdriPixelColor.b > maxRadiometricValue)
@@ -626,12 +641,10 @@
                                             if (yValue < 0.0f)
                                             {
                                                 colorRange = ColorRange.BelowGamut;
-                                                // Debug.Log("Values are BELOW the supported range " + yValue);
                                             } else if (yValue > 1.0f)
                                             {
                                                 colorRange = ColorRange.AboveGamut;
-                                                // Debug.Log("Values are ABOVE the supported range " + yValue);
-                                            } else if (Mathf.Approximately(hdriMaxRGBChannel, 0.0f))
+                                            } else if (hdriMaxRGBChannel < minRadiometricValue)
                                             {
                                                 colorRange = ColorRange.BelowGamut;
                                             }
@@ -736,8 +749,8 @@
                         greyPoint = new Vector2(0.18f, 0.18f);
                         origin = new Vector2(Mathf.Pow(2.0f, -6.0f) * 0.18f, 0.00001f);
                         slope = 2.2f;
-                        minDynamicRange = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
-                        maxDynamicRange = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
+                        minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
+                        maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
                         createParametricCurve(greyPoint, origin);
                     }
                     
