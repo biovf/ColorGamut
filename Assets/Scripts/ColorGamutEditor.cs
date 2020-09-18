@@ -42,7 +42,7 @@ public class ColorGamutEditor : Editor
     private float rootValue;
 
     private bool enableSliders = false;
-    private bool enableBleaching = true;
+    private bool enableBleaching = false;
     private bool isMultiThreaded = false;
     private bool enableOldGamutMap = false;
     
@@ -168,22 +168,20 @@ public class ColorGamutEditor : Editor
         // Handles.DrawLine(new Vector3(p2.x, p2.y), new Vector3(p4.x, p4.y));
         // Handles.DrawLine(new Vector3(p4.x, p4.y), new Vector3(p6.x, p6.y));
         // Handles.DrawWireCube(new Vector3(rootValue, p0.y), new Vector3(0.001f, 0.001f));
-        CurveTest parametricCurve = colorGamut.getParametricCurve();
-        List<float> tValues = colorGamut.getTValues();
-        List<float> xValues = colorGamut.initialiseIntervalOfXValues(4096, 12.0f);//new List<float>(1024);
-        // for (int i = 1; i <= 1024; i++)
+     
+        // CurveTest parametricCurve = colorGamut.getParametricCurve();
+        // List<float> tValues = colorGamut.getTValues();
+        // List<float> xValues = colorGamut.initialiseXCoordsInRange(4096, 12.0f);//new List<float>(1024);
+        //
+        // List<Vector3> debugPoints = new List<Vector3>();
+        // List<float> yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
+        //         new List<Vector2>(controlPoints));
+        //
+        // for (int i = 0; i < xValues.Count; i++)
         // {
-        //     xValues.Add(i * 0.01171f);
+        //     debugPoints.Add(new Vector3(xValues[i], yValues[i]));    
         // }
-        List<Vector3> debugPoints = new List<Vector3>();
-        List<float> yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
-                new List<Vector2>(controlPoints));
-        
-        for (int i = 0; i < xValues.Count; i++)
-        {
-            debugPoints.Add(new Vector3(xValues[i], yValues[i]));    
-        }
-        Handles.DrawPolyLine(debugPoints.ToArray());
+        // Handles.DrawPolyLine(debugPoints.ToArray());
         
     }
 
@@ -212,14 +210,14 @@ public class ColorGamutEditor : Editor
         enableOldGamutMap = EditorGUILayout.Toggle("Enable Old Gamut Map", enableOldGamutMap);
         
         enableSliders = EditorGUILayout.Toggle("Enable Sliders", enableSliders);
-        originX     = EditorGUILayout.Slider("x0", originX, 0.0f, 10.0f);
-        originY     = EditorGUILayout.Slider("y0", originY, 0.0f, 10.0f);
-        midGreyX    = EditorGUILayout.Slider("Mid Grey X", midGreyX, 0.0f, 1.5f);
-        midGreyY    = EditorGUILayout.Slider("Mid Grey Y", midGreyY, 0.0f, 1.5f);
-        shoulderStartX  = EditorGUILayout.Slider("Shoulder Start X", shoulderStartX, 0.0f, 10.5f);
-        shoulderStartY  = EditorGUILayout.Slider("Shoulder Start Y", shoulderStartY, 0.0f, 10.5f);
-        shoulderEndX    = EditorGUILayout.Slider("Shoulder End X", shoulderEndX, 0.0f, 40.5f);
-        shoulderEndY    = EditorGUILayout.Slider("Shoulder End Y", shoulderEndY, 0.0f, 40.5f);
+        // originX     = EditorGUILayout.Slider("x0", originX, 0.0f, 10.0f);
+        // originY     = EditorGUILayout.Slider("y0", originY, 0.0f, 10.0f);
+        // midGreyX    = EditorGUILayout.Slider("Mid Grey X", midGreyX, 0.0f, 1.5f);
+        // midGreyY    = EditorGUILayout.Slider("Mid Grey Y", midGreyY, 0.0f, 1.5f);
+        // shoulderStartX  = EditorGUILayout.Slider("Shoulder Start X", shoulderStartX, 0.0f, 10.5f);
+        // shoulderStartY  = EditorGUILayout.Slider("Shoulder Start Y", shoulderStartY, 0.0f, 10.5f);
+        // shoulderEndX    = EditorGUILayout.Slider("Shoulder End X", shoulderEndX, 0.0f, 40.5f);
+        // shoulderEndY    = EditorGUILayout.Slider("Shoulder End Y", shoulderEndY, 0.0f, 40.5f);
         EditorGUILayout.Space();
         EditorGUILayout.Space();
 
@@ -229,29 +227,29 @@ public class ColorGamutEditor : Editor
         greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
         greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
         
-        if (enableSliders)
-        {
-            Keyframe[] keys = filmicCurve.keys;
-            keys[0].time = originX;
-            keys[0].value = originY;
-            keys[1].time = midGreyX;
-            keys[1].value = midGreyY;
-            keys[2].time = shoulderStartX;
-            keys[2].value = shoulderStartY;
-            keys[3].time = shoulderEndX;
-            keys[3].value = shoulderEndY;
+        // if (enableSliders)
+        // {
+        //     Keyframe[] keys = filmicCurve.keys;
+        //     keys[0].time = originX;
+        //     keys[0].value = originY;
+        //     keys[1].time = midGreyX;
+        //     keys[1].value = midGreyY;
+        //     keys[2].time = shoulderStartX;
+        //     keys[2].value = shoulderStartY;
+        //     keys[3].time = shoulderEndX;
+        //     keys[3].value = shoulderEndY;
+        //
+        //     filmicCurve.keys = keys;
+        // }
+        // filmicCurve = EditorGUILayout.CurveField("Filmic Curve", filmicCurve);
+        //
+        // EditorGUILayout.CurveField(" Curve", animationCurve);
 
-            filmicCurve.keys = keys;
-        }
-        filmicCurve = EditorGUILayout.CurveField("Filmic Curve", filmicCurve);
-
-        EditorGUILayout.CurveField(" Curve", animationCurve);
-
-        writeBackValues(filmicCurve.keys[0].time, filmicCurve.keys[0].value,
-                        filmicCurve.keys[1].time, filmicCurve.keys[1].value,
-                        filmicCurve.keys[2].time, filmicCurve.keys[2].value,
-                        filmicCurve.keys[3].time, filmicCurve.keys[3].value);
-        //Debug.Log(filmicCurve.keys[3].time);
+        // writeBackValues(filmicCurve.keys[0].time, filmicCurve.keys[0].value,
+        //                 filmicCurve.keys[1].time, filmicCurve.keys[1].value,
+        //                 filmicCurve.keys[2].time, filmicCurve.keys[2].value,
+        //                 filmicCurve.keys[3].time, filmicCurve.keys[3].value);
+        // //Debug.Log(filmicCurve.keys[3].time);
         colorGamut.setHDRIIndex(hdriIndex);
         colorGamut.setAnimationCurve(filmicCurve);
         colorGamut.setShowSweep(showSweep);
