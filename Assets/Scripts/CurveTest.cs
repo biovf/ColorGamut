@@ -114,7 +114,7 @@
         public List<float> calcYfromXQuadratic(List<float> inXCoords, List<float> tValues, List<Vector2> controlPoints, 
                                                 List<float> preCalcXValues = null)
         {
-            if (inXCoords.Count <= 0 || tValues.Count <= 0 || inXCoords.Count > tValues.Count)
+            if (inXCoords.Count <= 0 || tValues.Count <= 0 /*|| inXCoords.Count > tValues.Count*/)
             {
                 Debug.Log("Input array of x values or t values have mismatched lengths ");
                 return null;

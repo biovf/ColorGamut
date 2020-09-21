@@ -368,7 +368,7 @@
                     minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
                     maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
                     origin = new Vector2(minRadiometricValue, 0.00001f);
-                    curveValueLutDim = 4096;
+                    curveValueLutDim = 1024;
                     createParametricCurve(greyPoint, origin);
                     
                   /***
@@ -403,7 +403,7 @@
                     }
                 }
 
-                void createParametricCurve(Vector2 greyPoint, Vector2 origin)
+                private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
                 {
                     parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
                     controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
@@ -412,8 +412,17 @@
                     tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
                 }
 
-              
-                
+                private void updateParametricCurve(Vector2 greyPoint, Vector2 origin)
+                {
+                    if(parametricCurve == null)
+                        parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
+                    
+                    tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+
+                }
+
+
+
                 void Update()
                 {
                     if (Input.GetMouseButtonDown(0))
@@ -542,10 +551,8 @@
                             
                             for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
                             {
-                                if (counter <= 0 || !onGuiChanged)
+                                if (counter <= 0 )
                                 {
-                                    
-                                    
                                     counter = maxIterationsPerFrame;
                                     yield return new WaitForEndOfFrame();
                                 }
@@ -720,6 +727,7 @@
                     this.greyPoint.y = greyPointY;
 
                     createParametricCurve(greyPoint, origin);
+                    // updateParametricCurve(greyPoint, origin);
                 }
                 
                 public bool getShowSweep()
