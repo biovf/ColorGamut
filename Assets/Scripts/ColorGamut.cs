@@ -288,6 +288,7 @@
                 private bool isBleachingActive;
                 private bool isMultiThreaded = true;
                 private bool enableOldGamutMap = false;
+                private bool onGuiChanged = true;
 
                 private int hdriIndex;
                 private int inputTextureIdx = 0;
@@ -354,12 +355,15 @@
 
                     isBleachingActive = true;
                     isSweepActive     = false;
+                    onGuiChanged      = true;
                     enableDyeBleaching = false;
                     
                     // Parametric curve
                     slope = 2.2f;
                     slopeMin = 1.02f;
                     slopeMax = 4.5f;
+                    maxDisplayValue = 1.5f;
+                    minDisplayValue = 0.0f;
                     greyPoint = new Vector2(0.18f, 0.18f);
                     minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
                     maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
@@ -538,8 +542,10 @@
                             
                             for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
                             {
-                                if (counter <= 0)
+                                if (counter <= 0 || !onGuiChanged)
                                 {
+                                    
+                                    
                                     counter = maxIterationsPerFrame;
                                     yield return new WaitForEndOfFrame();
                                 }
@@ -682,7 +688,6 @@
                 }
 
                 // Utility methods
-                
                 public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
                 {
                     List<float> xValues = new List<float>(dimension);
@@ -742,6 +747,11 @@
                 public void setEnableOldGamutMap(bool enableOldGamutMap)
                 {
                     this.enableOldGamutMap = enableOldGamutMap;
+                }
+
+                public void OnGuiChanged(bool hasGuiChanged)
+                {
+                    onGuiChanged = hasGuiChanged;
                 }
 
                 Texture2D toTexture2D(RenderTexture rTex)

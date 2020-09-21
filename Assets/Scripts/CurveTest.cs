@@ -180,9 +180,10 @@
             index = outIndex;
             return closest;
         }
+        
         public float getYCoordinate(float inputXCoord, List<float> xCoords, List<float> tValues, List<Vector2> controlPoints)
         {
-            if (xCoords.Count <= 0 || tValues.Count <= 0 || xCoords.Count > tValues.Count)
+            if (xCoords.Count <= 0 || tValues.Count <= 0 /*|| xCoords.Count > tValues.Count*/)
             {
                 Debug.Log("Input array of x values or t values have mismatched lengths ");
                 return -1.0f;
@@ -212,12 +213,9 @@
                                  (Mathf.Pow(tValue, 2.0f) * p2.y);
                 }
             }
-            
+
             return -1.0f;
         }
-        
-       
-
 
         public List<float> calcTfromXquadratic(List<float> xValues, List<Vector2> controlPoints)
         {
@@ -252,7 +250,7 @@
                         // check if it is complex
                         for (int idx = 0; idx < roots.Length; idx++)
                         {
-                            if (tmpRoot < 0.0f || roots[idx].Real < tmpRoot)
+                            if (tmpRoot < 0.0f || (roots[idx].Real >= 0.0f && roots[idx].Real <= 1.0f))//roots[idx].Real < tmpRoot)
                             {
                                 tmpRoot = (float)roots[idx].Real;
                             }
