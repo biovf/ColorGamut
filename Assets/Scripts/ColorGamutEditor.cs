@@ -96,7 +96,7 @@ public class ColorGamutEditor : Editor
             //
             // if (GUI.changed || debugPoints == null || debugPoints.Count == 0)
             {
-                Debug.Log("GUI has changed, recalculate");
+                // Debug.Log("GUI has changed, recalculate");
                 colorGamut.OnGuiChanged(true);
                 parametricCurve = colorGamut.getParametricCurve();
                 tValues = colorGamut.getTValues();
