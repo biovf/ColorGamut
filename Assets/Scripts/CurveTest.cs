@@ -11,25 +11,25 @@
 
     public class CurveTest
     {
-        public float MAXDisplayValue
+        public float MaxDisplayValue
         {
             get => maxDisplayValue;
             set => maxDisplayValue = value;
         }
 
-        public float MINDisplayValue
+        public float MinDisplayValue
         {
             get => minDisplayValue;
             set => minDisplayValue = value;
         }
 
-        public float MAXRadiometricValue
+        public float MaxRadiometricValue
         {
             get => maxRadiometricValue;
             set => maxRadiometricValue = value;
         }
 
-        public float MINRadiometricValue
+        public float MinRadiometricValue
         {
             get => minRadiometricValue;
             set => minRadiometricValue = value;
@@ -59,10 +59,10 @@
             return ((p2.x - p1.x) * (y - p1.y) / (p2.y - p1.y)) + p1.x;
         }
 
-        // Generated a sequence of control points to be used for 3 overlapping quadratic Bezier curves
-        // originCoord - minimum value we want from our dynamic range
-        // greyPoint - usually at (0.18, 0.18)
-        // slope - varies between 1.02 and 4.5
+        // Generates a sequence of control points to be used for 3 overlapping quadratic Bezier curves
+        // originCoord  - minimum value we want from our dynamic range
+        // greyPoint    - usually at (0.18, 0.18)
+        // slope        - varies between 1.02 - 4.5
         public Vector2[] createControlPoints(Vector2 originCoord, Vector2 greyPoint, float slope)
         {
             minRadiometricValue = originCoord.x;

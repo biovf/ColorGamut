@@ -257,7 +257,7 @@
                     }
                 }
             }
-            
+            [ExecuteInEditMode]
             public class ColorGamut : MonoBehaviour
             {
                 public Material colorGamutMat;
@@ -291,10 +291,10 @@
 
                 private int hdriIndex;
                 private int inputTextureIdx = 0;
-                private const int maxIterationsPerFrame = 100000;
-                private int lutLength = 4096;
+                private int lutLength;
                 private int yIndexIntersect = 0;
-                
+                private const int maxIterationsPerFrame = 100000;
+
                 private Texture2D hdriTextureTransformed;
                 private Texture2D sweepTextureTransformed;
                 private Texture2D textureToSave;
@@ -310,17 +310,28 @@
              
                 private float slope;
                 private Vector2 origin;
-                private CurveTest parametricCurve;
+                private CurveTest parametricCurve = null;
                 private Vector2[] controlPoints;
                 private List<float> tValues;
+                
+                public float SlopeMax => slopeMax;
+                private float slopeMax;
+
+                public float SlopeMin => slopeMin;
+                private float slopeMin;
+                public float MinRadiometricValue => minRadiometricValue;
                 private float minRadiometricValue;
+
+                public float MaxRadiometricValue => maxRadiometricValue;
                 private float maxRadiometricValue;
                 private float maxDisplayValue;
                 private float minDisplayValue;
                 
                 private Vector2 greyPoint;
                 private List<float> xValues;
-                private int curveValuesLen;
+
+                public int CurveValueLutDim => curveValueLutDim;
+                private int curveValueLutDim;
 
                 private enum ColorRange
                 {
@@ -347,11 +358,13 @@
                     
                     // Parametric curve
                     slope = 2.2f;
+                    slopeMin = 1.02f;
+                    slopeMax = 4.5f;
                     greyPoint = new Vector2(0.18f, 0.18f);
                     minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
                     maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
                     origin = new Vector2(minRadiometricValue, 0.00001f);
-                    curveValuesLen = 4096;
+                    curveValueLutDim = 4096;
                     createParametricCurve(greyPoint, origin);
                     
                   /***
@@ -391,43 +404,11 @@
                     parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
                     controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
                     
-                    xValues = initialiseXCoordsInRange(curveValuesLen, Mathf.Round(maxRadiometricValue));
+                    xValues = initialiseXCoordsInRange(curveValueLutDim, Mathf.Round(maxRadiometricValue));
                     tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
                 }
 
-                public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
-                {
-                    List<float> xValues = new List<float>(dimension);
-                    float step = maxRange / (float) dimension;
-                    for (int i = 1; i <= dimension; i++)
-                    {
-                        xValues.Add(i * step);
-                    }
-
-                    return xValues;
-                }
-
-                public void getParametricCurveValues(out float inSlope, out float originPointX, out float originPointY,
-                    out float greyPointX, out float greyPointY)
-                {
-                    inSlope = slope;
-                    originPointX = origin.x;
-                    originPointY = origin.y;
-                    greyPointX = greyPoint.x;
-                    greyPointY = greyPoint.y;
-                }
-
-                public void setParametricCurveValues( float inSlope, float originPointX, float originPointY, 
-                                                       float greyPointX, float greyPointY)
-                {
-                    this.slope = inSlope;
-                    this.origin.x = originPointX;
-                    this.origin.y = originPointY;
-                    this.greyPoint.x = greyPointX;
-                    this.greyPoint.y = greyPointY;
-
-                    createParametricCurve(greyPoint, origin);
-                }
+              
                 
                 void Update()
                 {
@@ -594,7 +575,7 @@
                                     if (activeTransferFunction == TransferFunction.Max_RGB)
                                     {
                                         maxDynamicRange = maxDynamicRange; // The x axis max value on the curve
-                                        // TODO: FIX ME
+                                        // TODO: FIX ME - needs to calculate where the curve intersects Y = 1
                                         bleachStartPoint = 1.0f;//TimeFromValue(animationCurve, 1.0f); // Intersect of x on Y = 1
 
                                         if (isBleachingActive)
@@ -700,6 +681,42 @@
                     }
                 }
 
+                // Utility methods
+                
+                public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
+                {
+                    List<float> xValues = new List<float>(dimension);
+                    float step = maxRange / (float) dimension;
+                    for (int i = 1; i <= dimension; i++)
+                    {
+                        xValues.Add(i * step);
+                    }
+
+                    return xValues;
+                }
+
+                public void getParametricCurveValues(out float inSlope, out float originPointX, out float originPointY,
+                    out float greyPointX, out float greyPointY)
+                {
+                    inSlope = slope;
+                    originPointX = origin.x;
+                    originPointY = origin.y;
+                    greyPointX = greyPoint.x;
+                    greyPointY = greyPoint.y;
+                }
+
+                public void setParametricCurveValues( float inSlope, float originPointX, float originPointY, 
+                    float greyPointX, float greyPointY)
+                {
+                    this.slope = inSlope;
+                    this.origin.x = originPointX;
+                    this.origin.y = originPointY;
+                    this.greyPoint.x = greyPointX;
+                    this.greyPoint.y = greyPointY;
+
+                    createParametricCurve(greyPoint, origin);
+                }
+                
                 public bool getShowSweep()
                 {
                     return isSweepActive;
@@ -764,6 +781,8 @@
 
                 public CurveTest getParametricCurve()
                 {
+                    if (parametricCurve == null)
+                        createParametricCurve(greyPoint, origin);
                     return parametricCurve;
                 }
 
