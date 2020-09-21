@@ -731,9 +731,12 @@ public class ColorGamut : MonoBehaviour
                     else
                     {
                         activeTransferFunction = TransferFunction.Per_Channel;
-                        hdriPixelColor.r = animationCurve.Evaluate(hdriPixelColor.r);
-                        hdriPixelColor.g = animationCurve.Evaluate(hdriPixelColor.g);
-                        hdriPixelColor.b = animationCurve.Evaluate(hdriPixelColor.b);
+
+                        //hdriPixelColor.r = animationCurve.Evaluate(hdriPixelColor.r);
+                        //hdriPixelColor.g = animationCurve.Evaluate(hdriPixelColor.g);
+                        //hdriPixelColor.b = animationCurve.Evaluate(hdriPixelColor.b);
+                        hdriPixelColor = perChannelColorEvaluation(hdriPixelColor);
+
 
                         //sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
                         //sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
@@ -753,6 +756,48 @@ public class ColorGamut : MonoBehaviour
             //sweepTextureTransformed.SetPixels(sweepPixelArray);
             //sweepTextureTransformed.Apply();
         }
+    }
+
+    
+
+    private Color perChannelColorEvaluation(Color pixelRGB) 
+    {
+        Color rgb = Color.black;
+
+        rgb.r = processSingleColorChannel(pixelRGB.r);
+        rgb.g = processSingleColorChannel(pixelRGB.g);
+        rgb.b = processSingleColorChannel(pixelRGB.b);
+
+        return rgb;
+    }
+
+    private float processSingleColorChannel(float colorChannel)
+    {
+        ColorRange colorRange = ColorRange.InGamut;
+        float yValue = 0.0f;
+        if (colorChannel < minRadiometricValue)
+        {
+            colorRange = ColorRange.BelowGamut;
+        }
+        else
+        {
+            yValue = parametricCurve.getYCoordinate(colorChannel, xValues, tValues,
+              new List<Vector2>(controlPoints));
+        }
+        if (yValue < 0.0f)
+        {
+            colorRange = ColorRange.BelowGamut;
+        }
+        else if (yValue > 1.0f)
+        {
+            colorRange = ColorRange.AboveGamut;
+        }
+        if (colorRange == ColorRange.InGamut)
+        {
+            yValue = Mathf.Min(yValue, 1.0f);
+        }
+
+        return yValue;
     }
 
     // Utility methods

@@ -8,24 +8,6 @@ using UnityEngine;
 public class ColorGamutEditor : Editor
 {
     ColorGamut colorGamut;
-    // public AnimationCurve filmicCurve;
-    // [Header("Curve Parameters")]
-    // #region DIRECT_PARAMS
-    // public float originX        ;
-    // public float originY        ;
-    // public float midGreyX       ;
-    // public float midGreyY       ;
-    // public float shoulderStartX ;
-    // public float shoulderStartY ;
-    // public float shoulderEndX   ;
-    // public float shoulderEndY;
-    // #endregion
-    
-    // private Keyframe[] keyframes;
-    // private Keyframe p0;
-    // private Keyframe p1;
-    // private Keyframe p2;
-    // private Keyframe p3;
     
     #region Parametric Curve Parameters
     private float slope;
@@ -74,8 +56,6 @@ public class ColorGamutEditor : Editor
     {
         if (Application.isPlaying)
         {
-
-
             colorGamut = (ColorGamut) target;
             Vector2[] controlPoints = colorGamut.getControlPoints();
             Vector2 p0 = controlPoints[0];
