@@ -390,6 +390,7 @@ public class ColorGamut : MonoBehaviour
     
     private Vector2 greyPoint;
     private List<float> xValues;
+    private List<float> yValues;
 
     public int CurveValueLutDim => curveValueLutDim;
     private int curveValueLutDim;
@@ -426,7 +427,7 @@ public class ColorGamut : MonoBehaviour
         minDisplayValue = 0.0f;
         greyPoint = new Vector2(0.18f, 0.18f);
         minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
-        maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
+        maxRadiometricValue = Mathf.Pow(2.0f,  6.0f) * greyPoint.x;
         origin = new Vector2(minRadiometricValue, 0.00001f);
         curveValueLutDim = 1024;
         createParametricCurve(greyPoint, origin);
@@ -470,6 +471,8 @@ public class ColorGamut : MonoBehaviour
         
         xValues = initialiseXCoordsInRange(curveValueLutDim, Mathf.Round(maxRadiometricValue));
         tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+        yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
+
     }
 
     private void updateParametricCurve(Vector2 greyPoint, Vector2 origin)
@@ -872,10 +875,11 @@ public class ColorGamut : MonoBehaviour
         if (controlPoints == null || controlPoints.Length == 0)
         {
             greyPoint = new Vector2(0.18f, 0.18f);
-            origin = new Vector2(Mathf.Pow(2.0f, -6.0f) * 0.18f, 0.00001f);
             slope = 2.2f;
             minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
             maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
+            origin = new Vector2(minRadiometricValue, 0.00001f);
+
             createParametricCurve(greyPoint, origin);
         }
         
@@ -887,28 +891,18 @@ public class ColorGamut : MonoBehaviour
         return tValues;
     }
 
+
+    public List<float> getYValues()
+    {
+        return yValues;
+    }
+
     public CurveTest getParametricCurve()
     {
         if (parametricCurve == null)
             createParametricCurve(greyPoint, origin);
+
         return parametricCurve;
-    }
-
-    public void setAnimationCurve(AnimationCurve curve)
-    {
-        animationCurve = curve;
-        animationCurveLUT = new Vector2[lutLength];
-        float tolerance = 0.01f;
-        for (int i = 0; i < lutLength; i++)
-        {
-            float xValue = animationCurve.Evaluate(((float)i / (float)lutLength) * animationCurve[3].time );
-            float yValue = TimeFromValue(animationCurve, xValue);
-            animationCurveLUT[i] = new Vector2(xValue, yValue);
-
-            if (Mathf.Approximately(yValue, 1.0f) || 
-                (yValue > (1.0f - tolerance) && yValue < (1.0f + tolerance)))
-                yIndexIntersect = i;
-        }
     }
 
     public void setHDRIIndex(int index)

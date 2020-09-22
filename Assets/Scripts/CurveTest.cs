@@ -185,7 +185,7 @@
 
         public float getYCoordinate(float inputXCoord, List<float> xCoords, List<float> tValues, List<Vector2> controlPoints)
         {
-            if (xCoords.Count <= 0 || tValues.Count <= 0 /*|| xCoords.Count > tValues.Count*/)
+            if (xCoords.Count <= 0 || tValues.Count <= 0 )
             {
                 Debug.Log("Input array of x values or t values have mismatched lengths ");
                 return -1.0f;
@@ -219,7 +219,43 @@
             return -1.0f;
         }
 
-        public List<float> calcTfromXquadratic(List<float> xValues, List<Vector2> controlPoints)
+    public float getXCoordinate(float inputYCoord, List<float> YCoords, List<float> tValues, List<Vector2> controlPoints)
+    {
+        if (YCoords.Count <= 0 || tValues.Count <= 0 )
+        {
+            Debug.Log("Input array of y values or t values are invalid ");
+            return -1.0f;
+        }
+
+        Vector2[] controlPointsArray = new Vector2[]{
+                controlPoints[0], controlPoints[1], controlPoints[2],
+                controlPoints[2], controlPoints[3], controlPoints[4],
+                controlPoints[4], controlPoints[5], controlPoints[6]};
+
+        for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
+        {
+            Vector2 p0 = controlPointsArray[0 + i];
+            Vector2 p1 = controlPointsArray[1 + i];
+            Vector2 p2 = controlPointsArray[2 + i];
+
+            if (p0.x <= inputYCoord && inputYCoord <= p2.x)
+            {
+                // Search closest x value to xValue and grab its index in the array too
+                // The array index is used to lookup the tValue
+                int idx = 0;
+                ClosestTo(YCoords, inputYCoord, out idx);
+                float tValue = tValues[idx];
+
+                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+                             (2.0f * (1.0f - tValue) * tValue * p1.y) +
+                             (Mathf.Pow(tValue, 2.0f) * p2.y);
+            }
+        }
+
+        return -1.0f;
+    }
+
+    public List<float> calcTfromXquadratic(List<float> xValues, List<Vector2> controlPoints)
         {
             List<float> rootsLst = new List<float>();
             if (controlPoints.Count < 3)
@@ -252,7 +288,7 @@
                         // check if it is complex
                         for (int idx = 0; idx < roots.Length; idx++)
                         {
-                            if (tmpRoot < 0.0f || (roots[idx].Real >= 0.0f && roots[idx].Real <= 1.0f))//roots[idx].Real < tmpRoot)
+                            if (tmpRoot < 0.0f || (roots[idx].Real >= 0.0f && roots[idx].Real <= 1.0f))
                             {
                                 tmpRoot = (float)roots[idx].Real;
                             }
