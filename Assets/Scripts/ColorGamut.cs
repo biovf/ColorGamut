@@ -120,8 +120,6 @@ struct GamutMapJob : IJobParallelFor
     [ReadOnly] public NativeArray<float> xValues;
     [ReadOnly] public NativeArray<Vector2> controlPoints;
     
-    // [ReadOnly] public NativeArray<Vector2> animationCurve;
-    
     [ReadOnly] public float exposure;
     [ReadOnly] public Vector2 finalKeyframe;
     [ReadOnly] public bool isBleachingActive;
@@ -183,8 +181,6 @@ struct GamutMapJob : IJobParallelFor
       
     public static float ClosestTo(NativeArray<float> list, float target, out int index)
     {
-// NB Method will return int.MaxValue for a sequence containing no elements.
-// Apply any defensive coding here as necessary.
         var closest = float.MaxValue;
         var minDifference = float.MaxValue;
         var outIndex = 0;
@@ -250,9 +246,7 @@ struct GamutMapJob : IJobParallelFor
         // Calculate Pixel max color and ratio
         hdriMaxRGBChannel = hdriPixelColor.maxColorComponent; 
         ratio = hdriPixelColor / hdriMaxRGBChannel;
-            
-         
-                        
+        
         maxDynamicRange = maxDynamicRange; // The x axis max value on the curve
         // TODO: FIX ME - needs to calculate where the curve intersects Y = 1
         bleachStartPoint = 1.0f;
@@ -507,9 +501,19 @@ public class ColorGamut : MonoBehaviour
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
-        colorGamutMat.SetTexture("_MainTex", screenGrab);
-        Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
+        // if (onGuiChanged)
+        {
+            Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
+            colorGamutMat.SetTexture("_MainTex", screenGrab);
+            Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
+        }
+        // else
+        // {
+        //     Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
+        // }
+
+        if (onGuiChanged)
+            OnGuiChanged(false);
     }
 
 
@@ -543,7 +547,6 @@ public class ColorGamut : MonoBehaviour
             }
 
             hdriPixelArray = inputTexture.GetPixels();
-            //Color[] sweepPixelArray = sweepTexture.GetPixels();
             hdriPixelArrayLen = hdriPixelArray.Length;
 
             if (isMultiThreaded && tValues != null && tValues.Count > 0)
@@ -580,15 +583,10 @@ public class ColorGamut : MonoBehaviour
                     GamutMapJob job = new GamutMapJob();
                     job.hdriPixelArray = pixels;
                     job.exposure = exposure;
-                    // NativeArray<Vector2> animCurveLut = new NativeArray<Vector2>(animationCurveLUT.Length, Allocator.TempJob);
-                    // animCurveLut.CopyFrom(animationCurveLUT);
-                    // job.animationCurve = animCurveLut;
                     NativeArray<float> xVals = new NativeArray<float>(xValues.Count, Allocator.TempJob);
                     xVals.CopyFrom(xValues.ToArray());
                     job.xValues = xVals;
-                    // job.activeTransferFunction = activeTransferFunction;
                     job.isBleachingActive = isBleachingActive;
-                    // job.finalKeyframe = new Vector2(animationCurve[3].time, animationCurve[3].value);
                     job.lutLength = lutLength;
                     job.yIndexIntersect = yIndexIntersect;
                     job.minRadiometricValue = minRadiometricValue;
@@ -609,7 +607,6 @@ public class ColorGamut : MonoBehaviour
                     hdriTextureTransformed.Apply();
                     pixels.Dispose();
                     xVals.Dispose();
-                    // animCurveLut.Dispose();
                     tVals.Dispose();
                     controlPts.Dispose();
                 }

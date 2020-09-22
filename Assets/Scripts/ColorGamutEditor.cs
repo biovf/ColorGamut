@@ -45,6 +45,13 @@ public class ColorGamutEditor : Editor
 
         // Initialise parameters for the curve with sensible values
         colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX, out greyPointY);
+        Debug.Log("OnEnable being invoked");
+        
+    }
+
+    public void OnDisable()
+    {
+        Debug.Log("OnDisable being invoked");
     }
 
     private void OnValidate()
@@ -74,10 +81,10 @@ public class ColorGamutEditor : Editor
             // Draw Y = 1 line
             Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f), 4.0f);
             //
-            // if (GUI.changed || debugPoints == null || debugPoints.Count == 0)
+             // if (GUI.changed || debugPoints == null || debugPoints.Count == 0)
             {
                 // Debug.Log("GUI has changed, recalculate");
-                colorGamut.OnGuiChanged(true);
+                // colorGamut.OnGuiChanged(true);
                 parametricCurve = colorGamut.getParametricCurve();
                 tValues = colorGamut.getTValues();
                 xValues = colorGamut.initialiseXCoordsInRange(colorGamut.CurveValueLutDim,
@@ -92,13 +99,14 @@ public class ColorGamutEditor : Editor
                     debugPoints.Add(new Vector3(xValues[i], yValues[i]));
                 }
             }
-
-            // colorGamut.OnGuiChanged(false);
+            // else
+            // {
+            //     colorGamut.OnGuiChanged(false);
+            // }
 
             if (debugPoints != null && debugPoints.Count > 0)
             {
                 Handles.DrawPolyLine(debugPoints.ToArray());
-
             }
             else
             {
@@ -155,16 +163,18 @@ public class ColorGamutEditor : Editor
             colorGamut.setBleaching(enableBleaching);
             colorGamut.setIsMultiThreaded(isMultiThreaded);
             // TODO: refactor
-            // if (GUI.changed)
+            if (GUI.changed)
             {
-                // colorGamut.OnGuiChanged(true);
-                // Debug.Log("Passing new parameters");
-                colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
+                colorGamut.OnGuiChanged(true);
+                Debug.Log("GUI Changes");
             }
-            // else
-            // {
-            //     colorGamut.OnGuiChanged(false);
-            // }            
+            else
+            {
+                colorGamut.OnGuiChanged(false);
+            }   
+            
+            colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
+
             colorGamut.setEnableOldGamutMap(enableOldGamutMap);
         }
 
