@@ -735,8 +735,11 @@ public class ColorGamut : MonoBehaviour
                         //hdriPixelColor.r = animationCurve.Evaluate(hdriPixelColor.r);
                         //hdriPixelColor.g = animationCurve.Evaluate(hdriPixelColor.g);
                         //hdriPixelColor.b = animationCurve.Evaluate(hdriPixelColor.b);
-                        hdriPixelColor = perChannelColorEvaluation(hdriPixelColor);
-
+                        // hdriPixelColor = perChannelColorEvaluation(hdriPixelColor);
+                        
+                        hdriPixelColor.r = evaluateSingleColorChannel(hdriPixelColor.r);
+                        hdriPixelColor.g = evaluateSingleColorChannel(hdriPixelColor.g);
+                        hdriPixelColor.b = evaluateSingleColorChannel(hdriPixelColor.b);
 
                         //sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
                         //sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
@@ -758,20 +761,7 @@ public class ColorGamut : MonoBehaviour
         }
     }
 
-    
-
-    private Color perChannelColorEvaluation(Color pixelRGB) 
-    {
-        Color rgb = Color.black;
-
-        rgb.r = processSingleColorChannel(pixelRGB.r);
-        rgb.g = processSingleColorChannel(pixelRGB.g);
-        rgb.b = processSingleColorChannel(pixelRGB.b);
-
-        return rgb;
-    }
-
-    private float processSingleColorChannel(float colorChannel)
+    private float evaluateSingleColorChannel(float colorChannel)
     {
         ColorRange colorRange = ColorRange.InGamut;
         float yValue = 0.0f;
