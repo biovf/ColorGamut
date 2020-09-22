@@ -480,9 +480,7 @@ public class ColorGamut : MonoBehaviour
         tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
 
     }
-
-
-
+    
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -655,7 +653,6 @@ public class ColorGamut : MonoBehaviour
                     // Transfer function
                     if (activeTransferFunction == TransferFunction.Max_RGB)
                     {
-                        maxDynamicRange = maxDynamicRange; // The x axis max value on the curve
                         // TODO: FIX ME - needs to calculate where the curve intersects Y = 1
                         bleachStartPoint = 1.0f;//TimeFromValue(animationCurve, 1.0f); // Intersect of x on Y = 1
 
@@ -670,12 +667,12 @@ public class ColorGamut : MonoBehaviour
 
                                 hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
                                 maxDynamicRangeVec.Set(maxDynamicRange, maxDynamicRange, maxDynamicRange);
-                                Vector3 outputColor = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
+                                hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
                                     bleachingRatio);
 
-                                hdriPixelColor.r = outputColor.x;
-                                hdriPixelColor.g = outputColor.y;
-                                hdriPixelColor.b = outputColor.z;
+                                hdriPixelColor.r = hdriPixelColorVec.x;
+                                hdriPixelColor.g = hdriPixelColorVec.y;
+                                hdriPixelColor.b = hdriPixelColorVec.z;
 
                                 ratio = hdriPixelColor / hdriMaxRGBChannel;
                             }

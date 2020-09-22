@@ -27,6 +27,7 @@ public class ColorGamutEditor : Editor
     private bool enableBleaching  = false;
     private bool isMultiThreaded  = false;
     private bool enableOldGamutMap = false;
+    private bool hasGuiChanged     = true;
     
     AnimationCurve animationCurve;
     private Vector2[] controlPoints;
@@ -45,13 +46,13 @@ public class ColorGamutEditor : Editor
 
         // Initialise parameters for the curve with sensible values
         colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX, out greyPointY);
-        Debug.Log("OnEnable being invoked");
+        // Debug.Log("OnEnable being invoked");
         
     }
 
     public void OnDisable()
     {
-        Debug.Log("OnDisable being invoked");
+        // Debug.Log("OnDisable being invoked");
     }
 
     private void OnValidate()
@@ -59,12 +60,29 @@ public class ColorGamutEditor : Editor
         // Debug.Log("Values changing");
     }
 
+    private void recalculateCurveParameters()
+    {
+        parametricCurve = colorGamut.getParametricCurve();
+        tValues = colorGamut.getTValues();
+        xValues = colorGamut.initialiseXCoordsInRange(colorGamut.CurveValueLutDim,
+            colorGamut.MaxRadiometricValue);
+
+        debugPoints = new List<Vector3>();
+        yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
+            new List<Vector2>(controlPoints));
+
+        for (int i = 0; i < xValues.Count; i++)
+        {
+            debugPoints.Add(new Vector3(xValues[i], yValues[i]));
+        }
+    }
+
     void OnSceneGUI()
     {
         if (Application.isPlaying)
         {
             colorGamut = (ColorGamut) target;
-            Vector2[] controlPoints = colorGamut.getControlPoints();
+            controlPoints = colorGamut.getControlPoints();
             Vector2 p0 = controlPoints[0];
             Vector2 p1 = controlPoints[1];
             Vector2 p2 = controlPoints[2];
@@ -72,37 +90,17 @@ public class ColorGamutEditor : Editor
             Vector2 p4 = controlPoints[4];
             Vector2 p5 = controlPoints[5];
             Vector2 p6 = controlPoints[6];
+            
+            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(12.0f, 0.0f)); // Draw X Axis
+            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f));  // Draw Y axis
+            Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
+            Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f), 4.0f);  // Draw Y = 1 line
 
-            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(12.0f, 0.0f));
-            // Draw Y axis
-            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f));
-            // Draw X = 1 line
-            Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f);
-            // Draw Y = 1 line
-            Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f), 4.0f);
-            //
-             // if (GUI.changed || debugPoints == null || debugPoints.Count == 0)
+            if (GUI.changed || debugPoints == null || debugPoints.Count == 0)
             {
-                // Debug.Log("GUI has changed, recalculate");
-                // colorGamut.OnGuiChanged(true);
-                parametricCurve = colorGamut.getParametricCurve();
-                tValues = colorGamut.getTValues();
-                xValues = colorGamut.initialiseXCoordsInRange(colorGamut.CurveValueLutDim,
-                    colorGamut.MaxRadiometricValue);
-
-                debugPoints = new List<Vector3>();
-                yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
-                    new List<Vector2>(controlPoints));
-
-                for (int i = 0; i < xValues.Count; i++)
-                {
-                    debugPoints.Add(new Vector3(xValues[i], yValues[i]));
-                }
+                Debug.Log("OnSceneGUI has changed, recalculate");
+                recalculateCurveParameters();
             }
-            // else
-            // {
-            //     colorGamut.OnGuiChanged(false);
-            // }
 
             if (debugPoints != null && debugPoints.Count > 0)
             {
@@ -122,7 +120,7 @@ public class ColorGamutEditor : Editor
     public override void OnInspectorGUI() 
     {
         colorGamut = (ColorGamut)target;
-
+        
         if (colorGamut.HDRIList != null)
         {
             HDRis = colorGamut.HDRIList;
@@ -156,6 +154,8 @@ public class ColorGamutEditor : Editor
         originPointY  = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
         greyPointX    = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
         greyPointY    = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
+       
+        // Only write back values once we are in Play mode
         if (Application.isPlaying)
         {
             colorGamut.setHDRIIndex(hdriIndex);
@@ -167,12 +167,12 @@ public class ColorGamutEditor : Editor
             {
                 colorGamut.OnGuiChanged(true);
                 Debug.Log("GUI Changes");
+                recalculateCurveParameters();
             }
             else
             {
                 colorGamut.OnGuiChanged(false);
             }   
-            
             colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
 
             colorGamut.setEnableOldGamutMap(enableOldGamutMap);

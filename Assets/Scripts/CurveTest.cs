@@ -163,15 +163,17 @@
         {
             // NB Method will return int.MaxValue for a sequence containing no elements.
             // Apply any defensive coding here as necessary.
-            var closest = float.MaxValue;
-            var minDifference = float.MaxValue;
-            var outIndex = 0;
-            for (int i = 0; i < list.Count; i++)
+            float closest = float.MaxValue;
+            float minDifference = float.MaxValue;
+            int outIndex = 0;
+            int listSize = list.Count;
+            for (int i = 0; i < listSize; i++)
             {
-                var difference = Math.Abs((float)list[i] - target);
+                float difference = Math.Abs((float)list[i] - target);
+                
                 if (minDifference > difference)
                 {
-                    minDifference = (float)difference;
+                    minDifference = difference;
                     closest = list[i];
                     outIndex = i;
                 }
@@ -180,7 +182,7 @@
             index = outIndex;
             return closest;
         }
-        
+
         public float getYCoordinate(float inputXCoord, List<float> xCoords, List<float> tValues, List<Vector2> controlPoints)
         {
             if (xCoords.Count <= 0 || tValues.Count <= 0 /*|| xCoords.Count > tValues.Count*/)
@@ -255,7 +257,6 @@
                                 tmpRoot = (float)roots[idx].Real;
                             }
                         }
-                        // @TODO - Check if 10000 does not inhibit the radiometric range
                         if (tmpRoot >= 0.0 && tmpRoot <= 1.0)
                         {
                             rootsLst.Add(tmpRoot);
