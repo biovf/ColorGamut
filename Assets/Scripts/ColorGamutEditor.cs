@@ -47,7 +47,6 @@ public class ColorGamutEditor : Editor
         MustRecalculate,
         Calculated
     }
-
     private CurveGuiDataState _curveGuiDataState = CurveGuiDataState.NotCalculated;
 
 
@@ -57,8 +56,8 @@ public class ColorGamutEditor : Editor
         hdriNames = new List<string>();
 
         // Initialise parameters for the curve with sensible values
-        colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX, out greyPointY);
-        
+        if(_curveGuiDataState == CurveGuiDataState.NotCalculated)
+            colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX, out greyPointY);
     }
 
     public void OnDisable()

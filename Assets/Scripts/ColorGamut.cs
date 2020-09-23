@@ -346,7 +346,7 @@ public class ColorGamut : MonoBehaviour
 
     private bool isSweepActive;
     private bool isBleachingActive;
-    private bool isMultiThreaded = true;
+    private bool isMultiThreaded = false;
     private bool enableOldGamutMap = false;
     private bool onGuiChanged = true;
 
@@ -397,12 +397,21 @@ public class ColorGamut : MonoBehaviour
 
     private enum ColorRange
     {
-        InGamut,
+        InsideGamut,
         BelowGamut,
         AboveGamut
     };
     private ColorRange colorRange;
-    
+
+    private enum CurveDataState
+    {
+        NotCalculated,
+        Calculated,
+        MustRecalculate
+    };
+
+    private CurveDataState curveDataState = CurveDataState.NotCalculated;
+    private Camera mainCamera;
     private void Awake()
     {
         activeTransferFunction = TransferFunction.Max_RGB;
@@ -457,6 +466,7 @@ public class ColorGamut : MonoBehaviour
         sweepTextureTransformed = new Texture2D(sweepTexture.width, sweepTexture.height);
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
         screenGrab.Create();
+        mainCamera = this.gameObject.GetComponent<Camera>();
 
         if (Application.isPlaying)
         {
@@ -466,7 +476,8 @@ public class ColorGamut : MonoBehaviour
 
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
-        parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
+        if(parametricCurve == null) 
+            parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
         controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
         
         xValues = initialiseXCoordsInRange(curveValueLutDim, Mathf.Round(maxRadiometricValue));
@@ -475,14 +486,14 @@ public class ColorGamut : MonoBehaviour
 
     }
 
-    private void updateParametricCurve(Vector2 greyPoint, Vector2 origin)
-    {
-        if(parametricCurve == null)
-            parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
-        
-        tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
-
-    }
+    // private void updateParametricCurve(Vector2 greyPoint, Vector2 origin)
+    // {
+    //     if(parametricCurve == null)
+    //         parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
+    //     
+    //     tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+    //
+    // }
     
     void Update()
     {
@@ -502,19 +513,12 @@ public class ColorGamut : MonoBehaviour
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        // if (onGuiChanged)
+        // if (curveDataState == CurveDataState.NotCalculated || curveDataState == CurveDataState.MustRecalculate)
         {
             Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
             colorGamutMat.SetTexture("_MainTex", screenGrab);
             Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
         }
-        // else
-        // {
-        //     Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
-        // }
-
-        if (onGuiChanged)
-            OnGuiChanged(false);
     }
 
 
@@ -538,7 +542,7 @@ public class ColorGamut : MonoBehaviour
         Vector3 maxDynamicRangeVec = Vector3.zero;
         bool aboveGamut = false;
         bool belowGamut = false;
-        
+
         while (true)
         {
             if (inputTextureIdx != hdriIndex)
@@ -550,217 +554,261 @@ public class ColorGamut : MonoBehaviour
             hdriPixelArray = inputTexture.GetPixels();
             hdriPixelArrayLen = hdriPixelArray.Length;
 
-            if (isMultiThreaded && tValues != null && tValues.Count > 0)
+            if (curveDataState != CurveDataState.Calculated)
             {
-                NativeArray<Color> pixels = new NativeArray<Color>(hdriPixelArrayLen, Allocator.TempJob);
-                pixels.CopyFrom(hdriPixelArray);
-
-                if (enableOldGamutMap)
+                if (isMultiThreaded && tValues != null && tValues.Count > 0)
                 {
-                    OldGamutMapJob job = new OldGamutMapJob();
-                    job.hdriPixelArray = pixels;
-                    job.exposure = exposure;
-                    NativeArray<Vector2> animCurveLut = new NativeArray<Vector2>(animationCurveLUT.Length, Allocator.TempJob);
-                    animCurveLut.CopyFrom(animationCurveLUT);
-                    job.animationCurve = animCurveLut;
-                    job.activeTransferFunction = activeTransferFunction;
-                    job.isBleachingActive = isBleachingActive;
-                    job.finalKeyframe = new Vector2(animationCurve[3].time, animationCurve[3].value);
-                    job.lutLength = curveValueLutDim;
-                    job.yIndexIntersect = yIndexIntersect;
-                    JobHandle handle = job.Schedule(hdriPixelArrayLen, 1);
-                    handle.Complete();
-                    for (int i = 0; i < hdriPixelArrayLen; i++)
-                    {
-                        hdriPixelArray[i] = pixels[i];
-                    }
-                    hdriTextureTransformed.SetPixels(hdriPixelArray);
-                    hdriTextureTransformed.Apply();
-                    pixels.Dispose();
-                    animCurveLut.Dispose();
-                }
-                else
-                {
-                    GamutMapJob job = new GamutMapJob();
-                    job.hdriPixelArray = pixels;
-                    job.exposure = exposure;
-                    NativeArray<float> xVals = new NativeArray<float>(xValues.Count, Allocator.TempJob);
-                    xVals.CopyFrom(xValues.ToArray());
-                    job.xValues = xVals;
-                    job.isBleachingActive = isBleachingActive;
-                    job.lutLength = lutLength;
-                    job.yIndexIntersect = yIndexIntersect;
-                    job.minRadiometricValue = minRadiometricValue;
-                    // parametric curve
-                    NativeArray<float> tVals = new NativeArray<float>(tValues.Count, Allocator.TempJob);
-                    tVals.CopyFrom(tValues.ToArray());
-                    job.tValues = tVals;
-                    NativeArray<Vector2> controlPts = new NativeArray<Vector2>(controlPoints.Length, Allocator.TempJob);
-                    controlPts.CopyFrom(controlPoints);
-                    job.controlPoints = controlPts;
-                    JobHandle handle = job.Schedule(hdriPixelArrayLen, 1);
-                    handle.Complete();
-                    for (int i = 0; i < hdriPixelArrayLen; i++)
-                    {
-                        hdriPixelArray[i] = pixels[i];
-                    }
-                    hdriTextureTransformed.SetPixels(hdriPixelArray);
-                    hdriTextureTransformed.Apply();
-                    pixels.Dispose();
-                    xVals.Dispose();
-                    tVals.Dispose();
-                    controlPts.Dispose();
-                }
-                yield return new WaitForEndOfFrame();
-            }
-            else
-            {
-                // StringBuilder strBuilder = new StringBuilder();
-                counter = maxIterationsPerFrame;
-                
-                for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
-                {
-                    if (counter <= 0 )
-                    {
-                        counter = maxIterationsPerFrame;
-                        yield return new WaitForEndOfFrame();
-                    }
+                    NativeArray<Color> pixels = new NativeArray<Color>(hdriPixelArrayLen, Allocator.TempJob);
+                    pixels.CopyFrom(hdriPixelArray);
 
-                    // Full dynamic range of image
-                    hdriPixelColor = hdriPixelArray[i] * exposure;
-                    //Color sweepPixelColor = sweepPixelArray[i] * sweepExposure;
-                    ratio = Color.blue;
-                    // Secondary Nuance Grade, guardrails
-                    if (hdriPixelColor.r > maxRadiometricValue || hdriPixelColor.g > maxRadiometricValue ||
-                        hdriPixelColor.b > maxRadiometricValue)
+                    if (enableOldGamutMap)
                     {
-                        hdriPixelColor.r = maxRadiometricValue;
-                        hdriPixelColor.g = maxRadiometricValue;
-                        hdriPixelColor.b = maxRadiometricValue;
-                    }
-                    //if (sweepPixelColor.r > animationCurve[3].time || sweepPixelColor.g > animationCurve[3].time || sweepPixelColor.b > animationCurve[3].time)
-                    //{
-                    //    sweepPixelColor.r = animationCurve[3].time;
-                    //    sweepPixelColor.g = animationCurve[3].time;
-                    //    sweepPixelColor.b = animationCurve[3].time;
-                    //}
-
-                    // Calculate Pixel max color and ratio
-                    hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
-                    ratio = hdriPixelColor / hdriMaxRGBChannel;
-
-                    // Calculate Sweep max color and ratio
-                    //float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
-                    //Color sweepRatio = sweepPixelColor / sweepMaxRGBChannel;
-
-                    // Transfer function
-                    if (activeTransferFunction == TransferFunction.Max_RGB)
-                    {
-                        // TODO: FIX ME - needs to calculate where the curve intersects Y = 1
-                        bleachStartPoint = 1.0f;//TimeFromValue(animationCurve, 1.0f); // Intersect of x on Y = 1
-
-                        if (isBleachingActive)
+                        OldGamutMapJob job = new OldGamutMapJob();
+                        job.hdriPixelArray = pixels;
+                        job.exposure = exposure;
+                        NativeArray<Vector2> animCurveLut =
+                            new NativeArray<Vector2>(animationCurveLUT.Length, Allocator.TempJob);
+                        animCurveLut.CopyFrom(animationCurveLUT);
+                        job.animationCurve = animCurveLut;
+                        job.activeTransferFunction = activeTransferFunction;
+                        job.isBleachingActive = isBleachingActive;
+                        job.finalKeyframe = new Vector2(animationCurve[3].time, animationCurve[3].value);
+                        job.lutLength = curveValueLutDim;
+                        job.yIndexIntersect = yIndexIntersect;
+                        JobHandle handle = job.Schedule(hdriPixelArrayLen, 1);
+                        handle.Complete();
+                        for (int i = 0; i < hdriPixelArrayLen; i++)
                         {
-                            if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.g > bleachStartPoint ||
-                                hdriPixelColor.b > bleachStartPoint)
-                            {
-                                bleachingRange = maxDynamicRange - bleachStartPoint;
-                                bleachingRatio = (hdriPixelColor.maxColorComponent - bleachStartPoint) /
-                                                 bleachingRange;
-
-                                hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
-                                maxDynamicRangeVec.Set(maxDynamicRange, maxDynamicRange, maxDynamicRange);
-                                hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
-                                    bleachingRatio);
-
-                                hdriPixelColor.r = hdriPixelColorVec.x;
-                                hdriPixelColor.g = hdriPixelColorVec.y;
-                                hdriPixelColor.b = hdriPixelColorVec.z;
-
-                                ratio = hdriPixelColor / hdriMaxRGBChannel;
-                            }
+                            hdriPixelArray[i] = pixels[i];
                         }
 
-                        // Get Y curve value
-                        if (enableOldGamutMap)
-                        {
-                            hdriYMaxValue = Mathf.Min(animationCurve.Evaluate(hdriMaxRGBChannel), 1.0f);
-                        }
-                        else
-                        {
-                            float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
-                                new List<Vector2>(controlPoints));
-                            if (yValue < 0.0f)
-                            {
-                                colorRange = ColorRange.BelowGamut;
-                            } else if (yValue > 1.0f)
-                            {
-                                colorRange = ColorRange.AboveGamut;
-                            } else if (hdriMaxRGBChannel < minRadiometricValue)
-                            {
-                                colorRange = ColorRange.BelowGamut;
-                            }
-
-                            if (colorRange == ColorRange.InGamut)
-                            {
-                                hdriYMaxValue = Mathf.Min(yValue, 1.0f);
-                            }
-                        }
-
-                        if (colorRange == ColorRange.InGamut)
-                        {
-                            hdriPixelColor = hdriYMaxValue * ratio;
-                        } else if (colorRange == ColorRange.BelowGamut)
-                        {
-                            hdriPixelColor = Color.red;
-                        } else if (colorRange == ColorRange.AboveGamut)
-                        {
-                            hdriPixelColor = Color.green;                      
-                        }
-
-                        colorRange = ColorRange.InGamut;
-                        // Sweep texture
-                        //sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
-                        //sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
-
-                        activeTransferFunction = TransferFunction.Max_RGB;
+                        hdriTextureTransformed.SetPixels(hdriPixelArray);
+                        hdriTextureTransformed.Apply();
+                        pixels.Dispose();
+                        animCurveLut.Dispose();
                     }
                     else
                     {
-                        activeTransferFunction = TransferFunction.Per_Channel;
+                        GamutMapJob job = new GamutMapJob();
+                        job.hdriPixelArray = pixels;
+                        job.exposure = exposure;
+                        NativeArray<float> xVals = new NativeArray<float>(xValues.Count, Allocator.TempJob);
+                        xVals.CopyFrom(xValues.ToArray());
+                        job.xValues = xVals;
+                        job.isBleachingActive = isBleachingActive;
+                        job.lutLength = lutLength;
+                        job.yIndexIntersect = yIndexIntersect;
+                        job.minRadiometricValue = minRadiometricValue;
+                        // parametric curve
+                        NativeArray<float> tVals = new NativeArray<float>(tValues.Count, Allocator.TempJob);
+                        tVals.CopyFrom(tValues.ToArray());
+                        job.tValues = tVals;
+                        NativeArray<Vector2> controlPts =
+                            new NativeArray<Vector2>(controlPoints.Length, Allocator.TempJob);
+                        controlPts.CopyFrom(controlPoints);
+                        job.controlPoints = controlPts;
+                        JobHandle handle = job.Schedule(hdriPixelArrayLen, 1);
+                        handle.Complete();
+                        for (int i = 0; i < hdriPixelArrayLen; i++)
+                        {
+                            hdriPixelArray[i] = pixels[i];
+                        }
 
-                        //hdriPixelColor.r = animationCurve.Evaluate(hdriPixelColor.r);
-                        //hdriPixelColor.g = animationCurve.Evaluate(hdriPixelColor.g);
-                        //hdriPixelColor.b = animationCurve.Evaluate(hdriPixelColor.b);
-                        // hdriPixelColor = perChannelColorEvaluation(hdriPixelColor);
-                        
-                        hdriPixelColor.r = evaluateSingleColorChannel(hdriPixelColor.r);
-                        hdriPixelColor.g = evaluateSingleColorChannel(hdriPixelColor.g);
-                        hdriPixelColor.b = evaluateSingleColorChannel(hdriPixelColor.b);
-
-                        //sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
-                        //sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
-                        //sweepPixelColor.b = animationCurve.Evaluate(sweepPixelColor.b);
+                        hdriTextureTransformed.SetPixels(hdriPixelArray);
+                        hdriTextureTransformed.Apply();
+                        pixels.Dispose();
+                        xVals.Dispose();
+                        tVals.Dispose();
+                        controlPts.Dispose();
                     }
 
-                    hdriPixelArray[i].r = Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
-                    hdriPixelArray[i].g = Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
-                    hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
-                    hdriPixelArray[i].a = 1.0f;
-                    //sweepPixelArray[i] = new Color(Mathf.Pow(sweepPixelColor.r, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.g, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.b, 1.0f / 2.2f), 1.0f);
-                    
+                    yield return new WaitForEndOfFrame();
                 }
-                hdriTextureTransformed.SetPixels(hdriPixelArray);
-                hdriTextureTransformed.Apply();
+                else
+                {
+                    counter = maxIterationsPerFrame;
+
+                    for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
+                    {
+                        if (counter <= 0)
+                        {
+                            counter = maxIterationsPerFrame;
+                            yield return new WaitForEndOfFrame();
+                        }
+
+                        // Full dynamic range of image
+                        hdriPixelColor = hdriPixelArray[i] * exposure;
+                        //Color sweepPixelColor = sweepPixelArray[i] * sweepExposure;
+                        ratio = Color.blue;
+                        // Secondary Nuance Grade, guardrails
+                        if (hdriPixelColor.r > maxRadiometricValue || hdriPixelColor.g > maxRadiometricValue ||
+                            hdriPixelColor.b > maxRadiometricValue)
+                        {
+                            hdriPixelColor.r = maxRadiometricValue;
+                            hdriPixelColor.g = maxRadiometricValue;
+                            hdriPixelColor.b = maxRadiometricValue;
+                        }
+                        //if (sweepPixelColor.r > animationCurve[3].time || sweepPixelColor.g > animationCurve[3].time || sweepPixelColor.b > animationCurve[3].time)
+                        //{
+                        //    sweepPixelColor.r = animationCurve[3].time;
+                        //    sweepPixelColor.g = animationCurve[3].time;
+                        //    sweepPixelColor.b = animationCurve[3].time;
+                        //}
+
+                        // Calculate Pixel max color and ratio
+                        hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
+                        ratio = hdriPixelColor / hdriMaxRGBChannel;
+
+                        // Calculate Sweep max color and ratio
+                        //float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
+                        //Color sweepRatio = sweepPixelColor / sweepMaxRGBChannel;
+
+                        // Transfer function
+                        if (activeTransferFunction == TransferFunction.Max_RGB)
+                        {
+                            // TODO: FIX ME - needs to calculate where the curve intersects Y = 1
+                            bleachStartPoint = 1.0f; //TimeFromValue(animationCurve, 1.0f); // Intersect of x on Y = 1
+
+                            if (isBleachingActive)
+                            {
+                                if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.g > bleachStartPoint ||
+                                    hdriPixelColor.b > bleachStartPoint)
+                                {
+                                    bleachingRange = maxDynamicRange - bleachStartPoint;
+                                    bleachingRatio = (hdriPixelColor.maxColorComponent - bleachStartPoint) /
+                                                     bleachingRange;
+
+                                    hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
+                                    maxDynamicRangeVec.Set(maxDynamicRange, maxDynamicRange, maxDynamicRange);
+                                    hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
+                                        bleachingRatio);
+
+                                    hdriPixelColor.r = hdriPixelColorVec.x;
+                                    hdriPixelColor.g = hdriPixelColorVec.y;
+                                    hdriPixelColor.b = hdriPixelColorVec.z;
+
+                                    ratio = hdriPixelColor / hdriMaxRGBChannel;
+                                }
+                            }
+
+                            // Get Y curve value
+                            if (enableOldGamutMap)
+                            {
+                                hdriYMaxValue = Mathf.Min(animationCurve.Evaluate(hdriMaxRGBChannel), 1.0f);
+                            }
+                            else
+                            {
+                                float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
+                                    new List<Vector2>(controlPoints));
+                                if (yValue < 0.0f)
+                                {
+                                    colorRange = ColorRange.BelowGamut;
+                                }
+                                else if (yValue > 1.0f)
+                                {
+                                    colorRange = ColorRange.AboveGamut;
+                                }
+                                else if (hdriMaxRGBChannel < minRadiometricValue)
+                                {
+                                    colorRange = ColorRange.BelowGamut;
+                                }
+
+                                if (colorRange == ColorRange.InsideGamut)
+                                {
+                                    hdriYMaxValue = Mathf.Min(yValue, 1.0f);
+                                }
+                            }
+
+                            if (colorRange == ColorRange.InsideGamut)
+                            {
+                                hdriPixelColor = hdriYMaxValue * ratio;
+                            }
+                            else if (colorRange == ColorRange.BelowGamut)
+                            {
+                                hdriPixelColor = Color.red;
+                            }
+                            else if (colorRange == ColorRange.AboveGamut)
+                            {
+                                hdriPixelColor = Color.green;
+                            }
+
+                            colorRange = ColorRange.InsideGamut;
+                            // Sweep texture
+                            //sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
+                            //sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
+
+                            activeTransferFunction = TransferFunction.Max_RGB;
+                        }
+                        else
+                        {
+                            activeTransferFunction = TransferFunction.Per_Channel;
+
+                            //hdriPixelColor.r = animationCurve.Evaluate(hdriPixelColor.r);
+                            //hdriPixelColor.g = animationCurve.Evaluate(hdriPixelColor.g);
+                            //hdriPixelColor.b = animationCurve.Evaluate(hdriPixelColor.b);
+                            // hdriPixelColor = perChannelColorEvaluation(hdriPixelColor);
+
+                            hdriPixelColor.r = evaluateSingleColorChannel(hdriPixelColor.r);
+                            hdriPixelColor.g = evaluateSingleColorChannel(hdriPixelColor.g);
+                            hdriPixelColor.b = evaluateSingleColorChannel(hdriPixelColor.b);
+
+                            //sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
+                            //sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
+                            //sweepPixelColor.b = animationCurve.Evaluate(sweepPixelColor.b);
+                        }
+
+                        hdriPixelArray[i].r = Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
+                        hdriPixelArray[i].g = Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
+                        hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
+                        hdriPixelArray[i].a = 1.0f;
+                        //sweepPixelArray[i] = new Color(Mathf.Pow(sweepPixelColor.r, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.g, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.b, 1.0f / 2.2f), 1.0f);
+
+                    }
+
+                    hdriTextureTransformed.SetPixels(hdriPixelArray);
+                    hdriTextureTransformed.Apply();
+                }
+
+                ChangeCurveDataState(CurveDataState.Calculated);
+                //sweepTextureTransformed.SetPixels(sweepPixelArray);
+                //sweepTextureTransformed.Apply();
             }
-            //sweepTextureTransformed.SetPixels(sweepPixelArray);
-            //sweepTextureTransformed.Apply();
+            else
+            { 
+                yield return new WaitForEndOfFrame();
+            }
+        }
+    }
+
+
+    private void ChangeCurveDataState(CurveDataState newState)
+    {
+        switch (newState)
+        {
+            case CurveDataState.NotCalculated:
+            {
+                mainCamera.clearFlags = CameraClearFlags.Skybox;
+                curveDataState = CurveDataState.NotCalculated;
+                break;
+            }
+            case CurveDataState.Calculated:
+            {
+                mainCamera.clearFlags = CameraClearFlags.Nothing;
+                curveDataState = CurveDataState.Calculated;
+                break;
+            }
+            case CurveDataState.MustRecalculate:
+            {
+                mainCamera.clearFlags = CameraClearFlags.Skybox;
+                curveDataState = CurveDataState.MustRecalculate;
+                break;
+            }
         }
     }
 
     private float evaluateSingleColorChannel(float colorChannel)
     {
-        ColorRange colorRange = ColorRange.InGamut;
+        ColorRange colorRange = ColorRange.InsideGamut;
         float yValue = 0.0f;
         if (colorChannel < minRadiometricValue)
         {
@@ -779,7 +827,7 @@ public class ColorGamut : MonoBehaviour
         {
             colorRange = ColorRange.AboveGamut;
         }
-        if (colorRange == ColorRange.InGamut)
+        if (colorRange == ColorRange.InsideGamut)
         {
             yValue = Mathf.Min(yValue, 1.0f);
         }
@@ -819,6 +867,7 @@ public class ColorGamut : MonoBehaviour
         this.greyPoint.x = greyPointX;
         this.greyPoint.y = greyPointY;
 
+        ChangeCurveDataState(CurveDataState.MustRecalculate);
         createParametricCurve(greyPoint, origin);
         // updateParametricCurve(greyPoint, origin);
     }
@@ -872,6 +921,7 @@ public class ColorGamut : MonoBehaviour
 
     public Vector2[] getControlPoints()
     {
+        // TODO: Replace with curveStateData state
         if (controlPoints == null || controlPoints.Length == 0)
         {
             greyPoint = new Vector2(0.18f, 0.18f);
