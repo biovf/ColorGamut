@@ -8,14 +8,16 @@ using UnityEngine;
 public class ColorGamutEditor : Editor
 {
     ColorGamut colorGamut;
-    
+
+    private float exposure = 1.0f;
+    private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
+        
     #region Parametric Curve Parameters
     private float slope;
     private float originPointX;
     private float originPointY;
     private float greyPointX;
     private float greyPointY;
-    
     #endregion
     
     private List<Texture2D> HDRis;
@@ -182,6 +184,8 @@ public class ColorGamutEditor : Editor
             hdriIndex = EditorGUILayout.Popup("HDRI to use", hdriIndex, hdriNames.ToArray());
         }
 
+        activeTransferFunction = (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
+        exposure           = EditorGUILayout.Slider("Exposure",    exposure, 0.0f, 20.0f);
         bool showSweep     = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching    = EditorGUILayout.Toggle("Enable Bleaching",         enableBleaching);
         isMultiThreaded    = EditorGUILayout.Toggle("Enable MultiThreading",    isMultiThreaded);
@@ -212,7 +216,9 @@ public class ColorGamutEditor : Editor
             colorGamut.setBleaching(enableBleaching);
             colorGamut.setIsMultiThreaded(isMultiThreaded);
             colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
-
+            colorGamut.setExposure(exposure);
+            colorGamut.setActiveTransferFunction(activeTransferFunction);
+            
             if(_curveGuiDataState == CurveGuiDataState.MustRecalculate || _curveGuiDataState == CurveGuiDataState.NotCalculated)
             {
                 Debug.Log("OnInspectorGUI() - GUI Changed");

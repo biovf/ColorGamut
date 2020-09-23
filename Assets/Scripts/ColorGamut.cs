@@ -12,6 +12,12 @@ using Unity.Jobs;
 using UnityEngine.Assertions.Comparers;
 using Debug = UnityEngine.Debug;
 
+public enum TransferFunction
+{
+    Per_Channel,
+    Max_RGB
+}
+
 [ExecuteInEditMode]
 public class ColorGamut : MonoBehaviour
 {
@@ -25,17 +31,11 @@ public class ColorGamut : MonoBehaviour
     public bool enableDyeBleaching;
     public float dye_bleach_x = 1.0f;
     public float dye_bleach_y = 1.0f;
-    public enum TransferFunction
-    {
-        Per_Channel,
-        Max_RGB
-    }
-    [Space]
-    [Range(0.01f, 20.0f)] public float exposure;
-    [Range(0.01f, 20.0f)] public float sweepExposure;
-    [Space] [Header("Aesthetic Function")]
-    public TransferFunction activeTransferFunction;
-    [Space]
+   
+    private float exposure;
+
+    // [Range(0.01f, 20.0f)] public float sweepExposure;
+    private TransferFunction activeTransferFunction;
     
     private Texture2D inputTexture;
 
@@ -116,7 +116,7 @@ public class ColorGamut : MonoBehaviour
     {
         hdriIndex = 0;
         exposure = 1.0f;
-        sweepExposure = 1.0f;
+        // sweepExposure = 1.0f;
 
         isBleachingActive = true;
         isSweepActive     = false;
@@ -583,6 +583,22 @@ public class ColorGamut : MonoBehaviour
         hdriIndex = index;
         ChangeCurveDataState(CurveDataState.MustRecalculate);
     }
+    public void setBleaching(bool inIsBleachingActive) 
+    {
+        isBleachingActive = inIsBleachingActive;
+    }
+
+    public void setExposure(float exposure)
+    {
+        this.exposure = exposure;
+        ChangeCurveDataState(CurveDataState.MustRecalculate);
+    }
+
+    public void setActiveTransferFunction(TransferFunction transferFunction)
+    {
+        this.activeTransferFunction = transferFunction;
+        ChangeCurveDataState(CurveDataState.MustRecalculate);
+    }
 
     static public Texture2D GetRTPixels(RenderTexture rt)
     {
@@ -642,11 +658,8 @@ public class ColorGamut : MonoBehaviour
         return new Color(Mathf.Clamp01(outColor.r), Mathf.Clamp01(outColor.g), Mathf.Clamp01(outColor.b));
     }
     
-    public void setBleaching(bool inIsBleachingActive) 
-    {
-        isBleachingActive = inIsBleachingActive;
-    }
-    
+ 
+
     bool all(bool[] x)       // bvec can be bvec2, bvec3 or bvec4
     {
         bool result = true;
