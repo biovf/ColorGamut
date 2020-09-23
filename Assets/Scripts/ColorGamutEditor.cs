@@ -26,8 +26,7 @@ public class ColorGamutEditor : Editor
     private bool enableSliders    = false;
     private bool enableBleaching  = false;
     private bool isMultiThreaded  = false;
-    private bool enableOldGamutMap = false;
-    private bool hasGuiChanged     = true;
+    private bool showPixelsOutOfGamut = false;
     
     AnimationCurve animationCurve;
     private Vector2[] controlPoints;
@@ -186,8 +185,8 @@ public class ColorGamutEditor : Editor
         bool showSweep     = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching    = EditorGUILayout.Toggle("Enable Bleaching",         enableBleaching);
         isMultiThreaded    = EditorGUILayout.Toggle("Enable MultiThreading",    isMultiThreaded);
-        enableOldGamutMap  = EditorGUILayout.Toggle("Enable Old Gamut Map",     enableOldGamutMap);
-        enableSliders      = EditorGUILayout.Toggle("Enable Sliders",           enableSliders);
+        showPixelsOutOfGamut  = EditorGUILayout.Toggle("Show Pixels Out of Gamut",     showPixelsOutOfGamut);
+        // enableSliders      = EditorGUILayout.Toggle("Enable Sliders",           enableSliders);
 
         EditorGUILayout.Space();
         EditorGUILayout.Space();
@@ -212,7 +211,7 @@ public class ColorGamutEditor : Editor
             colorGamut.setShowSweep(showSweep);
             colorGamut.setBleaching(enableBleaching);
             colorGamut.setIsMultiThreaded(isMultiThreaded);
-            colorGamut.setEnableOldGamutMap(enableOldGamutMap);
+            colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
 
             if(_curveGuiDataState == CurveGuiDataState.MustRecalculate || _curveGuiDataState == CurveGuiDataState.NotCalculated)
             {

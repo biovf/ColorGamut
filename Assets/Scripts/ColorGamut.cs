@@ -42,7 +42,7 @@ public class ColorGamut : MonoBehaviour
     private bool isSweepActive;
     private bool isBleachingActive;
     private bool isMultiThreaded = false;
-    private bool enableOldGamutMap = false;
+    private bool showPixelsOutOfGamut = false;
     private bool onGuiChanged = true;
 
     private int hdriIndex;
@@ -363,47 +363,23 @@ public class ColorGamut : MonoBehaviour
                             }
 
                             // Get Y curve value
-                            if (enableOldGamutMap)
+                            float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
+                                new List<Vector2>(controlPoints));
+                            hdriYMaxValue = Mathf.Min(yValue, 1.0f);
+                            hdriPixelColor = hdriYMaxValue * ratio;
+                            
+                            if (showPixelsOutOfGamut)
                             {
-                                hdriYMaxValue = Mathf.Min(animationCurve.Evaluate(hdriMaxRGBChannel), 1.0f);
-                            }
-                            else
-                            {
-                                float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
-                                    new List<Vector2>(controlPoints));
-                                if (yValue < 0.0f)
+                                if (yValue < 0.0f || hdriMaxRGBChannel < minRadiometricValue) // Below Gamut
                                 {
-                                    colorRange = ColorRange.BelowGamut;
+                                    hdriPixelColor = Color.red;
                                 }
-                                else if (yValue > 1.0f)
+                                else if (yValue > 1.0f)                                       // Above gamut
                                 {
-                                    colorRange = ColorRange.AboveGamut;
-                                }
-                                else if (hdriMaxRGBChannel < minRadiometricValue)
-                                {
-                                    colorRange = ColorRange.BelowGamut;
-                                }
-
-                                if (colorRange == ColorRange.InsideGamut)
-                                {
-                                    hdriYMaxValue = Mathf.Min(yValue, 1.0f);
+                                    hdriPixelColor = Color.green;
                                 }
                             }
 
-                            if (colorRange == ColorRange.InsideGamut)
-                            {
-                                hdriPixelColor = hdriYMaxValue * ratio;
-                            }
-                            else if (colorRange == ColorRange.BelowGamut)
-                            {
-                                hdriPixelColor = Color.red;
-                            }
-                            else if (colorRange == ColorRange.AboveGamut)
-                            {
-                                hdriPixelColor = Color.green;
-                            }
-
-                            colorRange = ColorRange.InsideGamut;
                             // Sweep texture
                             //sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
                             //sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
@@ -413,15 +389,24 @@ public class ColorGamut : MonoBehaviour
                         else
                         {
                             activeTransferFunction = TransferFunction.Per_Channel;
-
-                            //hdriPixelColor.r = animationCurve.Evaluate(hdriPixelColor.r);
-                            //hdriPixelColor.g = animationCurve.Evaluate(hdriPixelColor.g);
-                            //hdriPixelColor.b = animationCurve.Evaluate(hdriPixelColor.b);
-                            // hdriPixelColor = perChannelColorEvaluation(hdriPixelColor);
-
+                            
                             hdriPixelColor.r = evaluateSingleColorChannel(hdriPixelColor.r);
                             hdriPixelColor.g = evaluateSingleColorChannel(hdriPixelColor.g);
                             hdriPixelColor.b = evaluateSingleColorChannel(hdriPixelColor.b);
+
+                            if (showPixelsOutOfGamut)
+                            {
+                                if (hdriPixelColor.r < minRadiometricValue || hdriPixelColor.g < minRadiometricValue ||
+                                    hdriPixelColor.b < minRadiometricValue)
+                                {
+                                    hdriPixelColor = Color.red;
+                                }
+                                else if (hdriPixelColor.r > 1.0f || hdriPixelColor.g > 1.0f ||
+                                         hdriPixelColor.b > 1.0f)
+                                {
+                                    hdriPixelColor = Color.green;
+                                }
+                            }
 
                             //sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
                             //sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
@@ -479,31 +464,8 @@ public class ColorGamut : MonoBehaviour
 
     private float evaluateSingleColorChannel(float colorChannel)
     {
-        ColorRange colorRange = ColorRange.InsideGamut;
-        float yValue = 0.0f;
-        if (colorChannel < minRadiometricValue)
-        {
-            colorRange = ColorRange.BelowGamut;
-        }
-        else
-        {
-            yValue = parametricCurve.getYCoordinate(colorChannel, xValues, tValues,
-              new List<Vector2>(controlPoints));
-        }
-        if (yValue < 0.0f)
-        {
-            colorRange = ColorRange.BelowGamut;
-        }
-        else if (yValue > 1.0f)
-        {
-            colorRange = ColorRange.AboveGamut;
-        }
-        if (colorRange == ColorRange.InsideGamut)
-        {
-            yValue = Mathf.Min(yValue, 1.0f);
-        }
-
-        return yValue;
+        return parametricCurve.getYCoordinate(colorChannel, xValues, tValues,
+            new List<Vector2>(controlPoints));
     }
 
     // Utility methods
@@ -552,7 +514,6 @@ public class ColorGamut : MonoBehaviour
     {
         isSweepActive = isActive;
         sweepPlane.SetActive(isSweepActive);
-
     }
 
     public bool getIsMultiThreaded()
@@ -565,14 +526,10 @@ public class ColorGamut : MonoBehaviour
         this.isMultiThreaded = isMultiThreaded;
     }
 
-    public void setEnableOldGamutMap(bool enableOldGamutMap)
+    public void setShowOutOfGamutPixels(bool isPixelOutOfGamut)
     {
-        this.enableOldGamutMap = enableOldGamutMap;
-    }
-
-    public void OnGuiChanged(bool hasGuiChanged)
-    {
-        onGuiChanged = hasGuiChanged;
+        this.showPixelsOutOfGamut = isPixelOutOfGamut;
+        ChangeCurveDataState(CurveDataState.MustRecalculate);
     }
 
     Texture2D toTexture2D(RenderTexture rTex)
@@ -584,10 +541,6 @@ public class ColorGamut : MonoBehaviour
         RenderTexture.active = null;
 
         return tex;
-    }
-    public AnimationCurve getAnimationCurve() 
-    {
-        return animationCurve;
     }
 
     public Vector2[] getControlPoints()
@@ -611,8 +564,7 @@ public class ColorGamut : MonoBehaviour
     {
         return tValues;
     }
-
-
+    
     public List<float> getYValues()
     {
         return yValues;
@@ -629,6 +581,7 @@ public class ColorGamut : MonoBehaviour
     public void setHDRIIndex(int index)
     {
         hdriIndex = index;
+        ChangeCurveDataState(CurveDataState.MustRecalculate);
     }
 
     static public Texture2D GetRTPixels(RenderTexture rt)
@@ -647,8 +600,6 @@ public class ColorGamut : MonoBehaviour
         RenderTexture.active = currentActiveRT;
         return tex;
     }
-   
-
     
     float remap(float value, float min0, float max0, float min1, float max1)
     {
@@ -696,32 +647,6 @@ public class ColorGamut : MonoBehaviour
         isBleachingActive = inIsBleachingActive;
     }
     
-    public static float TimeFromValue(AnimationCurve c, float value, float precision = 1e-6f)
-    {
-        float minTime = c.keys[0].time;
-        float maxTime = c.keys[c.keys.Length - 1].time;
-        float best = (maxTime + minTime) / 2;
-        float bestVal = c.Evaluate(best);
-        int it = 0;
-        const int maxIt = 1000;
-        float sign = Mathf.Sign(c.keys[c.keys.Length - 1].value - c.keys[0].value);
-        while (it < maxIt && Mathf.Abs(minTime - maxTime) > precision)
-        {
-            if ((bestVal - value) * sign > 0)
-            {
-                maxTime = best;
-            }
-            else
-            {
-                minTime = best;
-            }
-            best = (maxTime + minTime) / 2;
-            bestVal = c.Evaluate(best);
-            it++;
-        }
-        return best;
-    }
-
     bool all(bool[] x)       // bvec can be bvec2, bvec3 or bvec4
     {
         bool result = true;
@@ -760,7 +685,6 @@ public class ColorGamut : MonoBehaviour
     {
         return new bool[3] { (vecA.x > vecB.x), (vecA.x > vecB.x), (vecA.x > vecB.x) };
     }
-
 
     bool[] lessThanEqual(Vector3 vecA, Vector3 vecB)
     {
