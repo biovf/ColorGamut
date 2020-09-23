@@ -36,9 +36,21 @@ public class ColorGamutEditor : Editor
     private List<float> tValues;
     private List<float> xValues;
     private List<float> yValues;
-    private List<Vector3> debugPoints;
+    private List<Vector3> debugPoints = new List<Vector3>();
 
     private Vector3 cubeWidgetSize = new Vector3(0.01f, 0.01f, 0.01f);
+    
+    // Prototype the state approach to test caching of data
+    private enum CurveGuiDataState
+    {
+        NotCalculated,
+        MustRecalculate,
+        Calculated
+    }
+
+    private CurveGuiDataState _curveGuiDataState = CurveGuiDataState.NotCalculated;
+
+
     public void OnEnable()
     {
         colorGamut = (ColorGamut)target;
@@ -46,7 +58,6 @@ public class ColorGamutEditor : Editor
 
         // Initialise parameters for the curve with sensible values
         colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX, out greyPointY);
-        // Debug.Log("OnEnable being invoked");
         
     }
 
@@ -67,7 +78,7 @@ public class ColorGamutEditor : Editor
         xValues = colorGamut.initialiseXCoordsInRange(colorGamut.CurveValueLutDim,
             colorGamut.MaxRadiometricValue);
 
-        debugPoints = new List<Vector3>();
+        debugPoints.Clear();
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
             new List<Vector2>(controlPoints));
 
@@ -114,6 +125,10 @@ public class ColorGamutEditor : Editor
     {
         if (Application.isPlaying)
         {
+            if (debugPoints == null || debugPoints.Count == 0)
+                _curveGuiDataState = CurveGuiDataState.NotCalculated;
+
+            
             colorGamut = (ColorGamut) target;
             controlPoints = colorGamut.getControlPoints();
             Vector2 p0 = controlPoints[0];
@@ -132,22 +147,16 @@ public class ColorGamutEditor : Editor
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f));  // Draw Y axis
             Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
             Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f), 4.0f);  // Draw Y = 1 line
-
-            if (GUI.changed || debugPoints == null || debugPoints.Count == 0)
+        
+            
+            if (_curveGuiDataState == CurveGuiDataState.MustRecalculate || _curveGuiDataState == CurveGuiDataState.NotCalculated)
             {
                 Debug.Log("OnSceneGUI has changed, recalculate");
                 recalculateCurveParameters();
+                _curveGuiDataState = CurveGuiDataState.Calculated;
             }
-
-            if (debugPoints != null && debugPoints.Count > 0)
-            {
-                Handles.DrawPolyLine(debugPoints.ToArray());
-            }
-            else
-            {
-                Debug.LogError("DebugPoints is null or has no data");
-            }
-
+            
+            Handles.DrawPolyLine(debugPoints.ToArray());
             Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
             Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
             Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
@@ -192,6 +201,11 @@ public class ColorGamutEditor : Editor
         greyPointX    = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
         greyPointY    = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
        
+        if (GUI.changed)
+        {
+            _curveGuiDataState = CurveGuiDataState.MustRecalculate;
+        }
+        
         // Only write back values once we are in Play mode
         if (Application.isPlaying)
         {
@@ -199,20 +213,14 @@ public class ColorGamutEditor : Editor
             colorGamut.setShowSweep(showSweep);
             colorGamut.setBleaching(enableBleaching);
             colorGamut.setIsMultiThreaded(isMultiThreaded);
-            // TODO: refactor
-            if (GUI.changed)
-            {
-                colorGamut.OnGuiChanged(true);
-                Debug.Log("GUI Changes");
-                recalculateCurveParameters();
-            }
-            else
-            {
-                colorGamut.OnGuiChanged(false);
-            }   
-            colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
-
             colorGamut.setEnableOldGamutMap(enableOldGamutMap);
+
+            if(_curveGuiDataState == CurveGuiDataState.MustRecalculate || _curveGuiDataState == CurveGuiDataState.NotCalculated)
+            {
+                Debug.Log("OnInspectorGUI() - GUI Changed");
+                colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
+                _curveGuiDataState = CurveGuiDataState.Calculated;
+            }
         }
 
         base.serializedObject.ApplyModifiedProperties();
