@@ -238,7 +238,7 @@
             Vector2 p1 = controlPointsArray[1 + i];
             Vector2 p2 = controlPointsArray[2 + i];
 
-            if (p0.x <= inputYCoord && inputYCoord <= p2.x)
+            if (p0.y <= inputYCoord && inputYCoord <= p2.y)
             {
                 // Search closest x value to xValue and grab its index in the array too
                 // The array index is used to lookup the tValue
@@ -246,9 +246,9 @@
                 ClosestTo(YCoords, inputYCoord, out idx);
                 float tValue = tValues[idx];
 
-                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-                             (2.0f * (1.0f - tValue) * tValue * p1.y) +
-                             (Mathf.Pow(tValue, 2.0f) * p2.y);
+                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.x) +
+                             (2.0f * (1.0f - tValue) * tValue * p1.x) +
+                             (Mathf.Pow(tValue, 2.0f) * p2.x);
             }
         }
 

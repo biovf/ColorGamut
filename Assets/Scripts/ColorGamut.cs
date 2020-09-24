@@ -34,7 +34,8 @@ public class ColorGamut : MonoBehaviour
    
     private float exposure;
 
-    // [Range(0.01f, 20.0f)] public float sweepExposure;
+    // [Range(0.01f, 20.0f)]
+    // public float sweepExposure;
     private TransferFunction activeTransferFunction;
     
     private Texture2D inputTexture;
@@ -223,8 +224,8 @@ public class ColorGamut : MonoBehaviour
         int hdriPixelArrayLen = 0;
 
         float hdriMaxRGBChannel = 0.0f;
-        float maxDynamicRange = 0.0f;
-        float bleachStartPoint = 0.0f;
+        // float maxDynamicRange = 0.0f;
+        float bleachingXCoord = 0.0f;
         float bleachingRange = 0.0f;
         float bleachingRatio = 0.0f;
         float hdriYMaxValue = 0.0f;
@@ -337,20 +338,22 @@ public class ColorGamut : MonoBehaviour
                         // Transfer function
                         if (activeTransferFunction == TransferFunction.Max_RGB)
                         {
-                            // TODO: FIX ME - needs to calculate where the curve intersects Y = 1
-                            bleachStartPoint = 1.0f; //TimeFromValue(animationCurve, 1.0f); // Intersect of x on Y = 1
-
+                            bleachingXCoord = 0.0f; // Intersect of x on Y = 1
+                            
                             if (isBleachingActive)
                             {
-                                if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.g > bleachStartPoint ||
-                                    hdriPixelColor.b > bleachStartPoint)
+                                // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
+                                bleachingXCoord = parametricCurve.getXCoordinate(1.0f, yValues, tValues, new List<Vector2>(controlPoints));
+                                
+                                if (hdriPixelColor.r > bleachingXCoord || hdriPixelColor.g > bleachingXCoord ||
+                                    hdriPixelColor.b > bleachingXCoord)
                                 {
-                                    bleachingRange = maxDynamicRange - bleachStartPoint;
-                                    bleachingRatio = (hdriPixelColor.maxColorComponent - bleachStartPoint) /
+                                    bleachingRange = maxRadiometricValue - bleachingXCoord;
+                                    bleachingRatio = (hdriPixelColor.maxColorComponent - bleachingXCoord) /
                                                      bleachingRange;
 
                                     hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
-                                    maxDynamicRangeVec.Set(maxDynamicRange, maxDynamicRange, maxDynamicRange);
+                                    maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
                                     hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
                                         bleachingRatio);
 
@@ -586,6 +589,7 @@ public class ColorGamut : MonoBehaviour
     public void setBleaching(bool inIsBleachingActive) 
     {
         isBleachingActive = inIsBleachingActive;
+        ChangeCurveDataState(CurveDataState.MustRecalculate);
     }
 
     public void setExposure(float exposure)

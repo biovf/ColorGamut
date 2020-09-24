@@ -88,37 +88,36 @@ public class ColorGamutEditor : Editor
         }
     }
 
-    //private float calculateXCoord() 
-    //{
-    //    if (colorGamut == null)
-    //        return -100.0f;
-
-    //    CurveTest parametricCurve = colorGamut.getParametricCurve();
-    //    List<Vector2> cps = new List<Vector2>() { controlPoints[4], controlPoints[5], controlPoints[6] };
-    //    //return parametricCurve.getXCoordinate(1.0f, colorGamut.getYValues(), colorGamut.getTValues(), cps);
-
-    //    //for (int i = 0; i < cps.Count - 1; i += 3)
-    //    {
-    //        Vector2 p0 = cps[0];
-    //        Vector2 p1 = cps[1];
-    //        Vector2 p2 = cps[2];
-
-    //        if (p0.x <= 1.0f && 1.0f <= p2.x)
-    //        {
-    //            // Search closest x value to xValue and grab its index in the array too
-    //            // The array index is used to lookup the tValue
-    //            int idx = 0;
-    //            CurveTest.ClosestTo(colorGamut.getYValues(), 1.0f, out idx);
-    //            float tValue = colorGamut.getTValues()[idx];
-
-    //            return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-    //                         (2.0f * (1.0f - tValue) * tValue * p1.y) +
-    //                         (Mathf.Pow(tValue, 2.0f) * p2.y);
-    //        }
-    //    }
-    //    return -100.0f;
-
-    //}
+    // private float calculateXCoord() 
+    // {
+    //     if (colorGamut == null)
+    //         return -100.0f;
+    //
+    //     CurveTest parametricCurve = colorGamut.getParametricCurve();
+    //     // List<Vector2> cps = new List<Vector2>() { controlPoints[4], controlPoints[5], controlPoints[6] };
+    //     return parametricCurve.getXCoordinate(1.0f, colorGamut.getYValues(), colorGamut.getTValues(), new List<Vector2>(controlPoints));
+    //
+    //     //for (int i = 0; i < cps.Count - 1; i += 3)
+    //     // {
+    //     //     Vector2 p0 = cps[0];
+    //     //     Vector2 p1 = cps[1];
+    //     //     Vector2 p2 = cps[2];
+    //     //
+    //     //     if (p0.x <= 1.0f && 1.0f <= p2.x)
+    //     //     {
+    //     //         // Search closest x value to xValue and grab its index in the array too
+    //     //         // The array index is used to lookup the tValue
+    //     //         int idx = 0;
+    //     //         CurveTest.ClosestTo(colorGamut.getYValues(), 1.0f, out idx);
+    //     //         float tValue = colorGamut.getTValues()[idx];
+    //     //
+    //     //         return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+    //     //                      (2.0f * (1.0f - tValue) * tValue * p1.y) +
+    //     //                      (Mathf.Pow(tValue, 2.0f) * p2.y);
+    //     //     }
+    //     // }
+    //     // return -100.0f;
+    // }
 
     float XValue = -1000.0f;
     void OnSceneGUI()
@@ -139,9 +138,9 @@ public class ColorGamutEditor : Editor
             Vector2 p5 = controlPoints[5];
             Vector2 p6 = controlPoints[6];
 
-            ////if(XValue < - 100.0f)
-            //    XValue = calculateXCoord();
-            //Handles.DrawWireCube(new Vector3(XValue, 1.0f), cubeWidgetSize);
+            // if(XValue < - 100.0f)
+            //     XValue = calculateXCoord();
+            // Handles.DrawWireCube(new Vector3(XValue, 1.0f), cubeWidgetSize * 2.0f);
 
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(12.0f, 0.0f)); // Draw X Axis
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f));  // Draw Y axis
@@ -211,16 +210,16 @@ public class ColorGamutEditor : Editor
         // Only write back values once we are in Play mode
         if (Application.isPlaying)
         {
-            colorGamut.setHDRIIndex(hdriIndex);
-            colorGamut.setShowSweep(showSweep);
-            colorGamut.setBleaching(enableBleaching);
-            colorGamut.setIsMultiThreaded(isMultiThreaded);
-            colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
-            colorGamut.setExposure(exposure);
-            colorGamut.setActiveTransferFunction(activeTransferFunction);
-            
             if(_curveGuiDataState == CurveGuiDataState.MustRecalculate || _curveGuiDataState == CurveGuiDataState.NotCalculated)
             {
+                colorGamut.setHDRIIndex(hdriIndex);
+                colorGamut.setShowSweep(showSweep);
+                colorGamut.setBleaching(enableBleaching);
+                colorGamut.setIsMultiThreaded(isMultiThreaded);
+                colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
+                colorGamut.setExposure(exposure);
+                colorGamut.setActiveTransferFunction(activeTransferFunction);
+                
                 Debug.Log("OnInspectorGUI() - GUI Changed");
                 colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
                 _curveGuiDataState = CurveGuiDataState.Calculated;
