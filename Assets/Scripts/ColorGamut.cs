@@ -26,7 +26,7 @@ public class ColorGamut : MonoBehaviour
     public GameObject sweepPlane;
     public Texture2D sweepTexture;
     public List<Texture2D> HDRIList;
-    
+
     // [Range(0.01f, 20.0f)]
     // public float sweepExposure;
     private TransferFunction activeTransferFunction;
@@ -56,15 +56,15 @@ public class ColorGamut : MonoBehaviour
     private Color[] hdriPixelArray;
     private Vector2[] animationCurveLUT;
     private string logOutput = "";
-    
+
     // Parametric curve variables
- 
+
     private float slope;
     private Vector2 origin;
     private CurveTest parametricCurve = null;
     private Vector2[] controlPoints;
     private List<float> tValues;
-    
+
     public float SlopeMax => slopeMax;
     private float slopeMax;
 
@@ -77,7 +77,7 @@ public class ColorGamut : MonoBehaviour
     private float maxRadiometricValue;
     private float maxDisplayValue;
     private float minDisplayValue;
-    
+
     private Vector2 greyPoint;
     private List<float> xValues;
     private List<float> yValues;
@@ -91,6 +91,7 @@ public class ColorGamut : MonoBehaviour
         BelowGamut,
         AboveGamut
     };
+
     private ColorRange colorRange;
 
     private enum CurveDataState
@@ -102,6 +103,7 @@ public class ColorGamut : MonoBehaviour
 
     private CurveDataState curveDataState = CurveDataState.NotCalculated;
     private Camera mainCamera;
+
     private void Awake()
     {
         activeTransferFunction = TransferFunction.Max_RGB;
@@ -114,9 +116,9 @@ public class ColorGamut : MonoBehaviour
         // sweepExposure = 1.0f;
 
         isBleachingActive = true;
-        isSweepActive     = false;
-        onGuiChanged      = true;
-        
+        isSweepActive = false;
+        onGuiChanged = true;
+
         // Parametric curve
         slope = 2.2f;
         slopeMin = 1.02f;
@@ -125,7 +127,7 @@ public class ColorGamut : MonoBehaviour
         minDisplayValue = 0.0f;
         greyPoint = new Vector2(0.18f, 0.18f);
         minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
-        maxRadiometricValue = Mathf.Pow(2.0f,  6.0f) * greyPoint.x;
+        maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
         origin = new Vector2(minRadiometricValue, 0.00001f);
         curveValueLutDim = 4096;
         createParametricCurve(greyPoint, origin);
@@ -133,16 +135,17 @@ public class ColorGamut : MonoBehaviour
         if (HDRIList == null)
             Debug.LogError("HDRIs list is empty");
 
-        inputTexture  = HDRIList[hdriIndex];
-        
-        hdriPixelArray          = new Color[inputTexture.width * inputTexture.height];
-        hdriTextureTransformed  = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
-        textureToSave           = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
+        inputTexture = HDRIList[hdriIndex];
+
+        hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
+        hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
+        textureToSave = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
         sweepTextureTransformed = new Texture2D(sweepTexture.width, sweepTexture.height);
-        screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
+        screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
+            RenderTextureReadWrite.Linear);
         screenGrab.Create();
         mainCamera = this.gameObject.GetComponent<Camera>();
-        
+
         if (Application.isPlaying)
         {
             StartCoroutine("CpuGGMIterative");
@@ -151,34 +154,24 @@ public class ColorGamut : MonoBehaviour
 
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
-        if(parametricCurve == null) 
+        if (parametricCurve == null)
             parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
         controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
-        
+
         xValues = initialiseXCoordsInRange(curveValueLutDim, Mathf.Round(maxRadiometricValue));
         // tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
-
     }
 
-    // private void updateParametricCurve(Vector2 greyPoint, Vector2 origin)
-    // {
-    //     if(parametricCurve == null)
-    //         parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
-    //     
-    //     tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
-    //
-    // }
-    
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
         {
-            int xCoord = (int)Input.mousePosition.x;
-            int yCoord = (int)Input.mousePosition.y;
-            Color initialHDRIColor  = inputTexture.GetPixel(xCoord, yCoord);
-            Color finalHDRIColor    = hdriTextureTransformed.GetPixel(xCoord, yCoord);
+            int xCoord = (int) Input.mousePosition.x;
+            int yCoord = (int) Input.mousePosition.y;
+            Color initialHDRIColor = inputTexture.GetPixel(xCoord, yCoord);
+            Color finalHDRIColor = hdriTextureTransformed.GetPixel(xCoord, yCoord);
 
             Debug.Log("Inital \tEXR color: " + initialHDRIColor.ToString());
             Debug.Log("Exposed\tEXR color: " + (initialHDRIColor * exposure).ToString());
@@ -189,12 +182,9 @@ public class ColorGamut : MonoBehaviour
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        // if (curveDataState == CurveDataState.NotCalculated || curveDataState == CurveDataState.MustRecalculate)
-        {
-            Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
-            colorGamutMat.SetTexture("_MainTex", screenGrab);
-            Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
-        }
+        Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
+        colorGamutMat.SetTexture("_MainTex", screenGrab);
+        Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
     }
 
 
@@ -210,7 +200,7 @@ public class ColorGamut : MonoBehaviour
         float bleachingRatio = 0.0f;
         float hdriYMaxValue = 0.0f;
         float inverseSrgbEOTF = (1.0f / 2.2f);
-        
+
         Color ratio = Color.black;
         Color hdriPixelColor = Color.black;
 
@@ -245,6 +235,9 @@ public class ColorGamut : MonoBehaviour
                     NativeArray<float> xVals = new NativeArray<float>(xValues.Count, Allocator.TempJob);
                     xVals.CopyFrom(xValues.ToArray());
                     job.xValues = xVals;
+                    NativeArray<float> yVals = new NativeArray<float>(yValues.Count, Allocator.TempJob);
+                    yVals.CopyFrom(yValues.ToArray());
+                    job.yValues = yVals;
                     // parametric curve
                     NativeArray<float> tVals = new NativeArray<float>(tValues.Count, Allocator.TempJob);
                     tVals.CopyFrom(tValues.ToArray());
@@ -252,42 +245,46 @@ public class ColorGamut : MonoBehaviour
                     NativeArray<Vector2> controlPts = new NativeArray<Vector2>(controlPoints.Length, Allocator.TempJob);
                     controlPts.CopyFrom(controlPoints);
                     job.controlPoints = controlPts;
-                    
+
                     job.exposure = exposure;
                     job.isBleachingActive = isBleachingActive;
+                    job.showPixelsOutOfGamut = showPixelsOutOfGamut;
                     job.lutLength = lutLength;
                     job.yIndexIntersect = yIndexIntersect;
                     job.minRadiometricValue = minRadiometricValue;
-                    
+                    job.maxRadiometricValue = maxRadiometricValue;
+
                     JobHandle handle = job.Schedule(hdriPixelArrayLen, 1);
                     handle.Complete();
-                    
+
                     // Finished processing image, write values back
                     for (int i = 0; i < hdriPixelArrayLen; i++)
                     {
                         hdriPixelArray[i] = pixels[i];
                     }
+
                     hdriTextureTransformed.SetPixels(hdriPixelArray);
                     hdriTextureTransformed.Apply();
                     // Cleanup arrays
                     pixels.Dispose();
                     xVals.Dispose();
                     tVals.Dispose();
+                    yVals.Dispose();
                     controlPts.Dispose();
-                    
+
                     // ChangeCurveDataState(CurveDataState.Calculated);
-                    
+
                     yield return new WaitForEndOfFrame();
                 }
                 else
                 {
                     if (tValues == null)
                         yield return new WaitForEndOfFrame();
-                    
+
                     xCoordsArray = xValues.ToArray();
                     yCoordsArray = yValues.ToArray();
                     tValuesArray = tValues.ToArray();
-                    
+
                     counter = maxIterationsPerFrame;
                     for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
                     {
@@ -328,12 +325,13 @@ public class ColorGamut : MonoBehaviour
                         if (activeTransferFunction == TransferFunction.Max_RGB)
                         {
                             bleachingXCoord = 0.0f; // Intersect of x on Y = 1
-                            
+
                             if (isBleachingActive)
                             {
                                 // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
                                 // bleachingXCoord = parametricCurve.getXCoordinate(1.0f, yValues, tValues, new List<Vector2>(controlPoints));
-                                bleachingXCoord = parametricCurve.getXCoordinate(1.0f, yCoordsArray, tValuesArray, controlPoints);
+                                bleachingXCoord =
+                                    parametricCurve.getXCoordinate(1.0f, yCoordsArray, tValuesArray, controlPoints);
 
                                 if (hdriPixelColor.r > bleachingXCoord || hdriPixelColor.g > bleachingXCoord ||
                                     hdriPixelColor.b > bleachingXCoord)
@@ -343,7 +341,7 @@ public class ColorGamut : MonoBehaviour
                                                      bleachingRange;
 
                                     hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
-                                    maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
+                                    maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,maxRadiometricValue);
                                     hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
                                         bleachingRatio);
 
@@ -361,17 +359,17 @@ public class ColorGamut : MonoBehaviour
                             // Get Y value from curve using the array version 
                             float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, tValuesArray,
                                 controlPoints);
-                            
+
                             hdriYMaxValue = Mathf.Min(yValue, 1.0f);
                             hdriPixelColor = hdriYMaxValue * ratio;
-                            
+
                             if (showPixelsOutOfGamut)
                             {
                                 if (yValue < 0.0f || hdriMaxRGBChannel < minRadiometricValue) // Below Gamut
                                 {
                                     hdriPixelColor = Color.red;
                                 }
-                                else if (yValue > 1.0f)                                       // Above gamut
+                                else if (yValue > 1.0f) // Above gamut
                                 {
                                     hdriPixelColor = Color.green;
                                 }
@@ -386,7 +384,7 @@ public class ColorGamut : MonoBehaviour
                         else
                         {
                             activeTransferFunction = TransferFunction.Per_Channel;
-                            
+
                             hdriPixelColor.r = evaluateSingleColorChannel(hdriPixelColor.r, xCoordsArray, tValuesArray);
                             hdriPixelColor.g = evaluateSingleColorChannel(hdriPixelColor.g, xCoordsArray, tValuesArray);
                             hdriPixelColor.b = evaluateSingleColorChannel(hdriPixelColor.b, xCoordsArray, tValuesArray);
@@ -415,7 +413,6 @@ public class ColorGamut : MonoBehaviour
                         hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
                         hdriPixelArray[i].a = 1.0f;
                         //sweepPixelArray[i] = new Color(Mathf.Pow(sweepPixelColor.r, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.g, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.b, 1.0f / 2.2f), 1.0f);
-
                     }
 
                     hdriTextureTransformed.SetPixels(hdriPixelArray);
@@ -427,7 +424,7 @@ public class ColorGamut : MonoBehaviour
                 //sweepTextureTransformed.Apply();
             }
             else
-            { 
+            {
                 yield return new WaitForEndOfFrame();
             }
         }
@@ -489,7 +486,7 @@ public class ColorGamut : MonoBehaviour
         greyPointY = greyPoint.y;
     }
 
-    public void setParametricCurveValues( float inSlope, float originPointX, float originPointY, 
+    public void setParametricCurveValues(float inSlope, float originPointX, float originPointY,
         float greyPointX, float greyPointY)
     {
         this.slope = inSlope;
@@ -500,15 +497,14 @@ public class ColorGamut : MonoBehaviour
 
         ChangeCurveDataState(CurveDataState.MustRecalculate);
         createParametricCurve(greyPoint, origin);
-        // updateParametricCurve(greyPoint, origin);
     }
-    
+
     public bool getShowSweep()
     {
         return isSweepActive;
     }
 
-    public void setShowSweep(bool isActive) 
+    public void setShowSweep(bool isActive)
     {
         isSweepActive = isActive;
         sweepPlane.SetActive(isSweepActive);
@@ -554,7 +550,7 @@ public class ColorGamut : MonoBehaviour
 
             createParametricCurve(greyPoint, origin);
         }
-        
+
         return controlPoints;
     }
 
@@ -562,7 +558,7 @@ public class ColorGamut : MonoBehaviour
     {
         return tValues;
     }
-    
+
     public List<float> getYValues()
     {
         return yValues;
@@ -581,7 +577,8 @@ public class ColorGamut : MonoBehaviour
         hdriIndex = index;
         ChangeCurveDataState(CurveDataState.MustRecalculate);
     }
-    public void setBleaching(bool inIsBleachingActive) 
+
+    public void setBleaching(bool inIsBleachingActive)
     {
         isBleachingActive = inIsBleachingActive;
         ChangeCurveDataState(CurveDataState.MustRecalculate);
@@ -615,7 +612,7 @@ public class ColorGamut : MonoBehaviour
         RenderTexture.active = currentActiveRT;
         return tex;
     }
-    
+
     float remap(float value, float min0, float max0, float min1, float max1)
     {
         return min1 + (value - min0) * ((max1 - min1) / (max0 - min0));
@@ -629,7 +626,9 @@ public class ColorGamut : MonoBehaviour
         Color outColor = new Color();
         if (channel == 0.0) // 0.0 corresponds to red
         {
-            float newRangeMin = remap(Mathf.Clamp01(col.r), 1.0f, 0.85f, 1.0f, 0.0f); // how far between 0.85 and 1 are we? Remap it to 1.0 to 0.0
+            float newRangeMin =
+                remap(Mathf.Clamp01(col.r), 1.0f, 0.85f, 1.0f,
+                    0.0f); // how far between 0.85 and 1 are we? Remap it to 1.0 to 0.0
 
             green = (col.r != col.g) ? Mathf.Lerp(green, col.r, newRangeMin) : col.g;
             blue = (col.r != col.b) ? Mathf.Lerp(blue, col.r, newRangeMin) : col.b;
@@ -638,7 +637,9 @@ public class ColorGamut : MonoBehaviour
         }
         else if (channel == 1.0) // 1.0 corresponds to green
         {
-            float newRangeMin = remap(Mathf.Clamp01(col.g), 1.0f, 0.85f, 1.0f, 0.0f); // how far between 0.85 and 1 are we? Remap it to 1.0 to 0.0
+            float newRangeMin =
+                remap(Mathf.Clamp01(col.g), 1.0f, 0.85f, 1.0f,
+                    0.0f); // how far between 0.85 and 1 are we? Remap it to 1.0 to 0.0
 
             red = (col.g != col.r) ? Mathf.Lerp(red, col.g, newRangeMin) : col.r;
             blue = (col.g != col.b) ? Mathf.Lerp(blue, col.g, newRangeMin) : col.b;
@@ -647,7 +648,9 @@ public class ColorGamut : MonoBehaviour
         }
         else if (channel == 2.0) // 2.0 corresponds to blue
         {
-            float newRangeMin = remap(Mathf.Clamp01(col.b), 1.0f, 0.85f, 1.0f, 0.0f); // how far between 0.85 and 1 are we? Remap it to 1.0 to 0.0
+            float newRangeMin =
+                remap(Mathf.Clamp01(col.b), 1.0f, 0.85f, 1.0f,
+                    0.0f); // how far between 0.85 and 1 are we? Remap it to 1.0 to 0.0
 
             red = (col.b != col.r) ? Mathf.Lerp(red, col.b, newRangeMin) : col.r;
             green = (col.b != col.g) ? Mathf.Lerp(green, col.b, newRangeMin) : col.g;
@@ -656,10 +659,9 @@ public class ColorGamut : MonoBehaviour
 
         return new Color(Mathf.Clamp01(outColor.r), Mathf.Clamp01(outColor.g), Mathf.Clamp01(outColor.b));
     }
-    
- 
 
-    bool all(bool[] x)       // bvec can be bvec2, bvec3 or bvec4
+
+    bool all(bool[] x) // bvec can be bvec2, bvec3 or bvec4
     {
         bool result = true;
         int i;
@@ -667,17 +669,20 @@ public class ColorGamut : MonoBehaviour
         {
             result &= x[i];
         }
+
         return result;
     }
 
     bool any(bool[] x)
-    {     // bvec can be bvec2, bvec3 or bvec4
+    {
+        // bvec can be bvec2, bvec3 or bvec4
         bool result = false;
         int i;
         for (i = 0; i < x.Length; ++i)
         {
             result |= x[i];
         }
+
         return result;
     }
 
@@ -695,14 +700,13 @@ public class ColorGamut : MonoBehaviour
 
     bool[] greaterThan(Vector3 vecA, Vector3 vecB)
     {
-        return new bool[3] { (vecA.x > vecB.x), (vecA.x > vecB.x), (vecA.x > vecB.x) };
+        return new bool[3] {(vecA.x > vecB.x), (vecA.x > vecB.x), (vecA.x > vecB.x)};
     }
 
     bool[] lessThanEqual(Vector3 vecA, Vector3 vecB)
     {
-        return new bool[3] { (vecA.x <= vecB.x), (vecA.x <= vecB.x), (vecA.x <= vecB.x) };
+        return new bool[3] {(vecA.x <= vecB.x), (vecA.x <= vecB.x), (vecA.x <= vecB.x)};
     }
-    
 }
 
 struct GamutMapJob : IJobParallelFor
@@ -710,15 +714,19 @@ struct GamutMapJob : IJobParallelFor
     public NativeArray<Color> hdriPixelArray;
     [ReadOnly] public NativeArray<float> tValues;
     [ReadOnly] public NativeArray<float> xValues;
+    [ReadOnly] public NativeArray<float> yValues;
     [ReadOnly] public NativeArray<Vector2> controlPoints;
-    
+
     [ReadOnly] public float exposure;
     [ReadOnly] public Vector2 finalKeyframe;
     [ReadOnly] public bool isBleachingActive;
+    [ReadOnly] public bool showPixelsOutOfGamut;
+
     [ReadOnly] public int lutLength;
     [ReadOnly] public int yIndexIntersect;
     [ReadOnly] public float minRadiometricValue;
-    
+    [ReadOnly] public float maxRadiometricValue;
+
     private float hdriMaxRGBChannel;
     private float maxDynamicRange;
     private float bleachStartPoint;
@@ -733,21 +741,25 @@ struct GamutMapJob : IJobParallelFor
 
     private Vector3 hdriPixelColorVec;
     private Vector3 maxDynamicRangeVec;
+
     private enum ColorRange
     {
         InGamut,
         BelowGamut,
         AboveGamut
     };
+
     private ColorRange colorRange;
-    
+
     public float calcYfromXQuadratic(float xValue, NativeArray<float> tValues, NativeArray<Vector2> controlPoints)
     {
         float yValues = 0.0f;
-        Vector2[] controlPointsArray = new Vector2[]{ 
+        Vector2[] controlPointsArray = new Vector2[]
+        {
             controlPoints[0], controlPoints[1], controlPoints[2],
             controlPoints[2], controlPoints[3], controlPoints[4],
-            controlPoints[4], controlPoints[5], controlPoints[6]};
+            controlPoints[4], controlPoints[5], controlPoints[6]
+        };
 
         for (int index = 0; index < tValues.Length; index++)
         {
@@ -763,35 +775,84 @@ struct GamutMapJob : IJobParallelFor
                     yValues = (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
                               (2.0f * (1.0f - tValue) * tValue * p1.y) +
                               (Mathf.Pow(tValue, 2.0f) * p2.y);
-                
+
                     return yValues;
                 }
             }
         }
+
         return yValues;
     }
-      
+
     public static float ClosestTo(NativeArray<float> list, float target, out int index)
     {
-        var closest = float.MaxValue;
-        var minDifference = float.MaxValue;
-        var outIndex = 0;
-        for (int i = 0; i < list.Length; i++)
+        float closest = float.MaxValue;
+        float minDifference = float.MaxValue;
+        float prevDifference = float.MaxValue;
+        int outIndex = 0;
+        int listSize = list.Length;
+        for (int i = 0; i < listSize; i++)
         {
-            var difference = Math.Abs((float)list[i] - target);
+            float difference = Mathf.Abs((float) list[i] - target);
+
+            // Early exit
+            if (prevDifference < difference)
+                break;
+
             if (minDifference > difference)
             {
-                minDifference = (float)difference;
+                minDifference = difference;
                 closest = list[i];
                 outIndex = i;
             }
+
+            prevDifference = difference;
         }
 
         index = outIndex;
         return closest;
     }
 
-    public float getYCoordinate(float inputXCoord, NativeArray<float> xCoords, 
+    public float getXCoordinate(float inputYCoord, NativeArray<float> YCoords, NativeArray<float> tValues, 
+        NativeArray<Vector2> controlPoints)
+    {
+        if (YCoords.Length <= 0 || tValues.Length <= 0)
+        {
+            Debug.Log("Input array of y values or t values are invalid ");
+            return -1.0f;
+        }
+
+        Vector2[] controlPointsArray = new Vector2[]
+        {
+            controlPoints[0], controlPoints[1], controlPoints[2],
+            controlPoints[2], controlPoints[3], controlPoints[4],
+            controlPoints[4], controlPoints[5], controlPoints[6]
+        };
+
+        for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
+        {
+            Vector2 p0 = controlPointsArray[0 + i];
+            Vector2 p1 = controlPointsArray[1 + i];
+            Vector2 p2 = controlPointsArray[2 + i];
+
+            if (p0.y <= inputYCoord && inputYCoord <= p2.y)
+            {
+                // Search closest x value to xValue and grab its index in the array too
+                // The array index is used to lookup the tValue
+                int idx = 0;
+                ClosestTo(YCoords, inputYCoord, out idx);
+                float tValue = tValues[idx];
+
+                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.x) +
+                       (2.0f * (1.0f - tValue) * tValue * p1.x) +
+                       (Mathf.Pow(tValue, 2.0f) * p2.x);
+            }
+        }
+
+        return -1.0f;
+    }
+    
+    public float getYCoordinate(float inputXCoord, NativeArray<float> xCoords,
         NativeArray<float> tValues, NativeArray<Vector2> controlPoints)
     {
         if (xCoords.Length <= 0 || tValues.Length <= 0)
@@ -800,12 +861,14 @@ struct GamutMapJob : IJobParallelFor
             return -1.0f;
         }
 
-        Vector2[] controlPointsArray = new Vector2[]{ 
+        Vector2[] controlPointsArray = new Vector2[]
+        {
             controlPoints[0], controlPoints[1], controlPoints[2],
             controlPoints[2], controlPoints[3], controlPoints[4],
-            controlPoints[4], controlPoints[5], controlPoints[6]};
+            controlPoints[4], controlPoints[5], controlPoints[6]
+        };
 
-        for (int i = 0; i < controlPointsArray.Length - 1 ; i += 3)
+        for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
         {
             Vector2 p0 = controlPointsArray[0 + i];
             Vector2 p1 = controlPointsArray[1 + i];
@@ -813,8 +876,8 @@ struct GamutMapJob : IJobParallelFor
 
             if (p0.x <= inputXCoord && inputXCoord <= p2.x)
             {
-// Search closest x value to xValue and grab its index in the array too
-// The array index is used to lookup the tValue
+                // Search closest x value to xValue and grab its index in the array too
+                // The array index is used to lookup the tValue
                 int idx = 0;
                 ClosestTo(xCoords, inputXCoord, out idx);
                 float tValue = tValues[idx];
@@ -827,84 +890,71 @@ struct GamutMapJob : IJobParallelFor
 
         return -1.0f;
     }
+
     public void Execute(int index)
     {
         hdriPixelColor = hdriPixelArray[index] * exposure;
         ratio = Color.black;
         inverseSrgbEOTF = 1.0f / 2.2f;
         colorRange = ColorRange.InGamut;
-   
-            
+
         // Calculate Pixel max color and ratio
-        hdriMaxRGBChannel = hdriPixelColor.maxColorComponent; 
+        hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
         ratio = hdriPixelColor / hdriMaxRGBChannel;
-        
+
         maxDynamicRange = maxDynamicRange; // The x axis max value on the curve
-        // TODO: FIX ME - needs to calculate where the curve intersects Y = 1
         bleachStartPoint = 1.0f;
 
         if (isBleachingActive)
         {
-            if (hdriPixelColor.r > bleachStartPoint || hdriPixelColor.g > bleachStartPoint ||
-                hdriPixelColor.b > bleachStartPoint)
+            // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
+            // bleachingXCoord = parametricCurve.getXCoordinate(1.0f, yValues, tValues, new List<Vector2>(controlPoints));
+            float bleachingXCoord =
+                getXCoordinate(1.0f, yValues, tValues, controlPoints);
+
+            if (hdriPixelColor.r > bleachingXCoord || hdriPixelColor.g > bleachingXCoord ||
+                hdriPixelColor.b > bleachingXCoord)
             {
-                bleachingRange = maxDynamicRange - bleachStartPoint;
-                bleachingRatio = (hdriPixelColor.maxColorComponent - bleachStartPoint) /
+                bleachingRange = maxRadiometricValue - bleachingXCoord;
+                bleachingRatio = (hdriPixelColor.maxColorComponent - bleachingXCoord) /
                                  bleachingRange;
 
                 hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
-                maxDynamicRangeVec.Set(maxDynamicRange, maxDynamicRange, maxDynamicRange);
-                Vector3 outputColor = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
+                maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,maxRadiometricValue);
+                hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
                     bleachingRatio);
 
-                hdriPixelColor.r = outputColor.x;
-                hdriPixelColor.g = outputColor.y;
-                hdriPixelColor.b = outputColor.z;
+                hdriPixelColor.r = hdriPixelColorVec.x;
+                hdriPixelColor.g = hdriPixelColorVec.y;
+                hdriPixelColor.b = hdriPixelColorVec.z;
 
                 ratio = hdriPixelColor / hdriMaxRGBChannel;
             }
         }
 
         // Get Y curve value
-           
         float yValue = getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
             controlPoints);
-        if (yValue < 0.0f)
+        hdriYMaxValue = Mathf.Min(yValue, 1.0f);
+        hdriPixelColor = hdriYMaxValue * ratio;
+
+        if (showPixelsOutOfGamut)
         {
-            colorRange = ColorRange.BelowGamut;
-        } else if (yValue > 1.0f)
-        {
-            colorRange = ColorRange.AboveGamut;
-        } else if (hdriMaxRGBChannel < minRadiometricValue)
-        {
-            colorRange = ColorRange.BelowGamut;
+            if (yValue < 0.0f || hdriMaxRGBChannel < minRadiometricValue) // Below Gamut
+            {
+                hdriPixelColor = Color.red;
+            }
+            else if (yValue > 1.0f) // Above gamut
+            {
+                hdriPixelColor = Color.green;
+            }
         }
 
-        if (colorRange == ColorRange.InGamut)
-        {
-            hdriYMaxValue = Mathf.Min(yValue, 1.0f);
-        }
-            
-
-        if (colorRange == ColorRange.InGamut)
-        {
-            hdriPixelColor = hdriYMaxValue * ratio;
-        } else if (colorRange == ColorRange.BelowGamut)
-        {
-            hdriPixelColor = Color.red;
-        } else if (colorRange == ColorRange.AboveGamut)
-        {
-            hdriPixelColor = Color.green;                      
-        }
-
-        colorRange = ColorRange.InGamut;
-        
         tempResult.r = Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
         tempResult.g = Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
         tempResult.b = Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
         tempResult.a = 1.0f;
-            
+
         hdriPixelArray[index] = tempResult;
-        
     }
 }
