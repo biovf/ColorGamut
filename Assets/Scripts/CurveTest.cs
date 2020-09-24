@@ -114,7 +114,7 @@
         public List<float> calcYfromXQuadratic(List<float> inXCoords, List<float> tValues, List<Vector2> controlPoints, 
                                                 List<float> preCalcXValues = null)
         {
-            if (inXCoords.Count <= 0 || tValues.Count <= 0 /*|| inXCoords.Count > tValues.Count*/)
+            if (inXCoords.Count <= 0 || tValues.Count <= 0)
             {
                 Debug.Log("Input array of x values or t values have mismatched lengths ");
                 return null;
@@ -159,17 +159,25 @@
             }
             return yValues;
         }
+        
+        // List based
         public static float ClosestTo(List<float> list, float target, out int index)
         {
             // NB Method will return int.MaxValue for a sequence containing no elements.
             // Apply any defensive coding here as necessary.
             float closest = float.MaxValue;
             float minDifference = float.MaxValue;
+            float prevDifference = float.MaxValue;
             int outIndex = 0;
             int listSize = list.Count;
             for (int i = 0; i < listSize; i++)
             {
-                float difference = Math.Abs((float)list[i] - target);
+                // float difference = Math.Abs((float)list[i] - target);
+                float difference = Mathf.Abs((float)list[i] - target);
+
+                // Early exit
+                if (prevDifference < difference)
+                    break;
                 
                 if (minDifference > difference)
                 {
@@ -177,12 +185,85 @@
                     closest = list[i];
                     outIndex = i;
                 }
+                
+                prevDifference = difference;
             }
-
+            // Debug.Log("Target: " + );
             index = outIndex;
             return closest;
         }
 
+        // Array version
+        public static float ClosestTo(float[] list, float target, out int index)
+        {
+            // NB Method will return int.MaxValue for a sequence containing no elements.
+            // Apply any defensive coding here as necessary.
+            float closest = float.MaxValue;
+            float minDifference = float.MaxValue;
+            float prevDifference = float.MaxValue;
+            int outIndex = 0;
+            int listSize = list.Length;
+            for (int i = 0; i < listSize; i++)
+            {
+                // float difference = Math.Abs((float)list[i] - target);
+                float difference = Mathf.Abs((float)list[i] - target);
+
+                // Early exit
+                if (prevDifference < difference)
+                    break;
+                
+                if (minDifference > difference)
+                {
+                    minDifference = difference;
+                    closest = list[i];
+                    outIndex = i;
+                }
+                
+                prevDifference = difference;
+            }
+            // Debug.Log("Target: " + );
+            index = outIndex;
+            return closest;
+        }
+        
+        // Array based implementation
+        public float getYCoordinate(float inputXCoord, float[] xCoords, float[] tValues, Vector2[] controlPoints)
+        {
+            if (xCoords.Length <= 0 || tValues.Length <= 0 )
+            {
+                Debug.Log("Input array of x values or t values have mismatched lengths ");
+                return -1.0f;
+            }
+
+            Vector2[] controlPointsArray = new Vector2[]{ 
+                controlPoints[0], controlPoints[1], controlPoints[2],
+                controlPoints[2], controlPoints[3], controlPoints[4],
+                controlPoints[4], controlPoints[5], controlPoints[6]};
+            
+            for (int i = 0; i < controlPointsArray.Length - 1 ; i += 3)
+            {
+                Vector2 p0 = controlPointsArray[0 + i];
+                Vector2 p1 = controlPointsArray[1 + i];
+                Vector2 p2 = controlPointsArray[2 + i];
+                
+                if (p0.x <= inputXCoord && inputXCoord <= p2.x)
+                {
+                    // Search closest x value to xValue and grab its index in the array too
+                    // The array index is used to lookup the tValue
+                    int idx = 0;
+                    ClosestTo(xCoords, inputXCoord, out idx);
+                    float tValue = tValues[idx];
+                    
+                    return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+                           (2.0f * (1.0f - tValue) * tValue * p1.y) +
+                           (Mathf.Pow(tValue, 2.0f) * p2.y);
+                }
+            }
+
+            return -1.0f;
+        }
+        
+        // List based implementation
         public float getYCoordinate(float inputXCoord, List<float> xCoords, List<float> tValues, List<Vector2> controlPoints)
         {
             if (xCoords.Count <= 0 || tValues.Count <= 0 )
@@ -219,6 +300,44 @@
             return -1.0f;
         }
 
+    // Array based
+    public float getXCoordinate(float inputYCoord, float[] YCoords, float[] tValues, Vector2[] controlPoints)
+    {
+        if (YCoords.Length <= 0 || tValues.Length <= 0 )
+        {
+            Debug.Log("Input array of y values or t values are invalid ");
+            return -1.0f;
+        }
+
+        Vector2[] controlPointsArray = new Vector2[]{
+            controlPoints[0], controlPoints[1], controlPoints[2],
+            controlPoints[2], controlPoints[3], controlPoints[4],
+            controlPoints[4], controlPoints[5], controlPoints[6]};
+
+        for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
+        {
+            Vector2 p0 = controlPointsArray[0 + i];
+            Vector2 p1 = controlPointsArray[1 + i];
+            Vector2 p2 = controlPointsArray[2 + i];
+
+            if (p0.y <= inputYCoord && inputYCoord <= p2.y)
+            {
+                // Search closest x value to xValue and grab its index in the array too
+                // The array index is used to lookup the tValue
+                int idx = 0;
+                ClosestTo(YCoords, inputYCoord, out idx);
+                float tValue = tValues[idx];
+
+                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.x) +
+                       (2.0f * (1.0f - tValue) * tValue * p1.x) +
+                       (Mathf.Pow(tValue, 2.0f) * p2.x);
+            }
+        }
+
+        return -1.0f;
+    }
+        
+     // List based   
     public float getXCoordinate(float inputYCoord, List<float> YCoords, List<float> tValues, List<Vector2> controlPoints)
     {
         if (YCoords.Count <= 0 || tValues.Count <= 0 )
@@ -255,6 +374,57 @@
         return -1.0f;
     }
 
+    // Array based
+    public List<float> calcTfromXquadratic(float[] xValues, Vector2[] controlPoints)
+        {
+            List<float> rootsLst = new List<float>();
+            if (controlPoints.Length < 3)
+            {
+                Debug.LogError("Not enough control points used as input");
+                return rootsLst;
+            }
+
+            Vector2[] controlPointsArray = new Vector2[]{ controlPoints[0], controlPoints[1], controlPoints[2],
+                                                          controlPoints[2], controlPoints[3], controlPoints[4],
+                                                          controlPoints[4], controlPoints[5], controlPoints[6]};
+
+            double[] coefficients = new double[3];
+            float tmpRoot = -1.0f;
+            for (int index = 0; index < xValues.Length; index++)
+            {
+                for (int i = 0; i < controlPointsArray.Length - 1 ; i += 3)
+                {
+                    Vector2 p0 = controlPointsArray[0 + i];
+                    Vector2 p1 = controlPointsArray[1 + i];
+                    Vector2 p2 = controlPointsArray[2 + i];
+
+                    if (p0.x <= xValues[index] && xValues[index] <= p2.x)
+                    {
+                        coefficients[0] = p0.x - xValues[index];
+                        coefficients[1] = (2.0f * p1.x) - (2.0f * p0.x);
+                        coefficients[2] = p0.x - (2.0f * p1.x) + p2.x;
+
+                        Complex[] roots = FindRoots.Polynomial(coefficients);
+                        // check if it is complex
+                        for (int idx = 0; idx < roots.Length; idx++)
+                        {
+                            if (tmpRoot < 0.0f || (roots[idx].Real >= 0.0f && roots[idx].Real <= 1.0f))
+                            {
+                                tmpRoot = (float)roots[idx].Real;
+                            }
+                        }
+                        if (tmpRoot >= 0.0 && tmpRoot <= 1.0)
+                        {
+                            rootsLst.Add(tmpRoot);
+                            tmpRoot = -1.0f;
+                            break;
+                        }
+                    } 
+                }
+            }
+            return rootsLst;
+        }
+    
     public List<float> calcTfromXquadratic(List<float> xValues, List<Vector2> controlPoints)
         {
             List<float> rootsLst = new List<float>();
@@ -352,68 +522,5 @@
         {
             return (inX1 - inX2) / (inY1 - inY2);
         }
- // public float generateYCoordinate(float xValue, List<float> tValues, List<Vector2> controlPoints)
-        // {
-        //     if ( tValues.Count <= 0)
-        //     {
-        //         Debug.LogError("T values array is empty ");
-        //         return -1.0f;
-        //     }
-        //
-        //     Vector2[] controlPointsArray = new Vector2[]{ 
-        //         controlPoints[0], controlPoints[1], controlPoints[2],
-        //         controlPoints[2], controlPoints[3], controlPoints[4],
-        //         controlPoints[4], controlPoints[5], controlPoints[6]};
-        //     
-        //     for (int i = 0; i < controlPointsArray.Length - 1 ; i += 3)
-        //     {
-        //         Vector2 p0 = controlPointsArray[0 + i];
-        //         Vector2 p1 = controlPointsArray[1 + i];
-        //         Vector2 p2 = controlPointsArray[2 + i];
-        //         
-        //         if (p0.x <= xValue && xValue <= p2.x)
-        //         {
-        //             float tValue = tValues.OrderBy(v => Math.Abs((float)v - xValue)).First();
-        //             return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-        //                          (2.0f * (1.0f - tValue) * tValue * p1.y) +
-        //                          (Mathf.Pow(tValue, 2.0f) * p2.y);
-        //         }
-        //     }
-        //     
-        //     return -1.0f;
-        // }
         
-        
-        // public float calcYfromXQuadratic(float xValue, NativeArray<float> tValues, NativeArray<Vector2> controlPoints)
-        // {
-        //     float yValues = 0.0f;
-        //     Vector2[] controlPointsArray = new Vector2[]{ 
-        //         controlPoints[0], controlPoints[1], controlPoints[2],
-        //         controlPoints[2], controlPoints[3], controlPoints[4],
-        //         controlPoints[4], controlPoints[5], controlPoints[6]};
-        //
-        //     for (int index = 0; index < tValues.Length; index++)
-        //     {
-        //         for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
-        //         {
-        //             Vector2 p0 = controlPointsArray[0 + i];
-        //             Vector2 p1 = controlPointsArray[1 + i];
-        //             Vector2 p2 = controlPointsArray[2 + i];
-        //
-        //             if (p0.x <= xValue && xValue <= p2.x)
-        //             {
-        //                 float tValue = tValues[index];
-        //                 float yVal = (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-        //                              (2.0f * (1.0f - tValue) * tValue * p1.y) +
-        //                              (Mathf.Pow(tValue, 2.0f) * p2.y);
-        //                 
-        //                 return yValues;
-        //             }
-        //         }
-        //     }
-        //     return yValues;
-        // }
-       
-
-
     }

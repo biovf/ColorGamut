@@ -27,17 +27,11 @@ public class ColorGamut : MonoBehaviour
     public Texture2D sweepTexture;
     public List<Texture2D> HDRIList;
     
-    [Header("Dye Bleaching")]
-    public bool enableDyeBleaching;
-    public float dye_bleach_x = 1.0f;
-    public float dye_bleach_y = 1.0f;
-   
-    private float exposure;
-
     // [Range(0.01f, 20.0f)]
     // public float sweepExposure;
     private TransferFunction activeTransferFunction;
-    
+    private float exposure;
+
     private Texture2D inputTexture;
 
     private bool isSweepActive;
@@ -122,7 +116,6 @@ public class ColorGamut : MonoBehaviour
         isBleachingActive = true;
         isSweepActive     = false;
         onGuiChanged      = true;
-        enableDyeBleaching = false;
         
         // Parametric curve
         slope = 2.2f;
@@ -134,23 +127,9 @@ public class ColorGamut : MonoBehaviour
         minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
         maxRadiometricValue = Mathf.Pow(2.0f,  6.0f) * greyPoint.x;
         origin = new Vector2(minRadiometricValue, 0.00001f);
-        curveValueLutDim = 1024;
+        curveValueLutDim = 4096;
         createParametricCurve(greyPoint, origin);
-        
-        /***
-         * Run Tests here
-         */
-        // List<float> xVal = new List<float>()
-        // {
-        //     0.886f, 0.896f, 1.001f, // values are mapping to 0.181, 0.181, 0.181
-        //     0.087f, 0.173f, 0.335f, // values are mapping to 0.000, 0.085, 0.181
-        //     0.040f, 0.097f, 0.207f, // values are mapping to 0.000, 0.000, 0.181
-        // };
-        //
-        // List<float> yValues = parametricCurve.calcYfromXQuadratic(xVal, tValues,
-        //     new List<Vector2>(controlPoints), xValues);
-    
-        
+
         if (HDRIList == null)
             Debug.LogError("HDRIs list is empty");
 
@@ -238,6 +217,8 @@ public class ColorGamut : MonoBehaviour
         Vector3 maxDynamicRangeVec = Vector3.zero;
         bool aboveGamut = false;
         bool belowGamut = false;
+        float[] xCoordsArray;
+        float[] tValuesArray;
 
         while (true)
         {
@@ -298,8 +279,13 @@ public class ColorGamut : MonoBehaviour
                 }
                 else
                 {
+                    if (tValues == null)
+                        yield return new WaitForEndOfFrame();
+                    
+                    xCoordsArray = xValues.ToArray();
+                    tValuesArray = tValues.ToArray();
+                    
                     counter = maxIterationsPerFrame;
-
                     for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
                     {
                         if (counter <= 0)
@@ -366,8 +352,12 @@ public class ColorGamut : MonoBehaviour
                             }
 
                             // Get Y curve value
-                            float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
-                                new List<Vector2>(controlPoints));
+                            // float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
+                            //     new List<Vector2>(controlPoints));
+                            // Get Y value from curve using the array version 
+                            float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, tValuesArray,
+                                controlPoints);
+                            
                             hdriYMaxValue = Mathf.Min(yValue, 1.0f);
                             hdriPixelColor = hdriYMaxValue * ratio;
                             
@@ -393,9 +383,9 @@ public class ColorGamut : MonoBehaviour
                         {
                             activeTransferFunction = TransferFunction.Per_Channel;
                             
-                            hdriPixelColor.r = evaluateSingleColorChannel(hdriPixelColor.r);
-                            hdriPixelColor.g = evaluateSingleColorChannel(hdriPixelColor.g);
-                            hdriPixelColor.b = evaluateSingleColorChannel(hdriPixelColor.b);
+                            hdriPixelColor.r = evaluateSingleColorChannel(hdriPixelColor.r, xCoordsArray, tValuesArray);
+                            hdriPixelColor.g = evaluateSingleColorChannel(hdriPixelColor.g, xCoordsArray, tValuesArray);
+                            hdriPixelColor.b = evaluateSingleColorChannel(hdriPixelColor.b, xCoordsArray, tValuesArray);
 
                             if (showPixelsOutOfGamut)
                             {
@@ -465,10 +455,11 @@ public class ColorGamut : MonoBehaviour
         }
     }
 
-    private float evaluateSingleColorChannel(float colorChannel)
+    private float evaluateSingleColorChannel(float colorChannel, float[] xCoordsArray, float[] tValuesArray)
     {
-        return parametricCurve.getYCoordinate(colorChannel, xValues, tValues,
-            new List<Vector2>(controlPoints));
+        return parametricCurve.getYCoordinate(colorChannel, xCoordsArray, tValuesArray, controlPoints);
+        // return parametricCurve.getYCoordinate(colorChannel, xValues, tValues,
+        //     new List<Vector2>(controlPoints));
     }
 
     // Utility methods

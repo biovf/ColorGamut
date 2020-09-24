@@ -9,7 +9,7 @@ public class ColorGamutEditor : Editor
 {
     ColorGamut colorGamut;
 
-    private float exposure = 1.0f;
+    private int exposure = 1;
     private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
         
     #region Parametric Curve Parameters
@@ -87,39 +87,7 @@ public class ColorGamutEditor : Editor
             debugPoints.Add(new Vector3(xValues[i], yValues[i]));
         }
     }
-
-    // private float calculateXCoord() 
-    // {
-    //     if (colorGamut == null)
-    //         return -100.0f;
-    //
-    //     CurveTest parametricCurve = colorGamut.getParametricCurve();
-    //     // List<Vector2> cps = new List<Vector2>() { controlPoints[4], controlPoints[5], controlPoints[6] };
-    //     return parametricCurve.getXCoordinate(1.0f, colorGamut.getYValues(), colorGamut.getTValues(), new List<Vector2>(controlPoints));
-    //
-    //     //for (int i = 0; i < cps.Count - 1; i += 3)
-    //     // {
-    //     //     Vector2 p0 = cps[0];
-    //     //     Vector2 p1 = cps[1];
-    //     //     Vector2 p2 = cps[2];
-    //     //
-    //     //     if (p0.x <= 1.0f && 1.0f <= p2.x)
-    //     //     {
-    //     //         // Search closest x value to xValue and grab its index in the array too
-    //     //         // The array index is used to lookup the tValue
-    //     //         int idx = 0;
-    //     //         CurveTest.ClosestTo(colorGamut.getYValues(), 1.0f, out idx);
-    //     //         float tValue = colorGamut.getTValues()[idx];
-    //     //
-    //     //         return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-    //     //                      (2.0f * (1.0f - tValue) * tValue * p1.y) +
-    //     //                      (Mathf.Pow(tValue, 2.0f) * p2.y);
-    //     //     }
-    //     // }
-    //     // return -100.0f;
-    // }
-
-    float XValue = -1000.0f;
+    
     void OnSceneGUI()
     {
         if (Application.isPlaying)
@@ -137,10 +105,6 @@ public class ColorGamutEditor : Editor
             Vector2 p4 = controlPoints[4];
             Vector2 p5 = controlPoints[5];
             Vector2 p6 = controlPoints[6];
-
-            // if(XValue < - 100.0f)
-            //     XValue = calculateXCoord();
-            // Handles.DrawWireCube(new Vector3(XValue, 1.0f), cubeWidgetSize * 2.0f);
 
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(12.0f, 0.0f)); // Draw X Axis
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f));  // Draw Y axis
@@ -184,7 +148,7 @@ public class ColorGamutEditor : Editor
         }
 
         activeTransferFunction = (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
-        exposure           = EditorGUILayout.Slider("Exposure",    exposure, 0.0f, 20.0f);
+        exposure           = EditorGUILayout.IntSlider("Exposure", exposure, 0, 20);
         bool showSweep     = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching    = EditorGUILayout.Toggle("Enable Bleaching",         enableBleaching);
         isMultiThreaded    = EditorGUILayout.Toggle("Enable MultiThreading",    isMultiThreaded);
@@ -217,7 +181,7 @@ public class ColorGamutEditor : Editor
                 colorGamut.setBleaching(enableBleaching);
                 colorGamut.setIsMultiThreaded(isMultiThreaded);
                 colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
-                colorGamut.setExposure(exposure);
+                colorGamut.setExposure((float)exposure);
                 colorGamut.setActiveTransferFunction(activeTransferFunction);
                 
                 Debug.Log("OnInspectorGUI() - GUI Changed");
