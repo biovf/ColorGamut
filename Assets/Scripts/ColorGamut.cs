@@ -156,7 +156,8 @@ public class ColorGamut : MonoBehaviour
         controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
         
         xValues = initialiseXCoordsInRange(curveValueLutDim, Mathf.Round(maxRadiometricValue));
-        tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+        // tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+        tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
 
     }
@@ -218,6 +219,7 @@ public class ColorGamut : MonoBehaviour
         bool aboveGamut = false;
         bool belowGamut = false;
         float[] xCoordsArray;
+        float[] yCoordsArray;
         float[] tValuesArray;
 
         while (true)
@@ -283,6 +285,7 @@ public class ColorGamut : MonoBehaviour
                         yield return new WaitForEndOfFrame();
                     
                     xCoordsArray = xValues.ToArray();
+                    yCoordsArray = yValues.ToArray();
                     tValuesArray = tValues.ToArray();
                     
                     counter = maxIterationsPerFrame;
@@ -329,8 +332,9 @@ public class ColorGamut : MonoBehaviour
                             if (isBleachingActive)
                             {
                                 // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
-                                bleachingXCoord = parametricCurve.getXCoordinate(1.0f, yValues, tValues, new List<Vector2>(controlPoints));
-                                
+                                // bleachingXCoord = parametricCurve.getXCoordinate(1.0f, yValues, tValues, new List<Vector2>(controlPoints));
+                                bleachingXCoord = parametricCurve.getXCoordinate(1.0f, yCoordsArray, tValuesArray, controlPoints);
+
                                 if (hdriPixelColor.r > bleachingXCoord || hdriPixelColor.g > bleachingXCoord ||
                                     hdriPixelColor.b > bleachingXCoord)
                                 {
