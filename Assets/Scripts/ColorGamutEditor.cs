@@ -9,7 +9,7 @@ public class ColorGamutEditor : Editor
 {
     ColorGamut colorGamut;
 
-    private int exposure = 1;
+    private float exposure = 1;
     private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
         
     #region Parametric Curve Parameters
@@ -55,9 +55,16 @@ public class ColorGamutEditor : Editor
     {
         colorGamut = (ColorGamut)target;
         hdriNames = new List<string>();
-
+        if (colorGamut.HDRIList != null)
+        {
+            HDRis = colorGamut.HDRIList;
+            for (int i = 0; i < HDRis.Count; i++)
+            {
+                hdriNames.Add(new string(HDRis[i].ToString().ToCharArray()));
+            }
+        }
         // Initialise parameters for the curve with sensible values
-        if(_curveGuiDataState == CurveGuiDataState.NotCalculated)
+        if (_curveGuiDataState == CurveGuiDataState.NotCalculated)
             colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX, out greyPointY);
     }
 
@@ -130,14 +137,7 @@ public class ColorGamutEditor : Editor
     {
         colorGamut = (ColorGamut)target;
         
-        if (colorGamut.HDRIList != null)
-        {
-            HDRis = colorGamut.HDRIList;
-            for (int i = 0; i < HDRis.Count; i++)
-            {
-                hdriNames.Add(new string(HDRis[i].ToString().ToCharArray()));
-            }
-        }
+        
         base.serializedObject.UpdateIfRequiredOrScript();
         base.serializedObject.Update();
         base.DrawDefaultInspector();
@@ -148,7 +148,7 @@ public class ColorGamutEditor : Editor
         }
 
         activeTransferFunction = (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
-        exposure           = EditorGUILayout.IntSlider("Exposure", exposure, 0, 20);
+        exposure           = EditorGUILayout.Slider("Exposure", exposure, -10.0f, 10.0f);
         bool showSweep     = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching    = EditorGUILayout.Toggle("Enable Bleaching",         enableBleaching);
         isMultiThreaded    = EditorGUILayout.Toggle("Enable MultiThreading",    isMultiThreaded);
@@ -181,7 +181,7 @@ public class ColorGamutEditor : Editor
                 colorGamut.setBleaching(enableBleaching);
                 colorGamut.setIsMultiThreaded(isMultiThreaded);
                 colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
-                colorGamut.setExposure((float)exposure);
+                colorGamut.setExposure(exposure);
                 colorGamut.setActiveTransferFunction(activeTransferFunction);
                 
                 Debug.Log("OnInspectorGUI() - GUI Changed");

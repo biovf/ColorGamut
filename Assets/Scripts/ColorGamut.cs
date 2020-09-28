@@ -129,7 +129,7 @@ public class ColorGamut : MonoBehaviour
         minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
         maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
         origin = new Vector2(minRadiometricValue, 0.00001f);
-        curveValueLutDim = 5000;
+        curveValueLutDim = 4096;
         createParametricCurve(greyPoint, origin);
 
         if (HDRIList == null)
@@ -289,6 +289,7 @@ public class ColorGamut : MonoBehaviour
                     tVals.Dispose();
                     yVals.Dispose();
                     controlPts.Dispose();
+                    Debug.Log("Multi-threaded Image Processing has finished");
 
                     // ChangeCurveDataState(CurveDataState.Calculated);
 
@@ -315,14 +316,6 @@ public class ColorGamut : MonoBehaviour
                         {
                             counter = maxIterationsPerFrame;
                             yield return new WaitForEndOfFrame();
-                        }
-
-                        if ((hdriPixelArray[i].r == 0.057f && hdriPixelArray[i].g == 0.099f &&
-                             hdriPixelArray[i].b == 0.180f) ||
-                            (hdriPixelArray[i].r == 0.136f && hdriPixelArray[i].g == 0.083f &&
-                             hdriPixelArray[i].b == 0.017f))
-                        {
-                            Debug.Log("Hit");
                         }
 
                         // Full dynamic range of image
@@ -502,7 +495,7 @@ public class ColorGamut : MonoBehaviour
         float step = maxRange / (float) dimension;
         float xCoord = 0.0f;
         
-        for (int i = 0; i < dimension; i++)
+        for (int i = 0; i < dimension - 1; ++i)
         {
             xCoord = minRadiometricValue + (i * step);
             if (xCoord < minRadiometricValue)
@@ -939,6 +932,14 @@ struct GamutMapJob : IJobParallelFor
         inverseSrgbEOTF = 1.0f / 2.2f;
         colorRange = ColorRange.InGamut;
 
+        if (hdriPixelColor.r > maxRadiometricValue || hdriPixelColor.g > maxRadiometricValue ||
+            hdriPixelColor.b > maxRadiometricValue)
+        {
+            hdriPixelColor.r = maxRadiometricValue;
+            hdriPixelColor.g = maxRadiometricValue;
+            hdriPixelColor.b = maxRadiometricValue;
+        }
+
         // Calculate Pixel max color and ratio
         hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
         ratio = hdriPixelColor / hdriMaxRGBChannel;
@@ -990,7 +991,7 @@ struct GamutMapJob : IJobParallelFor
                 hdriPixelColor = Color.green;
             }
         }
-
+    
         tempResult.r = Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
         tempResult.g = Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
         tempResult.b = Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
