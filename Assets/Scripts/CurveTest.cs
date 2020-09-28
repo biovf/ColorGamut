@@ -235,6 +235,8 @@ public class CurveTest
                 // The array index is used to lookup the tValue
                 int idx = 0;
                 ClosestTo(xCoords, inputXCoord, out idx);
+                if(idx >= tValues.Length)
+                    Debug.LogError("Index " + idx.ToString() + " is invalid");
                 float tValue = tValues[idx];
 
                 return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
@@ -471,6 +473,10 @@ public class CurveTest
                         rootsLst.Add(tmpRoot);
                         tmpRoot = -1.0f;
                         break;
+                    }
+                    else
+                    {
+                        Debug.LogError("No roots found");
                     }
                 }
             }

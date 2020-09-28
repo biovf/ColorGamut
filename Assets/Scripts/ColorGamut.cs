@@ -129,13 +129,14 @@ public class ColorGamut : MonoBehaviour
         minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
         maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
         origin = new Vector2(minRadiometricValue, 0.00001f);
-        curveValueLutDim = 4096;
+        curveValueLutDim = 5000;
         createParametricCurve(greyPoint, origin);
 
         if (HDRIList == null)
             Debug.LogError("HDRIs list is empty");
 
         inputTexture = HDRIList[hdriIndex];
+        
 
         hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
         hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
@@ -158,10 +159,17 @@ public class ColorGamut : MonoBehaviour
             parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
         controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
 
-        xValues = initialiseXCoordsInRange(curveValueLutDim, Mathf.Round(maxRadiometricValue));
+        xValues = initialiseXCoordsInRange(curveValueLutDim, /*Mathf.Round*/(maxRadiometricValue));
         // tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
+        // for (int i = 0; i < yValues.Count; i++)
+        // {
+        //     Debug.Log("xValues: " + xValues[i].ToString("F5") + 
+        //               " yValues: " + yValues[i].ToString("F5") + 
+        //               " tValues: " + tValues[i].ToString("F5"));
+        // }
+        
     }
 
     void Update()
@@ -170,12 +178,22 @@ public class ColorGamut : MonoBehaviour
         {
             int xCoord = (int) Input.mousePosition.x;
             int yCoord = (int) Input.mousePosition.y;
+            // Mouse position gives us the coordinates based on any resolution we have
+            // On the other hand our textures have a fixed resolution so we're going to have to remap the mouse coordinates
+            // into the texture width/height range
+            float normalisedXCoord = (float)xCoord / (float)Screen.width;
+            float normalisedYCoord = (float)yCoord / (float)Screen.height;
+            xCoord = (int)(normalisedXCoord * (float)inputTexture.width);
+            yCoord = (int)(normalisedYCoord * (float)inputTexture.height);
+            
             Color initialHDRIColor = inputTexture.GetPixel(xCoord, yCoord);
             Color finalHDRIColor = hdriTextureTransformed.GetPixel(xCoord, yCoord);
 
-            Debug.Log("Inital \tEXR color: " + initialHDRIColor.ToString());
-            Debug.Log("Exposed\tEXR color: " + (initialHDRIColor * exposure).ToString());
-            Debug.Log("Final  \tEXR color: " + finalHDRIColor.ToString());
+            Debug.Log("Coordinates \t \t " +
+                      "x: " + xCoord + " y: " + yCoord);
+            Debug.Log("HDRI pixel color: \t \t" + initialHDRIColor.ToString());
+            Debug.Log("HDRI pixel color * exposure: \t" + (initialHDRIColor * exposure).ToString());
+            Debug.Log("Gamut mapped Color:  \t \t" + finalHDRIColor.ToString());
             Debug.Log("--------------------------------------------------------------------------------");
         }
     }
@@ -284,6 +302,11 @@ public class ColorGamut : MonoBehaviour
                     xCoordsArray = xValues.ToArray();
                     yCoordsArray = yValues.ToArray();
                     tValuesArray = tValues.ToArray();
+                    if (tValuesArray == null)
+                    {
+                        Debug.LogError("T values array is null");
+                        yield return new WaitForEndOfFrame();
+                    }
 
                     counter = maxIterationsPerFrame;
                     for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
@@ -292,6 +315,14 @@ public class ColorGamut : MonoBehaviour
                         {
                             counter = maxIterationsPerFrame;
                             yield return new WaitForEndOfFrame();
+                        }
+
+                        if ((hdriPixelArray[i].r == 0.057f && hdriPixelArray[i].g == 0.099f &&
+                             hdriPixelArray[i].b == 0.180f) ||
+                            (hdriPixelArray[i].r == 0.136f && hdriPixelArray[i].g == 0.083f &&
+                             hdriPixelArray[i].b == 0.017f))
+                        {
+                            Debug.Log("Hit");
                         }
 
                         // Full dynamic range of image
@@ -417,6 +448,7 @@ public class ColorGamut : MonoBehaviour
 
                     hdriTextureTransformed.SetPixels(hdriPixelArray);
                     hdriTextureTransformed.Apply();
+                    Debug.Log("Image Processing has finished");
                 }
 
                 ChangeCurveDataState(CurveDataState.Calculated);
@@ -468,9 +500,18 @@ public class ColorGamut : MonoBehaviour
     {
         List<float> xValues = new List<float>(dimension);
         float step = maxRange / (float) dimension;
-        for (int i = 1; i <= dimension; i++)
+        float xCoord = 0.0f;
+        
+        for (int i = 0; i < dimension; i++)
         {
-            xValues.Add(i * step);
+            xCoord = minRadiometricValue + (i * step);
+            if (xCoord < minRadiometricValue)
+                continue;
+            
+            if (Mathf.Approximately(xCoord, maxRange))
+                break;
+            
+            xValues.Add(xCoord);
         }
 
         return xValues;
