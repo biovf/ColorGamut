@@ -51,7 +51,6 @@ public class ColorGamut : MonoBehaviour
     private Texture2D textureToSave;
     private RenderTexture screenGrab;
 
-    // private Ggm_troyedition ggm;
     private AnimationCurve animationCurve;
     private Color[] hdriPixelArray;
     private Vector2[] animationCurveLUT;
@@ -129,7 +128,7 @@ public class ColorGamut : MonoBehaviour
         minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
         maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
         origin = new Vector2(minRadiometricValue, 0.00001f);
-        curveValueLutDim = 4096;
+        curveValueLutDim = 512;
         createParametricCurve(greyPoint, origin);
 
         if (HDRIList == null)
@@ -159,17 +158,9 @@ public class ColorGamut : MonoBehaviour
             parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
         controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
 
-        xValues = initialiseXCoordsInRange(curveValueLutDim, /*Mathf.Round*/(maxRadiometricValue));
-        // tValues = parametricCurve.calcTfromXquadratic(xValues, new List<Vector2>(controlPoints));
+        xValues = initialiseXCoordsInRange(curveValueLutDim, maxRadiometricValue);
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
-        // for (int i = 0; i < yValues.Count; i++)
-        // {
-        //     Debug.Log("xValues: " + xValues[i].ToString("F5") + 
-        //               " yValues: " + yValues[i].ToString("F5") + 
-        //               " tValues: " + tValues[i].ToString("F5"));
-        // }
-        
     }
 
     void Update()
@@ -353,7 +344,6 @@ public class ColorGamut : MonoBehaviour
                             if (isBleachingActive)
                             {
                                 // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
-                                // bleachingXCoord = parametricCurve.getXCoordinate(1.0f, yValues, tValues, new List<Vector2>(controlPoints));
                                 bleachingXCoord =
                                     parametricCurve.getXCoordinate(1.0f, yCoordsArray, tValuesArray, controlPoints);
 
@@ -376,10 +366,7 @@ public class ColorGamut : MonoBehaviour
                                     ratio = hdriPixelColor / hdriMaxRGBChannel;
                                 }
                             }
-
-                            // Get Y curve value
-                            // float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
-                            //     new List<Vector2>(controlPoints));
+                            
                             // Get Y value from curve using the array version 
                             float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, tValuesArray,
                                 controlPoints);
@@ -484,8 +471,6 @@ public class ColorGamut : MonoBehaviour
     private float evaluateSingleColorChannel(float colorChannel, float[] xCoordsArray, float[] tValuesArray)
     {
         return parametricCurve.getYCoordinate(colorChannel, xCoordsArray, tValuesArray, controlPoints);
-        // return parametricCurve.getYCoordinate(colorChannel, xValues, tValues,
-        //     new List<Vector2>(controlPoints));
     }
 
     // Utility methods
@@ -498,6 +483,7 @@ public class ColorGamut : MonoBehaviour
         for (int i = 0; i < dimension - 1; ++i)
         {
             xCoord = minRadiometricValue + (i * step);
+            
             if (xCoord < minRadiometricValue)
                 continue;
             
@@ -505,6 +491,7 @@ public class ColorGamut : MonoBehaviour
                 break;
             
             xValues.Add(xCoord);
+            Debug.Log("X value: " + xCoord + " \tShaper X Value " + calculateLinearToLog(xCoord, greyPoint.x, minRadiometricValue, maxRadiometricValue));
         }
 
         return xValues;
@@ -533,6 +520,61 @@ public class ColorGamut : MonoBehaviour
         createParametricCurve(greyPoint, origin);
     }
 
+// # Convert scene referred linear value to normalised log value.
+//     def calculate_sr_to_log(
+//         in_sr,
+//         sr_middle_grey=base_middle_grey,
+//     minimum_ev=base_dr_minimum_ev,
+//     maximum_ev=base_dr_maximum_ev
+//     ):
+// # 2^stops * middleGrey = linear
+// # log(2)*stops * middleGrey = log(linear)
+// # stops = log(linear)/log(2)*middleGrey
+//     total_exposure = maximum_ev - minimum_ev
+//
+//         in_sr = numpy.asarray(in_sr)
+//     in_sr[in_sr <= 0.] = numpy.finfo(numpy.float).eps
+//
+//         output_log = numpy.clip(
+//                 numpy.log2(in_sr / sr_middle_grey),
+//                 minimum_ev,
+//                 maximum_ev
+//             )
+//
+//             return as_numeric((output_log - minimum_ev) / total_exposure)
+
+    public float calculateLinearToLog(float linearRadValue, float midGreyX, float minRadValue, float maxRadValue)
+    {
+        if (linearRadValue < 0.0f)
+            linearRadValue = minRadValue;
+        
+        float exposure = maxRadValue - minRadValue;
+        
+        float logRadiometricVal = Mathf.Clamp(Mathf.Log(linearRadValue / midGreyX), minRadValue, maxRadValue);
+        return (logRadiometricVal - minRadValue) / exposure;
+    }
+    
+//     
+// # Convert normalised log value to scene referred linear value.
+//     def calculate_log_to_sr(
+//         in_log_norm,
+//         sr_middle_grey=base_middle_grey,
+//     minimum_ev=base_dr_minimum_ev,
+//     maximum_ev=base_dr_maximum_ev
+//     ):
+//     in_log_norm = numpy.asarray(in_log_norm)
+//
+//         in_log_norm = numpy.clip(in_log_norm, 0., 1.) * (
+//                 maximum_ev - minimum_ev) + minimum_ev
+//
+//             return as_numeric(numpy.power(2., in_log_norm) * sr_middle_grey)
+
+    public float caculateLogToLinear(float logRadValue, float midGreyX, float minRadValue, float maxRadValue)
+    {
+        float logNormalisedValue = Mathf.Clamp01(logRadValue) * (maxRadValue - minRadValue) + minRadValue;
+        return Mathf.Pow(2.0f, logNormalisedValue) * midGreyX;
+    }
+    
     public bool getShowSweep()
     {
         return isSweepActive;

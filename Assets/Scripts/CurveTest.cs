@@ -42,7 +42,7 @@ public class CurveTest
         this.maxRadiometricValue = maxRadiometricValue;
         this.maxDisplayValue = maxDisplayValue;
     }
-    
+
     // Generates a sequence of control points to be used for 3 overlapping quadratic Bezier curves
     // originCoord  - minimum value we want from our dynamic range
     // greyPoint    - usually at (0.18, 0.18)
@@ -126,7 +126,7 @@ public class CurveTest
                     // List<float> tValueLst = calcTfromXquadratic(lst, new List<Vector2>(controlPoints));
                     // float tValue = tValueLst[0];
                     float tValue = calcTfromXquadratic(xValue, controlPoints.ToArray());
-                    
+
                     float yVal = (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
                                  (2.0f * (1.0f - tValue) * tValue * p1.y) +
                                  (Mathf.Pow(tValue, 2.0f) * p2.y);
@@ -139,39 +139,6 @@ public class CurveTest
         return yValues;
     }
 
-    // List based
-    // public static float ClosestTo(List<float> list, float target, out int index)
-    // {
-    //     // NB Method will return int.MaxValue for a sequence containing no elements.
-    //     // Apply any defensive coding here as necessary.
-    //     float closest = float.MaxValue;
-    //     float minDifference = float.MaxValue;
-    //     float prevDifference = float.MaxValue;
-    //     int outIndex = 0;
-    //     int listSize = list.Count;
-    //     for (int i = 0; i < listSize; i++)
-    //     {
-    //         // float difference = Math.Abs((float)list[i] - target);
-    //         float difference = Mathf.Abs((float) list[i] - target);
-    //
-    //         // Early exit
-    //         if (prevDifference < difference)
-    //             break;
-    //
-    //         if (minDifference > difference)
-    //         {
-    //             minDifference = difference;
-    //             closest = list[i];
-    //             outIndex = i;
-    //         }
-    //
-    //         prevDifference = difference;
-    //     }
-    //
-    //     // Debug.Log("Target: " + );
-    //     index = outIndex;
-    //     return closest;
-    // }
 
     // Array version
     public static float ClosestTo(float[] list, float target, out int index)
@@ -235,7 +202,7 @@ public class CurveTest
                 // The array index is used to lookup the tValue
                 int idx = 0;
                 ClosestTo(xCoords, inputXCoord, out idx);
-                if(idx >= tValues.Length)
+                if (idx >= tValues.Length)
                     Debug.LogError("Index " + idx.ToString() + " is invalid");
                 float tValue = tValues[idx];
 
@@ -485,6 +452,101 @@ public class CurveTest
         return rootsLst;
     }
 
+    // Return the (x,y) value for a given input t and 3 control points p0, p1 and p2
+    public Vector2 CalculateQuadraticBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2)
+    {
+        t = Mathf.Clamp01(t);
+        float u = 1 - t;
+        float uu = u * u;
+        float tt = t * t;
+        Vector2 res = uu * p0;
+        res += 2 * u * t * p1;
+        res += tt * p2;
+
+        return res;
+    }
+
+    float mix(float a, float b, float t)
+    {
+        // degree 1
+        return a * (1.0f - t) + b * t;
+    }
+
+    // Given two points of a line, calculate the x coordinate of a point P given its Y coordinate 
+    public float calculateXCoord(Vector2 p1, Vector2 p2, float y)
+    {
+        return ((p2.x - p1.x) * (y - p1.y) / (p2.y - p1.y)) + p1.x;
+    }
+
+    float calculateEV2RL(float inEV, float rlMiddleGrey = 0.18f)
+    {
+        return Mathf.Pow(2.0f, inEV) * rlMiddleGrey;
+    }
+
+    // Convert radiometric linear value to relative EV
+    float calculateRL2EV(float inRl, float rlMiddleGrey = 0.18f)
+    {
+        return Mathf.Log(inRl, 2.0f) - Mathf.Log(rlMiddleGrey, 2.0f);
+    }
+
+    //# Calculate the Y intercept based on slope and an X / Y coordinate pair.
+    float calculateLineYIntercept(float inX, float inY, float slope)
+    {
+        return (inY - (slope * inX));
+    }
+
+    // Calculate the Y of a line given by slope and X coordinate.
+    float calculateLineY(float inX, float yIntercept, float slope)
+    {
+        return (slope * inX) + yIntercept;
+    }
+
+    // Calculate the X of a line given by the slope and Y intercept.
+    float calculateLineX(float inY, float yIntercept, float slope)
+    {
+        return (inY - yIntercept / slope);
+    }
+
+    //# Calculate the slope of a line given by two coordinates.
+    float calculateLineSlope(float inX1, float inY1, float inX2, float inY2)
+    {
+        return (inX1 - inX2) / (inY1 - inY2);
+    }
+
+    // List based
+    // public static float ClosestTo(List<float> list, float target, out int index)
+    // {
+    //     // NB Method will return int.MaxValue for a sequence containing no elements.
+    //     // Apply any defensive coding here as necessary.
+    //     float closest = float.MaxValue;
+    //     float minDifference = float.MaxValue;
+    //     float prevDifference = float.MaxValue;
+    //     int outIndex = 0;
+    //     int listSize = list.Count;
+    //     for (int i = 0; i < listSize; i++)
+    //     {
+    //         // float difference = Math.Abs((float)list[i] - target);
+    //         float difference = Mathf.Abs((float) list[i] - target);
+    //
+    //         // Early exit
+    //         if (prevDifference < difference)
+    //             break;
+    //
+    //         if (minDifference > difference)
+    //         {
+    //             minDifference = difference;
+    //             closest = list[i];
+    //             outIndex = i;
+    //         }
+    //
+    //         prevDifference = difference;
+    //     }
+    //
+    //     // Debug.Log("Target: " + );
+    //     index = outIndex;
+    //     return closest;
+    // }
+
     // List based
     // public List<float> calcTfromXquadratic(List<float> xValues, List<Vector2> controlPoints)
     // {
@@ -540,64 +602,4 @@ public class CurveTest
     //
     //     return rootsLst;
     // }
-
-    // Return the (x,y) value for a given input t and 3 control points p0, p1 and p2
-    public Vector2 CalculateQuadraticBezierPoint(float t, Vector2 p0, Vector2 p1, Vector2 p2)
-    {
-        t = Mathf.Clamp01(t);
-        float u = 1 - t;
-        float uu = u * u;
-        float tt = t * t;
-        Vector2 res = uu * p0;
-        res += 2 * u * t * p1;
-        res += tt * p2;
-
-        return res;
-    }
-    
-    float mix(float a, float b, float t)
-    {
-        // degree 1
-        return a * (1.0f - t) + b * t;
-    }
-
-    // Given two points of a line, calculate the x coordinate of a point P given its Y coordinate 
-    public float calculateXCoord(Vector2 p1, Vector2 p2, float y)
-    {
-        return ((p2.x - p1.x) * (y - p1.y) / (p2.y - p1.y)) + p1.x;
-    }
-    float calculateEV2RL(float inEV, float rlMiddleGrey = 0.18f)
-    {
-        return Mathf.Pow(2.0f, inEV) * rlMiddleGrey;
-    }
-
-    // Convert radiometric linear value to relative EV
-    float calculateRL2EV(float inRl, float rlMiddleGrey = 0.18f)
-    {
-        return Mathf.Log(inRl, 2.0f) - Mathf.Log(rlMiddleGrey, 2.0f);
-    }
-
-    //# Calculate the Y intercept based on slope and an X / Y coordinate pair.
-    float calculateLineYIntercept(float inX, float inY, float slope)
-    {
-        return (inY - (slope * inX));
-    }
-
-    // Calculate the Y of a line given by slope and X coordinate.
-    float calculateLineY(float inX, float yIntercept, float slope)
-    {
-        return (slope * inX) + yIntercept;
-    }
-
-    // Calculate the X of a line given by the slope and Y intercept.
-    float calculateLineX(float inY, float yIntercept, float slope)
-    {
-        return (inY - yIntercept / slope);
-    }
-
-    //# Calculate the slope of a line given by two coordinates.
-    float calculateLineSlope(float inX1, float inY1, float inX2, float inY2)
-    {
-        return (inX1 - inX2) / (inY1 - inY2);
-    }
 }
