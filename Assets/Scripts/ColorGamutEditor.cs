@@ -3,6 +3,7 @@ using MathNet.Numerics;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 [CustomEditor(typeof(ColorGamut))]
 public class ColorGamutEditor : Editor
@@ -52,7 +53,7 @@ public class ColorGamutEditor : Editor
 
     private CurveGuiDataState _curveGuiDataState = CurveGuiDataState.NotCalculated;
 
-
+    List<float> xTempValues;
     public void OnEnable()
     {
         colorGamut = (ColorGamut) target;
@@ -70,6 +71,9 @@ public class ColorGamutEditor : Editor
         if (_curveGuiDataState == CurveGuiDataState.NotCalculated)
             colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
                 out greyPointY);
+
+        xTempValues = initialiseXCoordsInRange(512, colorGamut.MaxRadiometricValue);
+      
     }
 
     public void OnDisable()
@@ -99,6 +103,32 @@ public class ColorGamutEditor : Editor
         }
     }
 
+    //  Temp
+    public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
+    {
+        List<float> xValues = new List<float>(dimension);
+    float step = maxRange / (float)dimension;
+    float stepBias = Shaper.calculateLinearToLog(step);
+    float xCoord = 0.0f;
+
+        for (int i = 0; i<dimension - 1; ++i)
+        {
+            xCoord = colorGamut.MinRadiometricValue + (i* step);
+
+            if (xCoord < colorGamut.MinRadiometricValue)
+                continue;
+
+            if (Mathf.Approximately(xCoord, maxRange))
+                break;
+
+            xValues.Add(Shaper.calculateLinearToLog(xCoord));
+            Debug.Log("Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
+        }
+
+        return xValues;
+    }
+
+
     void OnSceneGUI()
     {
         if (Application.isPlaying)
@@ -123,6 +153,10 @@ public class ColorGamutEditor : Editor
             Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f),
                 4.0f); // Draw Y = 1 line
 
+            foreach (var item in xTempValues)
+            {
+                Handles.DrawWireCube(new Vector3(item, 5.0f), cubeWidgetSize);
+            }
 
             if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
                 _curveGuiDataState == CurveGuiDataState.NotCalculated)
