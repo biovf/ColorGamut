@@ -5,7 +5,7 @@ using UnityEngine;
 public static class Shaper 
 {
 // # Convert scene referred linear value to normalised log value.
-    public static float calculateLinearToLog(float linearRadValue, float midGreyX, float minExposureValue, float maxExposureValue)
+    public static float calculateLinearToLog(float linearRadValue, float midGreyX = 0.18f, float minExposureValue = -6.0f, float maxExposureValue = 6.0f)
     {
         if (linearRadValue < 0.0f)
             linearRadValue = minExposureValue;
@@ -18,7 +18,7 @@ public static class Shaper
 
 
 // # Convert normalised log value to scene referred linear value.
-    public static float caculateLogToLinear(float logRadValue, float midGreyX, float minExposureValue, float maxExposureValue)
+    public static float calculateLogToLinear(float logRadValue, float midGreyX = 0.18f, float minExposureValue = -6.0f, float maxExposureValue = 6.0f)
     {
         float logNormalisedValue = Mathf.Clamp01(logRadValue) * (maxExposureValue - minExposureValue) + minExposureValue;
         return Mathf.Pow(2.0f, logNormalisedValue) * midGreyX;

@@ -117,7 +117,7 @@ public class ColorGamutEditor : Editor
             Vector2 p5 = controlPoints[5];
             Vector2 p6 = controlPoints[6];
 
-            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(12.0f, 0.0f)); // Draw X Axis
+            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(colorGamut.MaxRadiometricValue, 0.0f)); // Draw X Axis
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f)); // Draw Y axis
             Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
             Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f),

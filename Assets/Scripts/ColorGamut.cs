@@ -70,11 +70,11 @@ public class ColorGamut : MonoBehaviour
     public float MinRadiometricValue => minRadiometricValue;
     private float minRadiometricValue;
 
-    public float MinRadiometricExposure => minRadiometricExposure;
-    public float minRadiometricExposure;
+    public float MINExposureValue => minExposureValue;
+    public float minExposureValue;
 
-    public float MaxRadiometricExposure => maxRadiometricExposure;
-    public float maxRadiometricExposure;
+    public float MAXExposureValue => maxExposureValue;
+    public float maxExposureValue;
 
     public float MaxRadiometricValue => maxRadiometricValue;
     private float maxRadiometricValue;
@@ -128,10 +128,10 @@ public class ColorGamut : MonoBehaviour
         maxDisplayValue = 1.5f;
         minDisplayValue = 0.0f;
         greyPoint = new Vector2(0.18f, 0.18f);
-        minRadiometricExposure = -6.0f;
-        maxRadiometricExposure = 6.0f;
-        minRadiometricValue = Mathf.Pow(2.0f, minRadiometricExposure) * greyPoint.x;
-        maxRadiometricValue = Mathf.Pow(2.0f, maxRadiometricExposure) * greyPoint.x;
+        minExposureValue = -6.0f;
+        maxExposureValue = 6.0f;
+        minRadiometricValue = Mathf.Pow(2.0f, minExposureValue) * greyPoint.x;
+        maxRadiometricValue = Mathf.Pow(2.0f, maxExposureValue) * greyPoint.x;
 
         origin = new Vector2(minRadiometricValue, 0.00001f);
         curveLutLength = 512;
@@ -161,7 +161,7 @@ public class ColorGamut : MonoBehaviour
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
         if (parametricCurve == null)
-            parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
+            parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
         controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
 
         xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
@@ -485,6 +485,7 @@ public class ColorGamut : MonoBehaviour
     {
         List<float> xValues = new List<float>(dimension);
         float step = maxRange / (float) dimension;
+        float stepBias = Shaper.calculateLinearToLog(step);
         float xCoord = 0.0f;
 
         for (int i = 0; i < dimension - 1; ++i)
@@ -497,9 +498,9 @@ public class ColorGamut : MonoBehaviour
             if (Mathf.Approximately(xCoord, maxRange))
                 break;
 
-            xValues.Add(xCoord);
-            Debug.Log("X value: " + xCoord + " \tShaper X Value " +
-                      Shaper.calculateLinearToLog(xCoord, greyPoint.x, minRadiometricExposure, maxRadiometricExposure));
+            xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
+            // Debug.Log("xCoord: " + xCoord + " \t Shaper Loop Index " +
+            //           Shaper.calculateLinearToLog(step * i) + " " + stepBias);
         }
 
         return xValues;
