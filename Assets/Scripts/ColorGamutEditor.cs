@@ -27,7 +27,6 @@ public class ColorGamutEditor : Editor
 
     private int hdriIndex = 0;
 
-    private bool enableSliders = false;
     private bool enableBleaching = false;
     private bool isMultiThreaded = false;
     private bool showPixelsOutOfGamut = false;
@@ -87,7 +86,7 @@ public class ColorGamutEditor : Editor
     {
         parametricCurve = colorGamut.getParametricCurve();
         tValues = colorGamut.getTValues();
-        xValues = colorGamut.initialiseXCoordsInRange(colorGamut.CurveValueLutDim,
+        xValues = colorGamut.initialiseXCoordsInRange(colorGamut.CurveLutLength,
             colorGamut.MaxRadiometricValue);
 
         debugPoints.Clear();

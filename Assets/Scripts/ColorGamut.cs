@@ -38,11 +38,9 @@ public class ColorGamut : MonoBehaviour
     private bool isBleachingActive;
     private bool isMultiThreaded = false;
     private bool showPixelsOutOfGamut = false;
-    private bool onGuiChanged = true;
 
     private int hdriIndex;
     private int inputTextureIdx = 0;
-    private int lutLength;
     private int yIndexIntersect = 0;
     private const int maxIterationsPerFrame = 100000;
 
@@ -72,6 +70,12 @@ public class ColorGamut : MonoBehaviour
     public float MinRadiometricValue => minRadiometricValue;
     private float minRadiometricValue;
 
+    public float MinRadiometricExposure => minRadiometricExposure;
+    public float minRadiometricExposure;
+
+    public float MaxRadiometricExposure => maxRadiometricExposure;
+    public float maxRadiometricExposure;
+
     public float MaxRadiometricValue => maxRadiometricValue;
     private float maxRadiometricValue;
     private float maxDisplayValue;
@@ -81,8 +85,8 @@ public class ColorGamut : MonoBehaviour
     private List<float> xValues;
     private List<float> yValues;
 
-    public int CurveValueLutDim => curveValueLutDim;
-    private int curveValueLutDim;
+    public int CurveLutLength => curveLutLength;
+    private int curveLutLength;
 
     private enum ColorRange
     {
@@ -116,7 +120,6 @@ public class ColorGamut : MonoBehaviour
 
         isBleachingActive = true;
         isSweepActive = false;
-        onGuiChanged = true;
 
         // Parametric curve
         slope = 2.2f;
@@ -125,17 +128,20 @@ public class ColorGamut : MonoBehaviour
         maxDisplayValue = 1.5f;
         minDisplayValue = 0.0f;
         greyPoint = new Vector2(0.18f, 0.18f);
-        minRadiometricValue = Mathf.Pow(2.0f, -6.0f) * greyPoint.x;
-        maxRadiometricValue = Mathf.Pow(2.0f, 6.0f) * greyPoint.x;
+        minRadiometricExposure = -6.0f;
+        maxRadiometricExposure = 6.0f;
+        minRadiometricValue = Mathf.Pow(2.0f, minRadiometricExposure) * greyPoint.x;
+        maxRadiometricValue = Mathf.Pow(2.0f, maxRadiometricExposure) * greyPoint.x;
+
         origin = new Vector2(minRadiometricValue, 0.00001f);
-        curveValueLutDim = 512;
+        curveLutLength = 512;
         createParametricCurve(greyPoint, origin);
 
         if (HDRIList == null)
             Debug.LogError("HDRIs list is empty");
 
         inputTexture = HDRIList[hdriIndex];
-        
+
 
         hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
         hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
@@ -158,7 +164,7 @@ public class ColorGamut : MonoBehaviour
             parametricCurve = new CurveTest(maxRadiometricValue, maxDisplayValue);
         controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
 
-        xValues = initialiseXCoordsInRange(curveValueLutDim, maxRadiometricValue);
+        xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
     }
@@ -172,11 +178,11 @@ public class ColorGamut : MonoBehaviour
             // Mouse position gives us the coordinates based on any resolution we have
             // On the other hand our textures have a fixed resolution so we're going to have to remap the mouse coordinates
             // into the texture width/height range
-            float normalisedXCoord = (float)xCoord / (float)Screen.width;
-            float normalisedYCoord = (float)yCoord / (float)Screen.height;
-            xCoord = (int)(normalisedXCoord * (float)inputTexture.width);
-            yCoord = (int)(normalisedYCoord * (float)inputTexture.height);
-            
+            float normalisedXCoord = (float) xCoord / (float) Screen.width;
+            float normalisedYCoord = (float) yCoord / (float) Screen.height;
+            xCoord = (int) (normalisedXCoord * (float) inputTexture.width);
+            yCoord = (int) (normalisedYCoord * (float) inputTexture.height);
+
             Color initialHDRIColor = inputTexture.GetPixel(xCoord, yCoord);
             Color finalHDRIColor = hdriTextureTransformed.GetPixel(xCoord, yCoord);
 
@@ -215,8 +221,8 @@ public class ColorGamut : MonoBehaviour
 
         Vector3 hdriPixelColorVec = Vector3.zero;
         Vector3 maxDynamicRangeVec = Vector3.zero;
-        bool aboveGamut = false;
-        bool belowGamut = false;
+        // bool aboveGamut = false;
+        // bool belowGamut = false;
         float[] xCoordsArray;
         float[] yCoordsArray;
         float[] tValuesArray;
@@ -258,7 +264,7 @@ public class ColorGamut : MonoBehaviour
                     job.exposure = exposure;
                     job.isBleachingActive = isBleachingActive;
                     job.showPixelsOutOfGamut = showPixelsOutOfGamut;
-                    job.lutLength = lutLength;
+                    job.lutLength = curveLutLength;
                     job.yIndexIntersect = yIndexIntersect;
                     job.minRadiometricValue = minRadiometricValue;
                     job.maxRadiometricValue = maxRadiometricValue;
@@ -355,7 +361,8 @@ public class ColorGamut : MonoBehaviour
                                                      bleachingRange;
 
                                     hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
-                                    maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,maxRadiometricValue);
+                                    maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
+                                        maxRadiometricValue);
                                     hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
                                         bleachingRatio);
 
@@ -366,7 +373,7 @@ public class ColorGamut : MonoBehaviour
                                     ratio = hdriPixelColor / hdriMaxRGBChannel;
                                 }
                             }
-                            
+
                             // Get Y value from curve using the array version 
                             float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, tValuesArray,
                                 controlPoints);
@@ -479,19 +486,20 @@ public class ColorGamut : MonoBehaviour
         List<float> xValues = new List<float>(dimension);
         float step = maxRange / (float) dimension;
         float xCoord = 0.0f;
-        
+
         for (int i = 0; i < dimension - 1; ++i)
         {
             xCoord = minRadiometricValue + (i * step);
-            
+
             if (xCoord < minRadiometricValue)
                 continue;
-            
+
             if (Mathf.Approximately(xCoord, maxRange))
                 break;
-            
+
             xValues.Add(xCoord);
-            Debug.Log("X value: " + xCoord + " \tShaper X Value " + calculateLinearToLog(xCoord, greyPoint.x, minRadiometricValue, maxRadiometricValue));
+            Debug.Log("X value: " + xCoord + " \tShaper X Value " +
+                      Shaper.calculateLinearToLog(xCoord, greyPoint.x, minRadiometricExposure, maxRadiometricExposure));
         }
 
         return xValues;
@@ -520,61 +528,8 @@ public class ColorGamut : MonoBehaviour
         createParametricCurve(greyPoint, origin);
     }
 
-// # Convert scene referred linear value to normalised log value.
-//     def calculate_sr_to_log(
-//         in_sr,
-//         sr_middle_grey=base_middle_grey,
-//     minimum_ev=base_dr_minimum_ev,
-//     maximum_ev=base_dr_maximum_ev
-//     ):
-// # 2^stops * middleGrey = linear
-// # log(2)*stops * middleGrey = log(linear)
-// # stops = log(linear)/log(2)*middleGrey
-//     total_exposure = maximum_ev - minimum_ev
-//
-//         in_sr = numpy.asarray(in_sr)
-//     in_sr[in_sr <= 0.] = numpy.finfo(numpy.float).eps
-//
-//         output_log = numpy.clip(
-//                 numpy.log2(in_sr / sr_middle_grey),
-//                 minimum_ev,
-//                 maximum_ev
-//             )
-//
-//             return as_numeric((output_log - minimum_ev) / total_exposure)
 
-    public float calculateLinearToLog(float linearRadValue, float midGreyX, float minRadValue, float maxRadValue)
-    {
-        if (linearRadValue < 0.0f)
-            linearRadValue = minRadValue;
-        
-        float exposure = maxRadValue - minRadValue;
-        
-        float logRadiometricVal = Mathf.Clamp(Mathf.Log(linearRadValue / midGreyX), minRadValue, maxRadValue);
-        return (logRadiometricVal - minRadValue) / exposure;
-    }
-    
-//     
-// # Convert normalised log value to scene referred linear value.
-//     def calculate_log_to_sr(
-//         in_log_norm,
-//         sr_middle_grey=base_middle_grey,
-//     minimum_ev=base_dr_minimum_ev,
-//     maximum_ev=base_dr_maximum_ev
-//     ):
-//     in_log_norm = numpy.asarray(in_log_norm)
-//
-//         in_log_norm = numpy.clip(in_log_norm, 0., 1.) * (
-//                 maximum_ev - minimum_ev) + minimum_ev
-//
-//             return as_numeric(numpy.power(2., in_log_norm) * sr_middle_grey)
 
-    public float caculateLogToLinear(float logRadValue, float midGreyX, float minRadValue, float maxRadValue)
-    {
-        float logNormalisedValue = Mathf.Clamp01(logRadValue) * (maxRadValue - minRadValue) + minRadValue;
-        return Mathf.Pow(2.0f, logNormalisedValue) * midGreyX;
-    }
-    
     public bool getShowSweep()
     {
         return isSweepActive;
@@ -794,7 +749,7 @@ struct GamutMapJob : IJobParallelFor
     [ReadOnly] public NativeArray<Vector2> controlPoints;
 
     [ReadOnly] public float exposure;
-    [ReadOnly] public Vector2 finalKeyframe;
+    // [ReadOnly] public Vector2 finalKeyframe;
     [ReadOnly] public bool isBleachingActive;
     [ReadOnly] public bool showPixelsOutOfGamut;
 
@@ -889,7 +844,7 @@ struct GamutMapJob : IJobParallelFor
         return closest;
     }
 
-    public float getXCoordinate(float inputYCoord, NativeArray<float> YCoords, NativeArray<float> tValues, 
+    public float getXCoordinate(float inputYCoord, NativeArray<float> YCoords, NativeArray<float> tValues,
         NativeArray<Vector2> controlPoints)
     {
         if (YCoords.Length <= 0 || tValues.Length <= 0)
@@ -927,7 +882,7 @@ struct GamutMapJob : IJobParallelFor
 
         return -1.0f;
     }
-    
+
     public float getYCoordinate(float inputXCoord, NativeArray<float> xCoords,
         NativeArray<float> tValues, NativeArray<Vector2> controlPoints)
     {
@@ -986,7 +941,6 @@ struct GamutMapJob : IJobParallelFor
         hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
         ratio = hdriPixelColor / hdriMaxRGBChannel;
 
-        maxDynamicRange = maxDynamicRange; // The x axis max value on the curve
         bleachStartPoint = 1.0f;
 
         if (isBleachingActive)
@@ -1004,7 +958,7 @@ struct GamutMapJob : IJobParallelFor
                                  bleachingRange;
 
                 hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
-                maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,maxRadiometricValue);
+                maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
                 hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
                     bleachingRatio);
 
@@ -1033,7 +987,7 @@ struct GamutMapJob : IJobParallelFor
                 hdriPixelColor = Color.green;
             }
         }
-    
+
         tempResult.r = Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
         tempResult.g = Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
         tempResult.b = Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
