@@ -140,39 +140,37 @@ public class CurveTest
     }
 
 
-    // Array version
-    public static float ClosestTo(float[] list, float target, out int index)
+    // Assumption: the input float[] is always sorted from smallest to largest values
+    public static float ClosestTo(float[] inputArray, float target, out int arrayIndex)
     {
-        // NB Method will return int.MaxValue for a sequence containing no elements.
-        // Apply any defensive coding here as necessary.
         float closest = float.MaxValue;
         float minDifference = float.MaxValue;
         float prevDifference = float.MaxValue;
+        
         int outIndex = 0;
-        int listSize = list.Length;
+        int listSize = inputArray.Length;
         for (int i = 0; i < listSize; i++)
         {
-            // float difference = Math.Abs((float)list[i] - target);
-            float difference = Mathf.Abs((float) list[i] - target);
+            float currentDifference = Mathf.Abs((float) inputArray[i] - target);
 
-            // Early exit
-            if (prevDifference < difference)
+            // Early exit because the array is always ordered from smallest to largest
+            if (prevDifference < currentDifference)
                 break;
 
-            if (minDifference > difference)
+            if (minDifference > currentDifference)
             {
-                minDifference = difference;
-                closest = list[i];
+                minDifference = currentDifference;
+                closest = inputArray[i];
                 outIndex = i;
             }
-
-            prevDifference = difference;
+            prevDifference = currentDifference;
         }
 
         // Debug.Log("Target: " + );
-        index = outIndex;
+        arrayIndex = outIndex;
         return closest;
     }
+    
 
     // Array based implementation
     public float getYCoordinate(float inputXCoord, float[] xCoords, float[] tValues, Vector2[] controlPoints)
@@ -198,8 +196,8 @@ public class CurveTest
 
             if (p0.x <= inputXCoord && inputXCoord <= p2.x)
             {
-                // Search closest x value to xValue and grab its index in the array too
-                // The array index is used to lookup the tValue
+                // Search closest x value to xValue and grab its arrayIndex in the array too
+                // The array arrayIndex is used to lookup the tValue
                 int idx = 0;
                 ClosestTo(xCoords, inputXCoord, out idx);
                 if (idx >= tValues.Length)
@@ -240,8 +238,8 @@ public class CurveTest
     //
     //         if (p0.x <= inputXCoord && inputXCoord <= p2.x)
     //         {
-    //             // Search closest x value to xValue and grab its index in the array too
-    //             // The array index is used to lookup the tValue
+    //             // Search closest x value to xValue and grab its arrayIndex in the array too
+    //             // The array arrayIndex is used to lookup the tValue
     //             int idx = 0;
     //             ClosestTo(xCoords, inputXCoord, out idx);
     //             float tValue = tValues[idx];
@@ -279,8 +277,8 @@ public class CurveTest
 
             if (p0.y <= inputYCoord && inputYCoord <= p2.y)
             {
-                // Search closest x value to xValue and grab its index in the array too
-                // The array index is used to lookup the tValue
+                // Search closest x value to xValue and grab its arrayIndex in the array too
+                // The array arrayIndex is used to lookup the tValue
                 int idx = 0;
                 ClosestTo(YCoords, inputYCoord, out idx);
                 float tValue = tValues[idx];
@@ -319,8 +317,8 @@ public class CurveTest
     //
     //         if (p0.y <= inputYCoord && inputYCoord <= p2.y)
     //         {
-    //             // Search closest x value to xValue and grab its index in the array too
-    //             // The array index is used to lookup the tValue
+    //             // Search closest x value to xValue and grab its arrayIndex in the array too
+    //             // The array arrayIndex is used to lookup the tValue
     //             int idx = 0;
     //             ClosestTo(YCoords, inputYCoord, out idx);
     //             float tValue = tValues[idx];
@@ -514,7 +512,7 @@ public class CurveTest
     }
 
     // List based
-    // public static float ClosestTo(List<float> list, float target, out int index)
+    // public static float ClosestTo(List<float> inputArray, float target, out int arrayIndex)
     // {
     //     // NB Method will return int.MaxValue for a sequence containing no elements.
     //     // Apply any defensive coding here as necessary.
@@ -522,11 +520,11 @@ public class CurveTest
     //     float minDifference = float.MaxValue;
     //     float prevDifference = float.MaxValue;
     //     int outIndex = 0;
-    //     int listSize = list.Count;
+    //     int listSize = inputArray.Count;
     //     for (int i = 0; i < listSize; i++)
     //     {
-    //         // float difference = Math.Abs((float)list[i] - target);
-    //         float difference = Mathf.Abs((float) list[i] - target);
+    //         // float difference = Math.Abs((float)inputArray[i] - target);
+    //         float difference = Mathf.Abs((float) inputArray[i] - target);
     //
     //         // Early exit
     //         if (prevDifference < difference)
@@ -535,7 +533,7 @@ public class CurveTest
     //         if (minDifference > difference)
     //         {
     //             minDifference = difference;
-    //             closest = list[i];
+    //             closest = inputArray[i];
     //             outIndex = i;
     //         }
     //
@@ -543,7 +541,7 @@ public class CurveTest
     //     }
     //
     //     // Debug.Log("Target: " + );
-    //     index = outIndex;
+    //     arrayIndex = outIndex;
     //     return closest;
     // }
 
@@ -566,7 +564,7 @@ public class CurveTest
     //
     //     double[] coefficients = new double[3];
     //     float tmpRoot = -1.0f;
-    //     for (int index = 0; index < xValues.Count; index++)
+    //     for (int arrayIndex = 0; arrayIndex < xValues.Count; arrayIndex++)
     //     {
     //         for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
     //         {
@@ -574,9 +572,9 @@ public class CurveTest
     //             Vector2 p1 = controlPointsArray[1 + i];
     //             Vector2 p2 = controlPointsArray[2 + i];
     //
-    //             if (p0.x <= xValues[index] && xValues[index] <= p2.x)
+    //             if (p0.x <= xValues[arrayIndex] && xValues[arrayIndex] <= p2.x)
     //             {
-    //                 coefficients[0] = p0.x - xValues[index];
+    //                 coefficients[0] = p0.x - xValues[arrayIndex];
     //                 coefficients[1] = (2.0f * p1.x) - (2.0f * p0.x);
     //                 coefficients[2] = p0.x - (2.0f * p1.x) + p2.x;
     //
