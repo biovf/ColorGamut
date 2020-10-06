@@ -144,6 +144,46 @@ public class CurveTest
         return yValues;
     }
 
+    // Assumption: the input float[] is always sorted from smallest to largest values
+    public static float BilinearClosestTo(float[] inputArray, float target, out int arrayIndex, out int arrayIndex2)
+    {
+        float closest = float.MaxValue;
+        float minDifference = float.MaxValue;
+        float prevDifference = float.MaxValue;
+        
+        int outIndex = 0;
+        int outIndex2 = -1;
+        int listSize = inputArray.Length;
+        for (int i = 0; i < listSize; i++)
+        {
+            float currentDifference = Mathf.Abs((float) inputArray[i] - target);
+
+            // Early exit because the array is always ordered from smallest to largest
+            if (prevDifference < currentDifference)
+                break;
+
+            if (minDifference > currentDifference)
+            {
+                // Check which of the values, before or after this one, are closer to the target value
+                int indexBefore = Mathf.Clamp((i - 1), 0, listSize - 1);
+                int indexAfter = Mathf.Clamp((i + 1), 0, listSize - 1);
+                float currentDiffBefore = Mathf.Abs((float) inputArray[indexBefore] - target);
+                float currentDiffAfter = Mathf.Abs((float) inputArray[indexAfter] - target);
+                
+                minDifference = currentDifference;
+                closest = inputArray[i];
+                outIndex = i;
+                outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
+            }
+            prevDifference = currentDifference;
+        }
+
+        // Debug.Log("Target: " + );
+        arrayIndex = outIndex;
+        arrayIndex2 = outIndex2;
+        return closest;
+    }
+    
 
     // Assumption: the input float[] is always sorted from smallest to largest values
     public static float ClosestTo(float[] inputArray, float target, out int arrayIndex)
@@ -194,8 +234,8 @@ public class CurveTest
             controlPoints[2], controlPoints[3], controlPoints[4],
             controlPoints[4], controlPoints[5], controlPoints[6]
         };
-
-        for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
+        int controlPointsLen = controlPointsArray.Length - 1;
+        for (int i = 0; i < controlPointsLen; i += 3)
         {
             Vector2 p0 = controlPointsArray[0 + i];
             Vector2 p1 = controlPointsArray[1 + i];
@@ -205,15 +245,42 @@ public class CurveTest
             {
                 // Search closest x value to xValue and grab its arrayIndex in the array too
                 // The array arrayIndex is used to lookup the tValue
-                int idx = 0;
-                ClosestTo(xCoords, logInputXCoord, out idx);
-                if (idx >= tValues.Length)
-                    Debug.LogError("Index " + idx.ToString() + " is invalid");
-                float tValue = tValues[idx];
+                if (true)
+                {
+                    int idx = 0;
+                    int idx2 = 0;
+                    BilinearClosestTo(xCoords, logInputXCoord, out idx, out idx2);
+                    if (idx >= tValues.Length || idx2 >= tValues.Length)
+                    {
+                        Debug.LogError("Index " + idx.ToString() + "or Index " + idx2.ToString() + " is invalid");
+                    }
 
-                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-                       (2.0f * (1.0f - tValue) * tValue * p1.y) +
-                       (Mathf.Pow(tValue, 2.0f) * p2.y);
+                    float tValue = tValues[idx];
+                    float tValue2 = tValues[idx2];
+                    float result = Mathf.Lerp((Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+                                              (2.0f * (1.0f - tValue) * tValue * p1.y) +
+                                              (Mathf.Pow(tValue, 2.0f) * p2.y), 
+                                            (Mathf.Pow(1.0f - tValue2, 2.0f) * p0.y) +
+                                                (2.0f * (1.0f - tValue2) * tValue2 * p1.y) +
+                                                (Mathf.Pow(tValue2, 2.0f) * p2.y), 0.5f);
+                        
+                    return result;
+                }
+                else
+                {
+                    int idx = 0;
+                    ClosestTo(xCoords, logInputXCoord, out idx);
+                    if (idx >= tValues.Length)
+                    {
+                        Debug.LogError("Index " + idx.ToString() + " is invalid");
+                    }
+
+                    float tValue = tValues[idx];
+
+                    return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+                           (2.0f * (1.0f - tValue) * tValue * p1.y) +
+                           (Mathf.Pow(tValue, 2.0f) * p2.y);
+                }
             }
         }
 

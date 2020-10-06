@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,7 +12,7 @@ public static class Shaper
             linearRadValue = minExposureValue;
 
         float dynamicRange = maxExposureValue - minExposureValue;
-
+        
         float logRadiometricVal = Mathf.Clamp(Mathf.Log(linearRadValue / midGreyX, 2.0f), minExposureValue, maxExposureValue);
         return (logRadiometricVal - minExposureValue) / dynamicRange;
         //float lg2 = Mathf.Log(linearRadValue / midGreyX, 2.0f);
