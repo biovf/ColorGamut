@@ -61,11 +61,11 @@ public class CurveTest
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
         // We will design our curve from 3 separate Bezier curves: toe, middle linear section, shoulder
         Vector2 toeP0Coords = originCoord; // originCoord of plot
-        Vector2 toeP1Coords = new Vector2(0.0f, 0.0f); // We don't know where it will be yet
+        Vector2 toeP1Coords = new Vector2(0.0f, 0.0f);     // We don't know where it will be yet
         Vector2 toeP2Coords = new Vector2(0.0f, 0.085f);
-        Vector2 midP1Coords = new Vector2(0.0f, 0.0f); // Unknown
+        Vector2 midP1Coords = new Vector2(0.0f, 0.0f);     // Unknown at this point
         Vector2 shP0Coords = greyPoint;
-        Vector2 shP1Coords = new Vector2(0.0f, 1.0f); // Unknown
+        Vector2 shP1Coords = new Vector2(0.0f, 1.0f);      // Unknown at this point
         Vector2 shP2Coords = new Vector2(maxRadiometricValue, maxDisplayValue);
 
         // calculate y intersection when y = 0
@@ -75,7 +75,7 @@ public class CurveTest
         toeP1Coords.y = 0.001f;
         toeP1Coords.x = xP1Coord;
         // Calculate the toe's P2 using an already known Y value and the equation y = mx + b 
-        toeP2Coords.x = (toeP2Coords.y - b) / slope;
+        toeP2Coords.x = calculateLineX(toeP2Coords.y, b, slope);
         // Calculate the middle linear's section (x, y) coords
         midP1Coords = (shP0Coords + toeP2Coords) / 2.0f;
         // calculate shoulder's P1 which amounts to knowing the x value when y = 1.0 
@@ -245,7 +245,7 @@ public class CurveTest
             {
                 // Search closest x value to xValue and grab its arrayIndex in the array too
                 // The array arrayIndex is used to lookup the tValue
-                if (true)
+                if (false)
                 {
                     int idx = 0;
                     int idx2 = 0;
@@ -254,7 +254,11 @@ public class CurveTest
                     {
                         Debug.LogError("Index " + idx.ToString() + "or Index " + idx2.ToString() + " is invalid");
                     }
-
+                    // Calculate interpolation factor
+                    float lerpValue = idx < idx2
+                        ? (logInputXCoord - xCoords[idx]) / (xCoords[idx2] - xCoords[idx])
+                        : (logInputXCoord - xCoords[idx2]) / (xCoords[idx] - xCoords[idx2]);
+                    
                     float tValue = tValues[idx];
                     float tValue2 = tValues[idx2];
                     float result = Mathf.Lerp((Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
@@ -262,7 +266,7 @@ public class CurveTest
                                               (Mathf.Pow(tValue, 2.0f) * p2.y), 
                                             (Mathf.Pow(1.0f - tValue2, 2.0f) * p0.y) +
                                                 (2.0f * (1.0f - tValue2) * tValue2 * p1.y) +
-                                                (Mathf.Pow(tValue2, 2.0f) * p2.y), 0.5f);
+                                                (Mathf.Pow(tValue2, 2.0f) * p2.y), lerpValue);
                         
                     return result;
                 }
@@ -484,25 +488,25 @@ public class CurveTest
     }
 
     //# Calculate the Y intercept based on slope and an X / Y coordinate pair.
-    float calculateLineYIntercept(float inX, float inY, float slope)
+    public static float calculateLineYIntercept(float inX, float inY, float slope)
     {
         return (inY - (slope * inX));
     }
 
     // Calculate the Y of a line given by slope and X coordinate.
-    float calculateLineY(float inX, float yIntercept, float slope)
+    public static float calculateLineY(float inX, float yIntercept, float slope)
     {
         return (slope * inX) + yIntercept;
     }
 
     // Calculate the X of a line given by the slope and Y intercept.
-    float calculateLineX(float inY, float yIntercept, float slope)
+    public static float calculateLineX(float inY, float yIntercept, float slope)
     {
-        return (inY - yIntercept / slope);
+        return (inY - yIntercept) / slope;
     }
 
     //# Calculate the slope of a line given by two coordinates.
-    float calculateLineSlope(float inX1, float inY1, float inX2, float inY2)
+    public static float calculateLineSlope(float inX1, float inY1, float inX2, float inY2)
     {
         return (inX1 - inX2) / (inY1 - inY2);
     }
