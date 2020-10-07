@@ -105,46 +105,51 @@ public class ColorGamutEditor : Editor
     }
 
     //  Temp
-    // public List<float> initialiseXCoordsInRangeTest(int dimension, float maxRange)
-    // {
-    //     List<float> xValues = new List<float>(dimension);
-    //
-    //     // Use 
-    //     float stepPreMidGrey = 0.18f / (((float) dimension) / 2.0f);
-    //     float stepPostMidGrey = (maxRange - 0.18f) / ((((float) dimension) / 2.0f) - 1.0f);
-    //     float xCoord = 0.0f;
-    //     
-    //     for (int i = 0; i <= (dimension/2); ++i)
-    //     {
-    //         xCoord = colorGamut.MinRadiometricValue + (i * stepPreMidGrey);
-    //         
-    //         if (xCoord < colorGamut.MinRadiometricValue)
-    //             continue;
-    //
-    //         if (Mathf.Approximately(xCoord, maxRange))
-    //             break;
-    //
-    //         xValues.Add(Shaper.calculateLinearToLog(xCoord));
-    //         Debug.Log("1st half - Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
-    //     }
-    //
-    //     int len = (dimension % 2) == 0 ? dimension / 2 : (dimension / 2) + 1;
-    //     for (int i = 1; i < len; ++i)
-    //     {
-    //         xCoord = 0.18f + (i * stepPostMidGrey);
-    //         
-    //         if (xCoord < colorGamut.MinRadiometricValue)
-    //             continue;
-    //
-    //         // if (Mathf.Approximately(xCoord, maxRange))
-    //         //     break;
-    //
-    //         xValues.Add(Shaper.calculateLinearToLog(xCoord));
-    //         Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
-    //     }
-    //
-    //     return xValues;
-    // }
+   // public List<float> initialiseXCoordsInRangeTest(int dimension, float maxRange)
+   //  {
+   //      List<float> xValues = new List<float>(dimension);
+   //  
+   //      // Use 
+   //      float step = maxRange / (float) dimension;
+   //
+   //      float xCoord = 0.0f;
+   //      for (int i = 0; i < dimension; ++i)
+   //      {
+   //          xCoord = colorGamut.MinRadiometricValue + (i * step);
+   //          xValues.Add(Shaper.calculateLinearToLog((1.0f/(xCoord + 0.0001f)))); //Mathf.Pow(xCoord, 2.0f));
+   //      }
+   //
+   //      // for (int i = 0; i <= (dimension/2); ++i)
+   //      // {
+   //      //     xCoord = colorGamut.MinRadiometricValue + (i * stepPreMidGrey);
+   //      //     
+   //      //     if (xCoord < colorGamut.MinRadiometricValue)
+   //      //         continue;
+   //      //
+   //      //     if (Mathf.Approximately(xCoord, maxRange))
+   //      //         break;
+   //      //
+   //      //     xValues.Add(Shaper.calculateLinearToLog(xCoord));
+   //      //     Debug.Log("1st half - Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
+   //      // }
+   //      //
+   //      // int len = (dimension % 2) == 0 ? dimension / 2 : (dimension / 2) + 1;
+   //      // for (int i = 1; i < len; ++i)
+   //      // {
+   //      //     xCoord = 0.18f + (i * stepPostMidGrey);
+   //      //      
+   //      //     if (xCoord < colorGamut.MinRadiometricValue)
+   //      //         continue;
+   //      //
+   //      //     // if (Mathf.Approximately(xCoord, maxRange))
+   //      //     //     break;
+   //      //
+   //      //     xValues.Add(Shaper.calculateLinearToLog(xCoord));
+   //      //     Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
+   //      // }
+   //  
+   //      return xValues;
+   //  }
 
 
     void OnSceneGUI()
@@ -188,6 +193,10 @@ public class ColorGamutEditor : Editor
             Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
             Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
             Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
+            float b = CurveTest.calculateLineYIntercept(0.18f, 0.18f, 2.2f);
+            Handles.DrawWireCube(new Vector3(0.0f, b), cubeWidgetSize);
+
+
         }
     }
 

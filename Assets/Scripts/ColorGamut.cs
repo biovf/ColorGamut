@@ -118,7 +118,7 @@ public class ColorGamut : MonoBehaviour
         exposure = 1.0f;
         // sweepExposure = 1.0f;
 
-        isBleachingActive = true;
+        isBleachingActive = false;
         isSweepActive = false;
 
         // Parametric curve
@@ -304,12 +304,7 @@ public class ColorGamut : MonoBehaviour
                     xCoordsArray = xValues.ToArray();
                     yCoordsArray = yValues.ToArray();
                     tValuesArray = tValues.ToArray();
-                    if (tValuesArray == null)
-                    {
-                        Debug.LogError("T values array is null");
-                        yield return new WaitForEndOfFrame();
-                    }
-
+                    
                     counter = maxIterationsPerFrame;
                     for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
                     {
@@ -336,6 +331,14 @@ public class ColorGamut : MonoBehaviour
                             hdriPixelColor.g = maxRadiometricValue;
                             hdriPixelColor.b = maxRadiometricValue;
                         }
+                        // Add guardrails for minimum values
+                        // if (hdriPixelColor.r < minRadiometricValue || hdriPixelColor.g < minRadiometricValue ||
+                        //     hdriPixelColor.b < minRadiometricValue)
+                        // {
+                        //     hdriPixelColor.r = minRadiometricValue;
+                        //     hdriPixelColor.g = minRadiometricValue;
+                        //     hdriPixelColor.b = minRadiometricValue;
+                        // }                        
                         //if (sweepPixelColor.r > animationCurve[3].time || sweepPixelColor.g > animationCurve[3].time || sweepPixelColor.b > animationCurve[3].time)
                         //{
                         //    sweepPixelColor.r = animationCurve[3].time;
@@ -344,6 +347,7 @@ public class ColorGamut : MonoBehaviour
                         //}
 
                         // Calculate Pixel max color and ratio
+                        
                         hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
                         ratio = hdriPixelColor / hdriMaxRGBChannel;
 
@@ -384,7 +388,7 @@ public class ColorGamut : MonoBehaviour
                             }
 
                             // Get Y value from curve using the array version 
-                            float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, tValuesArray,
+                            float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray,
                                 controlPoints);
 
                             hdriYMaxValue = Mathf.Min(yValue, 1.0f);
@@ -392,11 +396,11 @@ public class ColorGamut : MonoBehaviour
 
                             if (showPixelsOutOfGamut)
                             {
-                                if (yValue < 0.0f || hdriMaxRGBChannel < minRadiometricValue) // Below Gamut
+                                if (hdriMaxRGBChannel < minRadiometricValue) // Below Gamut
                                 {
                                     hdriPixelColor = Color.red;
                                 }
-                                else if (yValue > 1.0f) // Above gamut
+                                else if (hdriMaxRGBChannel > maxRadiometricValue) // Above gamut
                                 {
                                     hdriPixelColor = Color.green;
                                 }
@@ -412,9 +416,9 @@ public class ColorGamut : MonoBehaviour
                         {
                             activeTransferFunction = TransferFunction.Per_Channel;
 
-                            hdriPixelColor.r = evaluateSingleColorChannel(hdriPixelColor.r, xCoordsArray, tValuesArray);
-                            hdriPixelColor.g = evaluateSingleColorChannel(hdriPixelColor.g, xCoordsArray, tValuesArray);
-                            hdriPixelColor.b = evaluateSingleColorChannel(hdriPixelColor.b, xCoordsArray, tValuesArray);
+                            hdriPixelColor.r = evaluateSingleColorChannel(hdriPixelColor.r, xCoordsArray, yCoordsArray, tValuesArray);
+                            hdriPixelColor.g = evaluateSingleColorChannel(hdriPixelColor.g, xCoordsArray, yCoordsArray, tValuesArray);
+                            hdriPixelColor.b = evaluateSingleColorChannel(hdriPixelColor.b, xCoordsArray, yCoordsArray, tValuesArray);
 
                             if (showPixelsOutOfGamut)
                             {
@@ -477,6 +481,7 @@ public class ColorGamut : MonoBehaviour
             }
             case CurveDataState.MustRecalculate:
             {
+                Debug.Log("Image Processing has started");
                 mainCamera.clearFlags = CameraClearFlags.Skybox;
                 curveDataState = CurveDataState.MustRecalculate;
                 break;
@@ -484,9 +489,9 @@ public class ColorGamut : MonoBehaviour
         }
     }
 
-    private float evaluateSingleColorChannel(float colorChannel, float[] xCoordsArray, float[] tValuesArray)
+    private float evaluateSingleColorChannel(float colorChannel, float[] xCoordsArray, float[] yValuesArray, float[] tValuesArray)
     {
-        return parametricCurve.getYCoordinate(colorChannel, xCoordsArray, tValuesArray, controlPoints);
+        return parametricCurve.getYCoordinate(colorChannel, xCoordsArray, yValuesArray, tValuesArray, controlPoints);
     }
 
     // Utility methods
@@ -550,9 +555,7 @@ public class ColorGamut : MonoBehaviour
             
             if (xCoord < MinRadiometricValue)
                 continue;
-
-            // if (Mathf.Approximately(xCoord, maxRange))
-            //     break;
+            
 
             xValues.Add(Shaper.calculateLinearToLog(xCoord));
             // Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
