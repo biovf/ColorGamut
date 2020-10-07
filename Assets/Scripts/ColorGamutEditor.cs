@@ -193,10 +193,6 @@ public class ColorGamutEditor : Editor
             Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
             Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
             Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
-            float b = CurveTest.calculateLineYIntercept(0.18f, 0.18f, 2.2f);
-            Handles.DrawWireCube(new Vector3(0.0f, b), cubeWidgetSize);
-
-
         }
     }
 
@@ -215,7 +211,7 @@ public class ColorGamutEditor : Editor
 
         activeTransferFunction =
             (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
-        exposure = EditorGUILayout.Slider("Exposure", exposure, -10.0f, 10.0f);
+        exposure = EditorGUILayout.Slider("Exposure", exposure, -6.0f, 6.0f);
         bool showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);

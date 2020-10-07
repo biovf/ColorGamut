@@ -364,7 +364,7 @@ public class ColorGamut : MonoBehaviour
                             {
                                 // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
                                 bleachingXCoord =
-                                    parametricCurve.getXCoordinate(1.0f, yCoordsArray, tValuesArray, controlPoints);
+                                    parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray);
 
                                 if (hdriPixelColor.r > bleachingXCoord || hdriPixelColor.g > bleachingXCoord ||
                                     hdriPixelColor.b > bleachingXCoord)

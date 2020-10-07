@@ -267,7 +267,7 @@ public class CurveTest
 
 
     // Array based
-    public float getXCoordinate(float inputYCoord, float[] YCoords, float[] tValues, Vector2[] controlPoints)
+    public float getXCoordinate(float inputYCoord, float[] xCoords, float[] YCoords, float[] tValues)
     {
         if (YCoords.Length <= 0 || tValues.Length <= 0)
         {
@@ -275,34 +275,14 @@ public class CurveTest
             return -1.0f;
         }
 
-        Vector2[] controlPointsArray = new Vector2[]
+        int idx = 0;
+        ClosestTo(YCoords, inputYCoord, out idx);
+        if (idx >= xCoords.Length)
         {
-            controlPoints[0], controlPoints[1], controlPoints[2],
-            controlPoints[2], controlPoints[3], controlPoints[4],
-            controlPoints[4], controlPoints[5], controlPoints[6]
-        };
-
-        for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
-        {
-            Vector2 p0 = controlPointsArray[0 + i];
-            Vector2 p1 = controlPointsArray[1 + i];
-            Vector2 p2 = controlPointsArray[2 + i];
-
-            if (p0.y <= inputYCoord && inputYCoord <= p2.y)
-            {
-                // Search closest x value to xValue and grab its arrayIndex in the array too
-                // The array arrayIndex is used to lookup the tValue
-                int idx = 0;
-                ClosestTo(YCoords, inputYCoord, out idx);
-                float tValue = tValues[idx];
-
-                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.x) +
-                       (2.0f * (1.0f - tValue) * tValue * p1.x) +
-                       (Mathf.Pow(tValue, 2.0f) * p2.x);
-            }
+            Debug.LogError("Index " + idx.ToString() + " is invalid");
         }
 
-        return -1.0f;
+        return xCoords[idx];
     }
 
 
@@ -462,198 +442,26 @@ public class CurveTest
     }
 
     //# Calculate the Y intercept based on slope and an X / Y coordinate pair.
-    public static float calculateLineYIntercept(float inX, float inY, float slope)
+    public float calculateLineYIntercept(float inX, float inY, float slope)
     {
         return (inY - (slope * inX));
     }
 
     // Calculate the Y of a line given by slope and X coordinate.
-    public static float calculateLineY(float inX, float yIntercept, float slope)
+    public float calculateLineY(float inX, float yIntercept, float slope)
     {
         return (slope * inX) + yIntercept;
     }
 
     // Calculate the X of a line given by the slope and Y intercept.
-    public static float calculateLineX(float inY, float yIntercept, float slope)
+    public float calculateLineX(float inY, float yIntercept, float slope)
     {
         return (inY - yIntercept) / slope;
     }
 
     //# Calculate the slope of a line given by two coordinates.
-    public static float calculateLineSlope(float inX1, float inY1, float inX2, float inY2)
+    public float calculateLineSlope(float inX1, float inY1, float inX2, float inY2)
     {
         return (inX1 - inX2) / (inY1 - inY2);
     }
-
-
-    // List based implementation
-    // public float getYCoordinate(float inputXCoord, List<float> xCoords, List<float> tValues,
-    //     List<Vector2> controlPoints)
-    // {
-    //     if (xCoords.Count <= 0 || tValues.Count <= 0)
-    //     {
-    //         Debug.Log("Input array of x values or t values have mismatched lengths ");
-    //         return -1.0f;
-    //     }
-    //
-    //     Vector2[] controlPointsArray = new Vector2[]
-    //     {
-    //         controlPoints[0], controlPoints[1], controlPoints[2],
-    //         controlPoints[2], controlPoints[3], controlPoints[4],
-    //         controlPoints[4], controlPoints[5], controlPoints[6]
-    //     };
-    //
-    //     for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
-    //     {
-    //         Vector2 p0 = controlPointsArray[0 + i];
-    //         Vector2 p1 = controlPointsArray[1 + i];
-    //         Vector2 p2 = controlPointsArray[2 + i];
-    //
-    //         if (p0.x <= inputXCoord && inputXCoord <= p2.x)
-    //         {
-    //             // Search closest x value to xValue and grab its arrayIndex in the array too
-    //             // The array arrayIndex is used to lookup the tValue
-    //             int idx = 0;
-    //             ClosestTo(xCoords, inputXCoord, out idx);
-    //             float tValue = tValues[idx];
-    //
-    //             return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-    //                    (2.0f * (1.0f - tValue) * tValue * p1.y) +
-    //                    (Mathf.Pow(tValue, 2.0f) * p2.y);
-    //         }
-    //     }
-    //
-    //     return -1.0f;
-    // }
-
-
-    // List based   
-    // public float getXCoordinate(float inputYCoord, List<float> YCoords, List<float> tValues,
-    //     List<Vector2> controlPoints)
-    // {
-    //     if (YCoords.Count <= 0 || tValues.Count <= 0)
-    //     {
-    //         Debug.Log("Input array of y values or t values are invalid ");
-    //         return -1.0f;
-    //     }
-    //
-    //     Vector2[] controlPointsArray = new Vector2[]
-    //     {
-    //         controlPoints[0], controlPoints[1], controlPoints[2],
-    //         controlPoints[2], controlPoints[3], controlPoints[4],
-    //         controlPoints[4], controlPoints[5], controlPoints[6]
-    //     };
-    //
-    //     for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
-    //     {
-    //         Vector2 p0 = controlPointsArray[0 + i];
-    //         Vector2 p1 = controlPointsArray[1 + i];
-    //         Vector2 p2 = controlPointsArray[2 + i];
-    //
-    //         if (p0.y <= inputYCoord && inputYCoord <= p2.y)
-    //         {
-    //             // Search closest x value to xValue and grab its arrayIndex in the array too
-    //             // The array arrayIndex is used to lookup the tValue
-    //             int idx = 0;
-    //             ClosestTo(YCoords, inputYCoord, out idx);
-    //             float tValue = tValues[idx];
-    //
-    //             return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.x) +
-    //                    (2.0f * (1.0f - tValue) * tValue * p1.x) +
-    //                    (Mathf.Pow(tValue, 2.0f) * p2.x);
-    //         }
-    //     }
-    //
-    //     return -1.0f;
-    // }
-
-    // List based
-    // public static float ClosestTo(List<float> inputArray, float target, out int arrayIndex)
-    // {
-    //     // NB Method will return int.MaxValue for a sequence containing no elements.
-    //     // Apply any defensive coding here as necessary.
-    //     float closest = float.MaxValue;
-    //     float minDifference = float.MaxValue;
-    //     float prevDifference = float.MaxValue;
-    //     int outIndex = 0;
-    //     int listSize = inputArray.Count;
-    //     for (int i = 0; i < listSize; i++)
-    //     {
-    //         // float difference = Math.Abs((float)inputArray[i] - target);
-    //         float difference = Mathf.Abs((float) inputArray[i] - target);
-    //
-    //         // Early exit
-    //         if (prevDifference < difference)
-    //             break;
-    //
-    //         if (minDifference > difference)
-    //         {
-    //             minDifference = difference;
-    //             closest = inputArray[i];
-    //             outIndex = i;
-    //         }
-    //
-    //         prevDifference = difference;
-    //     }
-    //
-    //     // Debug.Log("Target: " + );
-    //     arrayIndex = outIndex;
-    //     return closest;
-    // }
-
-    // List based
-    // public List<float> calcTfromXquadratic(List<float> xValues, List<Vector2> controlPoints)
-    // {
-    //     List<float> rootsLst = new List<float>();
-    //     if (controlPoints.Count < 3)
-    //     {
-    //         Debug.LogError("Not enough control points used as input");
-    //         return rootsLst;
-    //     }
-    //
-    //     Vector2[] controlPointsArray = new Vector2[]
-    //     {
-    //         controlPoints[0], controlPoints[1], controlPoints[2],
-    //         controlPoints[2], controlPoints[3], controlPoints[4],
-    //         controlPoints[4], controlPoints[5], controlPoints[6]
-    //     };
-    //
-    //     double[] coefficients = new double[3];
-    //     float tmpRoot = -1.0f;
-    //     for (int arrayIndex = 0; arrayIndex < xValues.Count; arrayIndex++)
-    //     {
-    //         for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
-    //         {
-    //             Vector2 p0 = controlPointsArray[0 + i];
-    //             Vector2 p1 = controlPointsArray[1 + i];
-    //             Vector2 p2 = controlPointsArray[2 + i];
-    //
-    //             if (p0.x <= xValues[arrayIndex] && xValues[arrayIndex] <= p2.x)
-    //             {
-    //                 coefficients[0] = p0.x - xValues[arrayIndex];
-    //                 coefficients[1] = (2.0f * p1.x) - (2.0f * p0.x);
-    //                 coefficients[2] = p0.x - (2.0f * p1.x) + p2.x;
-    //
-    //                 Complex[] roots = FindRoots.Polynomial(coefficients);
-    //                 // check if it is complex
-    //                 for (int idx = 0; idx < roots.Length; idx++)
-    //                 {
-    //                     if (tmpRoot < 0.0f || (roots[idx].Real >= 0.0f && roots[idx].Real <= 1.0f))
-    //                     {
-    //                         tmpRoot = (float) roots[idx].Real;
-    //                     }
-    //                 }
-    //
-    //                 if (tmpRoot >= 0.0 && tmpRoot <= 1.0)
-    //                 {
-    //                     rootsLst.Add(tmpRoot);
-    //                     tmpRoot = -1.0f;
-    //                     break;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //
-    //     return rootsLst;
-    // }
 }
