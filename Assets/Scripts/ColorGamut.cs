@@ -43,7 +43,6 @@ public class ColorGamut : MonoBehaviour
     private const int maxIterationsPerFrame = 100000;
 
     private Texture2D hdriTextureTransformed;
-    private Texture2D sweepTextureTransformed;
     private Texture2D textureToSave;
     private RenderTexture screenGrab;
 
@@ -53,7 +52,6 @@ public class ColorGamut : MonoBehaviour
     private string logOutput = "";
 
     // Parametric curve variables
-
     private float slope;
     private Vector2 origin;
     private CurveTest parametricCurve = null;
@@ -142,7 +140,6 @@ public class ColorGamut : MonoBehaviour
         hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
         hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
         textureToSave = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
-        sweepTextureTransformed = new Texture2D(sweepTexture.width, sweepTexture.height);
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         screenGrab.Create();
@@ -198,8 +195,7 @@ public class ColorGamut : MonoBehaviour
         Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
         
     }
-
-
+    
     private IEnumerator CpuGGMIterative()
     {
         int counter = maxIterationsPerFrame;
@@ -348,10 +344,6 @@ public class ColorGamut : MonoBehaviour
                         hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
                         ratio = hdriPixelColor / hdriMaxRGBChannel;
 
-                        // Calculate Sweep max color and ratio
-                        //float sweepMaxRGBChannel = sweepPixelColor.maxColorComponent;
-                        //Color sweepRatio = sweepPixelColor / sweepMaxRGBChannel;
-
                         // Transfer function
                         if (activeTransferFunction == TransferFunction.Max_RGB)
                         {
@@ -369,7 +361,7 @@ public class ColorGamut : MonoBehaviour
                                     bleachingRange = maxRadiometricValue - bleachingXCoord;
                                     bleachingRatio = (hdriPixelColor.maxColorComponent - bleachingXCoord) /
                                                      bleachingRange;
-
+                                    
                                     hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
                                     maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
                                         maxRadiometricValue);
@@ -382,6 +374,7 @@ public class ColorGamut : MonoBehaviour
 
                                     ratio = hdriPixelColor / hdriMaxRGBChannel;
                                 }
+                                
                             }
 
                             // Get Y value from curve using the array version 

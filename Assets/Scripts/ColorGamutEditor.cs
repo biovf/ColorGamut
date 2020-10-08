@@ -29,7 +29,7 @@ public class ColorGamutEditor : Editor
     private int hdriIndex = 0;
 
     private bool showSweep = false;
-    private bool enableBleaching = false;
+    private bool enableBleaching = true;
     private bool isMultiThreaded = false;
     private bool showPixelsOutOfGamut = false;
 
@@ -185,7 +185,6 @@ public class ColorGamutEditor : Editor
             if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
                 _curveGuiDataState == CurveGuiDataState.NotCalculated)
             {
-                // Debug.Log("OnSceneGUI has changed, recalculate");
                 recalculateCurveParameters();
                 _curveGuiDataState = CurveGuiDataState.Calculated;
             }
