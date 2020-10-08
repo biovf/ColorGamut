@@ -28,6 +28,7 @@ public class ColorGamutEditor : Editor
 
     private int hdriIndex = 0;
 
+    private bool showSweep = false;
     private bool enableBleaching = false;
     private bool isMultiThreaded = false;
     private bool showPixelsOutOfGamut = false;
@@ -212,7 +213,7 @@ public class ColorGamutEditor : Editor
         activeTransferFunction =
             (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
         exposure = EditorGUILayout.Slider("Exposure", exposure, -6.0f, 6.0f);
-        bool showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
+        showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
         showPixelsOutOfGamut = EditorGUILayout.Toggle("Show Pixels Out of Gamut", showPixelsOutOfGamut);

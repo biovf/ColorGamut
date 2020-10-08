@@ -23,12 +23,10 @@ public class ColorGamut : MonoBehaviour
 {
     public Material colorGamutMat;
     public Material fullScreenTextureMat;
-    public GameObject sweepPlane;
+    public Material fullScreenTextureAndSweepMat;
     public Texture2D sweepTexture;
     public List<Texture2D> HDRIList;
-
-    // [Range(0.01f, 20.0f)]
-    // public float sweepExposure;
+    
     private TransferFunction activeTransferFunction;
     private float exposure;
 
@@ -116,7 +114,6 @@ public class ColorGamut : MonoBehaviour
     {
         hdriIndex = 0;
         exposure = 1.0f;
-        // sweepExposure = 1.0f;
 
         isBleachingActive = false;
         isSweepActive = false;
@@ -199,6 +196,7 @@ public class ColorGamut : MonoBehaviour
         Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
         colorGamutMat.SetTexture("_MainTex", screenGrab);
         Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
+        
     }
 
 
@@ -208,9 +206,9 @@ public class ColorGamut : MonoBehaviour
         int hdriPixelArrayLen = 0;
 
         float hdriMaxRGBChannel = 0.0f;
-        // float maxDynamicRange = 0.0f;
         float bleachingXCoord = 0.0f;
         float bleachingRange = 0.0f;
+        
         float bleachingRatio = 0.0f;
         float hdriYMaxValue = 0.0f;
         float inverseSrgbEOTF = (1.0f / 2.2f);
@@ -220,8 +218,7 @@ public class ColorGamut : MonoBehaviour
 
         Vector3 hdriPixelColorVec = Vector3.zero;
         Vector3 maxDynamicRangeVec = Vector3.zero;
-        // bool aboveGamut = false;
-        // bool belowGamut = false;
+
         float[] xCoordsArray;
         float[] yCoordsArray;
         float[] tValuesArray;
@@ -230,10 +227,17 @@ public class ColorGamut : MonoBehaviour
 
         while (true)
         {
-            if (inputTextureIdx != hdriIndex)
+            if (!isSweepActive)
             {
-                inputTextureIdx = hdriIndex;
-                inputTexture = HDRIList[inputTextureIdx];
+                // if (inputTextureIdx != hdriIndex)
+                {
+                    inputTextureIdx = hdriIndex;
+                    inputTexture = HDRIList[inputTextureIdx];
+                }
+            }
+            else
+            {
+                inputTexture = sweepTexture;
             }
 
             hdriPixelArray = inputTexture.GetPixels();
@@ -321,7 +325,6 @@ public class ColorGamut : MonoBehaviour
 
                         // Full dynamic range of image
                         hdriPixelColor = hdriPixelArray[i] * exposure;
-                        //Color sweepPixelColor = sweepPixelArray[i] * sweepExposure;
                         ratio = Color.blue;
                         // Secondary Nuance Grade, guardrails
                         if (hdriPixelColor.r > maxRadiometricValue || hdriPixelColor.g > maxRadiometricValue ||
@@ -339,15 +342,9 @@ public class ColorGamut : MonoBehaviour
                         //     hdriPixelColor.g = minRadiometricValue;
                         //     hdriPixelColor.b = minRadiometricValue;
                         // }                        
-                        //if (sweepPixelColor.r > animationCurve[3].time || sweepPixelColor.g > animationCurve[3].time || sweepPixelColor.b > animationCurve[3].time)
-                        //{
-                        //    sweepPixelColor.r = animationCurve[3].time;
-                        //    sweepPixelColor.g = animationCurve[3].time;
-                        //    sweepPixelColor.b = animationCurve[3].time;
-                        //}
+                  
 
                         // Calculate Pixel max color and ratio
-                        
                         hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
                         ratio = hdriPixelColor / hdriMaxRGBChannel;
 
@@ -433,17 +430,12 @@ public class ColorGamut : MonoBehaviour
                                     hdriPixelColor = Color.green;
                                 }
                             }
-
-                            //sweepPixelColor.r = animationCurve.Evaluate(sweepPixelColor.r);
-                            //sweepPixelColor.g = animationCurve.Evaluate(sweepPixelColor.g);
-                            //sweepPixelColor.b = animationCurve.Evaluate(sweepPixelColor.b);
                         }
 
                         hdriPixelArray[i].r = Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
                         hdriPixelArray[i].g = Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
                         hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
                         hdriPixelArray[i].a = 1.0f;
-                        //sweepPixelArray[i] = new Color(Mathf.Pow(sweepPixelColor.r, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.g, 1.0f / 2.2f), Mathf.Pow(sweepPixelColor.b, 1.0f / 2.2f), 1.0f);
                     }
 
                     hdriTextureTransformed.SetPixels(hdriPixelArray);
@@ -452,8 +444,6 @@ public class ColorGamut : MonoBehaviour
                 }
 
                 ChangeCurveDataState(CurveDataState.Calculated);
-                //sweepTextureTransformed.SetPixels(sweepPixelArray);
-                //sweepTextureTransformed.Apply();
             }
             else
             {
@@ -595,7 +585,8 @@ public class ColorGamut : MonoBehaviour
     public void setShowSweep(bool isActive)
     {
         isSweepActive = isActive;
-        sweepPlane.SetActive(isSweepActive);
+        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        //sweepPlane.SetActive(isSweepActive);
     }
 
     public bool getIsMultiThreaded()
