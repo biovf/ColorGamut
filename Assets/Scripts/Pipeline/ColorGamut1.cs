@@ -1,31 +1,17 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Text;
 using UnityEngine;
-using UnityEngine.UI;
-using MathNet.Numerics;
 using Unity.Collections;
 using Unity.Jobs;
-using UnityEngine.Assertions.Comparers;
 using Debug = UnityEngine.Debug;
 
-public enum TransferFunction
-{
-    Per_Channel,
-    Max_RGB
-}
-
-[ExecuteInEditMode]
-public class ColorGamut : MonoBehaviour
+public class ColorGamut1 
 {
     public Material colorGamutMat;
     public Material fullScreenTextureMat;
     public Material fullScreenTextureAndSweepMat;
     public Texture2D sweepTexture;
-    public List<Texture2D> HDRIList;
+    // public List<Texture2D> HDRIList;
     
     private TransferFunction activeTransferFunction;
     private float exposure;
@@ -103,13 +89,10 @@ public class ColorGamut : MonoBehaviour
     private CurveDataState curveDataState = CurveDataState.NotCalculated;
     private Camera mainCamera;
 
-    private void Awake()
+    public void Start(HDRPipeline pipeline)
     {
         activeTransferFunction = TransferFunction.Max_RGB;
-    }
 
-    void Start()
-    {
         hdriIndex = 0;
         exposure = 1.0f;
 
@@ -132,10 +115,10 @@ public class ColorGamut : MonoBehaviour
         curveLutLength = 1024;
         createParametricCurve(greyPoint, origin);
 
-        if (HDRIList == null)
-            Debug.LogError("HDRIs list is empty");
+        // if (HDRIList == null)
+        //     Debug.LogError("HDRIs list is empty");
 
-        inputTexture = HDRIList[hdriIndex];
+        // inputTexture = HDRIList[hdriIndex];
 
         hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
         hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
@@ -143,11 +126,11 @@ public class ColorGamut : MonoBehaviour
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         screenGrab.Create();
-        mainCamera = this.gameObject.GetComponent<Camera>();
+        mainCamera = pipeline.gameObject.GetComponent<Camera>();
 
         if (Application.isPlaying)
         {
-            StartCoroutine("CpuGGMIterative");
+            pipeline.StartCoroutine("CpuGGMIterative");
         }
     }
 
@@ -162,7 +145,7 @@ public class ColorGamut : MonoBehaviour
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
     }
 
-    void Update()
+    public void Update()
     {
         if (Input.GetMouseButtonDown(0))
         {
@@ -188,13 +171,18 @@ public class ColorGamut : MonoBehaviour
         }
     }
 
-    void OnRenderImage(RenderTexture src, RenderTexture dest)
+    public Texture2D getHDRITexture()
     {
-        Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
-        colorGamutMat.SetTexture("_MainTex", screenGrab);
-        Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
-        
+        return hdriTextureTransformed;
     }
+
+    // void OnRenderImage(RenderTexture src, RenderTexture dest)
+    // {
+    //     Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
+    //     colorGamutMat.SetTexture("_MainTex", screenGrab);
+    //     Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
+    //     
+    // }
     
     private IEnumerator CpuGGMIterative()
     {
@@ -224,19 +212,6 @@ public class ColorGamut : MonoBehaviour
 
         while (true)
         {
-            if (!isSweepActive)
-            {
-                // if (inputTextureIdx != hdriIndex)
-                {
-                    inputTextureIdx = hdriIndex;
-                    inputTexture = HDRIList[inputTextureIdx];
-                }
-            }
-            else
-            {
-                inputTexture = sweepTexture;
-            }
-
             hdriPixelArray = inputTexture.GetPixels();
             hdriPixelArrayLen = hdriPixelArray.Length;
             int quarterSize = hdriPixelArrayLen / 4;
@@ -399,10 +374,6 @@ public class ColorGamut : MonoBehaviour
                                 }
                             }
 
-                            // Sweep texture
-                            //sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
-                            //sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
-
                             activeTransferFunction = TransferFunction.Max_RGB;
                         }
                         else
@@ -447,8 +418,7 @@ public class ColorGamut : MonoBehaviour
             }
         }
     }
-
-
+    
     private void ChangeCurveDataState(CurveDataState newState)
     {
         switch (newState)
@@ -475,32 +445,6 @@ public class ColorGamut : MonoBehaviour
         }
     }
 
-    // Utility methods
-    // public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
-    // {
-    //     List<float> xValues = new List<float>(dimension);
-    //     float step = maxRange / (float) dimension;
-    //     float stepBias = Shaper.calculateLinearToLog(step);
-    //     float xCoord = 0.0f;
-    //
-    //     for (int i = 0; i < dimension - 1; ++i)
-    //     {
-    //         xCoord = minRadiometricValue + (i * step);
-    //
-    //         if (xCoord < minRadiometricValue)
-    //             continue;
-    //
-    //         if (Mathf.Approximately(xCoord, maxRange))
-    //             break;
-    //
-    //         xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
-    //         // Debug.Log("xCoord: " + xCoord + " \t Shaper Loop Index " +
-    //         //           Shaper.calculateLinearToLog(step * i) + " " + stepBias);
-    //     }
-    //
-    //     return xValues;
-    // }
-    
     // Dimension - size of the look up table being created
     // maxRange - maximum radiometric value we are using
     public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
@@ -573,11 +517,11 @@ public class ColorGamut : MonoBehaviour
         return isSweepActive;
     }
 
-    public void setShowSweep(bool isActive)
+    public void setShowSweep(bool isActive, Texture2D inputTexture)
     {
         isSweepActive = isActive;
+        this.inputTexture = inputTexture;
         ChangeCurveDataState(CurveDataState.MustRecalculate);
-        //sweepPlane.SetActive(isSweepActive);
     }
 
     public bool getIsMultiThreaded()
@@ -642,11 +586,17 @@ public class ColorGamut : MonoBehaviour
         return parametricCurve;
     }
 
-    public void setHDRIIndex(int index)
+    public void setInputTexture(Texture2D inputTexture)
     {
-        hdriIndex = index;
+        this.inputTexture = inputTexture;
         ChangeCurveDataState(CurveDataState.MustRecalculate);
     }
+
+    // public void setHDRIIndex(int index)
+    // {
+    //     hdriIndex = index;
+    //     ChangeCurveDataState(CurveDataState.MustRecalculate);
+    // }
 
     public void setBleaching(bool inIsBleachingActive)
     {
@@ -682,104 +632,10 @@ public class ColorGamut : MonoBehaviour
         RenderTexture.active = currentActiveRT;
         return tex;
     }
-
-    float remap(float value, float min0, float max0, float min1, float max1)
-    {
-        return min1 + (value - min0) * ((max1 - min1) / (max0 - min0));
-    }
-
-    Color colorRemap(Color col, float channel)
-    {
-        float red = col.r;
-        float green = col.g;
-        float blue = col.b;
-        Color outColor = new Color();
-        if (channel == 0.0) // 0.0 corresponds to red
-        {
-            float newRangeMin =
-                remap(Mathf.Clamp01(col.r), 1.0f, 0.85f, 1.0f,
-                    0.0f); // how far between 0.85 and 1 are we? Remap it to 1.0 to 0.0
-
-            green = (col.r != col.g) ? Mathf.Lerp(green, col.r, newRangeMin) : col.g;
-            blue = (col.r != col.b) ? Mathf.Lerp(blue, col.r, newRangeMin) : col.b;
-
-            outColor = new Color(col.r, green, blue);
-        }
-        else if (channel == 1.0) // 1.0 corresponds to green
-        {
-            float newRangeMin =
-                remap(Mathf.Clamp01(col.g), 1.0f, 0.85f, 1.0f,
-                    0.0f); // how far between 0.85 and 1 are we? Remap it to 1.0 to 0.0
-
-            red = (col.g != col.r) ? Mathf.Lerp(red, col.g, newRangeMin) : col.r;
-            blue = (col.g != col.b) ? Mathf.Lerp(blue, col.g, newRangeMin) : col.b;
-
-            outColor = new Color(red, col.g, blue);
-        }
-        else if (channel == 2.0) // 2.0 corresponds to blue
-        {
-            float newRangeMin =
-                remap(Mathf.Clamp01(col.b), 1.0f, 0.85f, 1.0f,
-                    0.0f); // how far between 0.85 and 1 are we? Remap it to 1.0 to 0.0
-
-            red = (col.b != col.r) ? Mathf.Lerp(red, col.b, newRangeMin) : col.r;
-            green = (col.b != col.g) ? Mathf.Lerp(green, col.b, newRangeMin) : col.g;
-            outColor = new Color(red, green, col.b);
-        }
-
-        return new Color(Mathf.Clamp01(outColor.r), Mathf.Clamp01(outColor.g), Mathf.Clamp01(outColor.b));
-    }
-
-
-    bool all(bool[] x) // bvec can be bvec2, bvec3 or bvec4
-    {
-        bool result = true;
-        int i;
-        for (i = 0; i < x.Length; ++i)
-        {
-            result &= x[i];
-        }
-
-        return result;
-    }
-
-    bool any(bool[] x)
-    {
-        // bvec can be bvec2, bvec3 or bvec4
-        bool result = false;
-        int i;
-        for (i = 0; i < x.Length; ++i)
-        {
-            result |= x[i];
-        }
-
-        return result;
-    }
-
-    Vector3 sum_vec3(Vector3 input_vector)
-    {
-        float sum = input_vector.x + input_vector.y + input_vector.z;
-        return new Vector3(sum, sum, sum);
-    }
-
-    Vector3 max_vec3(Vector3 input_vector)
-    {
-        float max = Mathf.Max(Mathf.Max(input_vector.x, input_vector.y), input_vector.z);
-        return new Vector3(max, max, max);
-    }
-
-    bool[] greaterThan(Vector3 vecA, Vector3 vecB)
-    {
-        return new bool[3] {(vecA.x > vecB.x), (vecA.x > vecB.x), (vecA.x > vecB.x)};
-    }
-
-    bool[] lessThanEqual(Vector3 vecA, Vector3 vecB)
-    {
-        return new bool[3] {(vecA.x <= vecB.x), (vecA.x <= vecB.x), (vecA.x <= vecB.x)};
-    }
+    
 }
 
-struct GamutMapJob : IJobParallelFor
+struct GamutMapJob1 : IJobParallelFor
 {
     public NativeArray<Color> hdriPixelArray;
     [ReadOnly] public NativeArray<float> tValues;
