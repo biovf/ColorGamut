@@ -208,13 +208,14 @@ public class ColorGamut : MonoBehaviour
         float bleachingRatio = 0.0f;
         float hdriYMaxValue = 0.0f;
         float inverseSrgbEOTF = (1.0f / 2.2f);
-
+        float rawMaxPixelValue = 0.0f;
+        
         Color ratio = Color.black;
         Color hdriPixelColor = Color.black;
 
         Vector3 hdriPixelColorVec = Vector3.zero;
         Vector3 maxDynamicRangeVec = Vector3.zero;
-
+        
         float[] xCoordsArray;
         float[] yCoordsArray;
         float[] tValuesArray;
@@ -240,6 +241,7 @@ public class ColorGamut : MonoBehaviour
             hdriPixelArrayLen = hdriPixelArray.Length;
             int quarterSize = hdriPixelArrayLen / 4;
             int halfSize = hdriPixelArrayLen / 2;
+            int threeQuartersSize = hdriPixelArrayLen - quarterSize;
      
             
             if (curveDataState != CurveDataState.Calculated)
@@ -308,7 +310,7 @@ public class ColorGamut : MonoBehaviour
                     counter = maxIterationsPerFrame;
                     for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
                     {
-                        if (i == quarterSize || i == halfSize )
+                        if (i == quarterSize || i == halfSize || i == threeQuartersSize)
                         {
                             Debug.Log("Image Processing at " + (100.0f * (float)i/(float)hdriPixelArrayLen).ToString() + "%");
                         }
@@ -321,6 +323,7 @@ public class ColorGamut : MonoBehaviour
 
                         // Full dynamic range of image
                         hdriPixelColor = hdriPixelArray[i] * exposure;
+                        rawMaxPixelValue = hdriPixelColor.maxColorComponent;
                         ratio = Color.blue;
                         // Secondary Nuance Grade, guardrails
                         if (hdriPixelColor.r > maxRadiometricValue || hdriPixelColor.g > maxRadiometricValue ||
@@ -375,7 +378,6 @@ public class ColorGamut : MonoBehaviour
 
                                     ratio = hdriPixelColor / hdriMaxRGBChannel;
                                 }
-                                
                             }
 
                             // Get Y value from curve using the array version 
@@ -387,11 +389,11 @@ public class ColorGamut : MonoBehaviour
 
                             if (showPixelsOutOfGamut)
                             {
-                                if (hdriMaxRGBChannel < minRadiometricValue) // Below Gamut
+                                if (rawMaxPixelValue < minRadiometricValue) // Below Gamut
                                 {
                                     hdriPixelColor = Color.red;
                                 }
-                                else if (hdriMaxRGBChannel > maxRadiometricValue) // Above gamut
+                                else if (rawMaxPixelValue > maxRadiometricValue) // Above gamut
                                 {
                                     hdriPixelColor = Color.green;
                                 }
