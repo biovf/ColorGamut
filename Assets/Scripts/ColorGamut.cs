@@ -361,6 +361,7 @@ public class ColorGamut : MonoBehaviour
                                     bleachingRange = maxRadiometricValue - bleachingXCoord;
                                     bleachingRatio = (hdriPixelColor.maxColorComponent - bleachingXCoord) /
                                                      bleachingRange;
+                                    // bleachingRatio = Mathf.Pow(bleachingRatio, 2.0f);
                                     
                                     hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
                                     maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,

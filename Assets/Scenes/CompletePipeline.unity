@@ -240,14 +240,13 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   - component: {fileID: 963194229}
-  - component: {fileID: 963194230}
   - component: {fileID: 963194231}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 4294967295
   m_IsActive: 1
 --- !u!81 &963194226
 AudioListener:
@@ -256,7 +255,7 @@ AudioListener:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
+  m_Enabled: 0
 --- !u!20 &963194227
 Camera:
   m_ObjectHideFlags: 0
@@ -292,7 +291,7 @@ Camera:
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
-  m_TargetEye: 3
+  m_TargetEye: 0
   m_HDR: 1
   m_AllowMSAA: 0
   m_AllowDynamicResolution: 0
@@ -308,7 +307,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -8.5}
+  m_LocalPosition: {x: -0, y: 0.02, z: -8.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -327,42 +326,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   colorGamutMat: {fileID: 2100000, guid: 763f07c427001ba4ebdbae681f8e2e40, type: 2}
-  inputTexture: {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
-  fullScreenTextureMat: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2,
+  fullScreenTextureMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1,
     type: 2}
-  hdriPlane: {fileID: 1380646434}
-  sweepPlane: {fileID: 1048242420}
+  fullScreenTextureAndSweepMat: {fileID: 2100000, guid: 18a6e64ab6eb44d8182ae4e5b00e40e0,
+    type: 2}
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
   HDRIList:
+  - {fileID: 2800000, guid: 400a91eb508d8400f964caa61ea28b6e, type: 3}
+  - {fileID: 2800000, guid: 74b5112b0de7249ff828a4ddd01638a5, type: 3}
+  - {fileID: 2800000, guid: d27072d01fcf94c9184573ab97959e52, type: 3}
   - {fileID: 2800000, guid: bedbb785de66cdb4c8b507ef388afa93, type: 3}
-  - {fileID: 2800000, guid: d573e668cebd549a6897b51fcfd303cc, type: 3}
-  - {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
-  - {fileID: 2800000, guid: bd000266b35516c4fbdae6c97a7001fd, type: 3}
-  - {fileID: 2800000, guid: 38869bc2cc4d02842a5b31cbece41e05, type: 3}
-  enableDyeBleaching: 0
-  lerpRatio: 0
-  dye_bleach_x: 5
-  dye_bleach_y: 2
-  exposure: 0.01
-  sweepExposure: 0
-  activeTransferFunction: 0
---- !u!114 &963194230
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b4ce7ed36a574d7a8b12de7736b62ee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  colorGradingMat: {fileID: 2100000, guid: 2093b6b71017042388fc0c11f863b22b, type: 2}
-  fullscreenMat: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2, type: 2}
-  colorLUT: {fileID: 2800000, guid: 992233de78b824671bc5963e8c2aff83, type: 3}
-  inputTexture: {fileID: 2800000, guid: 37aba1c0db59f0b4e99910c06f289fa9, type: 3}
-  secondPlane: {fileID: 1380646434}
+  - {fileID: 2800000, guid: 819994d73a1e5482ca3d6e59240ed007, type: 3}
+  - {fileID: 2800000, guid: d5d27005e4472af4ab106ce3b2875209, type: 3}
+  - {fileID: 2800000, guid: 5d8c966a0846c8340afe2cdfc20189fb, type: 3}
+  - {fileID: 2800000, guid: 13b0793a5c665854f958efe67c21e386, type: 3}
+  minExposureValue: -6
+  maxExposureValue: 6
 --- !u!114 &963194231
 MonoBehaviour:
   m_ObjectHideFlags: 0
