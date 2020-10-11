@@ -176,6 +176,8 @@ public class ColorGamutEditor : Editor
             Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
             Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f),
                 4.0f); // Draw Y = 1 line
+            Handles.DrawDottedLine(new Vector3(0.0f, 1.5f), new Vector3(colorGamut.MaxRadiometricValue, 1.5f),
+            4.0f); // Draw Y = 1 line
 
             // foreach (var item in xTempValues)
             // {

@@ -370,7 +370,7 @@ public class ColorGamut : MonoBehaviour
                                     maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
                                         maxRadiometricValue);
                                     hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
-                                        bleachingRatio);
+                                        Mathf.Pow(bleachingRatio, 2.0f));
 
                                     hdriPixelColor.r = hdriPixelColorVec.x;
                                     hdriPixelColor.g = hdriPixelColorVec.y;

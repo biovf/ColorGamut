@@ -65,7 +65,7 @@ public class CurveTest
         Vector2 toeP2Coords = new Vector2(0.0f, 0.085f);
         Vector2 midP1Coords = new Vector2(0.0f, 0.0f); // Unknown at this point
         Vector2 shP0Coords = greyPoint;
-        Vector2 shP1Coords = new Vector2(0.0f, 1.0f); // Unknown at this point
+        Vector2 shP1Coords = new Vector2(0.0f, 1.5f); // Unknown at this point
         Vector2 shP2Coords = new Vector2(maxRadiometricValue, maxDisplayValue);
 
         // calculate y intersection when y = 0
