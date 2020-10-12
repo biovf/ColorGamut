@@ -220,8 +220,7 @@ public class ColorGradingHDR : MonoBehaviour
         Debug.Log("Saving log file to disk");
         File.WriteAllText(testImage.name + "PQDisplayP3Log.txt", colorInfo.ToString());
     }
-
-
+    
     private void testCompareTextureContents(Texture2D tex1, Texture2D tex2)
     {
         // Get pixels and save temp color

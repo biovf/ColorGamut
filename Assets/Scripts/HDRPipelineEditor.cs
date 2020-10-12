@@ -7,7 +7,6 @@ using UnityEditor;
 [CustomEditor(typeof(HDRPipeline))]
 public class HDRPipelineEditor : Editor
 {
- 
     HDRPipeline hdrPipeline;
     private ColorGamut1 colorGamut;
     private float exposure = 1;
@@ -23,7 +22,6 @@ public class HDRPipelineEditor : Editor
 
     #endregion
 
-    public List<Texture2D> HDRIList;
     
     private List<string> hdriNames;
 
@@ -45,6 +43,37 @@ public class HDRPipelineEditor : Editor
 
     private Vector3 cubeWidgetSize = new Vector3(0.01f, 0.01f, 0.01f);
 
+    #region CubeLut Variables
+
+    private bool useShaperFunction = true;
+    private bool useDisplayP3 = false;
+    private bool foldoutStateCubeLut = false;
+    private int lutDimension = 33;
+    private float maxRadiometricValue = 1.0f;
+    private string outPathCubeLut = "";
+    private string defaultCubeLutFileName;
+    #endregion
+
+    #region Lut Texture Variables
+    private bool generateHDRLut = false;
+    private bool useShaperFunctionTexLut = true;
+    private bool useDisplayP3TexLut = false;
+    private bool foldoutState1DLut = false;
+    private int lutDimensionTexLut = 32;
+    private float maxRadiometricValueTexLut = 1.0f;
+    private string outPathTextureLut = "";
+    private string defaultTextureFileName;
+    #endregion
+
+    #region EXR Capture Variables 
+    private bool foldoutStateSaveExr = false;
+    private string outPathGameCapture = "";
+    #endregion
+
+    private bool colorGradingEditorFold = false;
+    private ColorGradingHDR1 colorGradingHDR;
+    
+    
     // Prototype the state approach to test caching of data
     private enum CurveGuiDataState
     {
@@ -60,20 +89,36 @@ public class HDRPipelineEditor : Editor
     {
         hdrPipeline = (HDRPipeline) target;
         colorGamut = hdrPipeline.getColorGamut();
-        hdriNames = new List<string>();
-        if (HDRIList != null)
+        colorGradingHDR = hdrPipeline.getColorGrading();
+        if (colorGamut != null)
         {
-            for (int i = 0; i < HDRIList.Count; i++)
+            hdriNames = new List<string>();
+            if (hdrPipeline.HDRIList != null)
             {
-                hdriNames.Add(new string(HDRIList[i].ToString().ToCharArray()));
+                for (int i = 0; i < hdrPipeline.HDRIList.Count; i++)
+                {
+                    hdriNames.Add(new string(hdrPipeline.HDRIList[i].ToString().ToCharArray()));
+                }
             }
+
+            colorGamut.setInputTexture(hdrPipeline.HDRIList[hdriIndex]);
         }
-        colorGamut.setInputTexture(HDRIList[hdriIndex]);
-        
+
         // Initialise parameters for the curve with sensible values
         if (_curveGuiDataState == CurveGuiDataState.NotCalculated)
             colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
                 out greyPointY);
+        
+        // Color grading initialisation
+        defaultTextureFileName = "LUT" + lutDimensionTexLut +
+                                 (useShaperFunctionTexLut == true ? "PQ" : "Linear") +
+                                 (useDisplayP3TexLut == true ? "DisplayP3" : "sRGB") +
+                                 "MaxRange" + maxRadiometricValueTexLut.ToString();
+        
+        defaultCubeLutFileName = "CubeLut" + lutDimension.ToString() +
+                                 (useShaperFunction == true ? "PQ" : "Linear") +
+                                 (useDisplayP3 == true ? "DisplayP3" : "sRGB") +
+                                 "MaxRange" + maxRadiometricValue.ToString();
         
     }
 
@@ -156,6 +201,7 @@ public class HDRPipelineEditor : Editor
         {
             hdrPipeline = (HDRPipeline) target;
             colorGamut = hdrPipeline.getColorGamut();
+            colorGradingHDR = hdrPipeline.getColorGrading();
         }
         
         if (hdriNames != null && hdriNames.Count > 0)
@@ -182,6 +228,15 @@ public class HDRPipelineEditor : Editor
         greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
         greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
 
+        colorGradingEditorFold = EditorGUILayout.InspectorTitlebar(colorGradingEditorFold, hdrPipeline);
+        if (colorGradingEditorFold)
+        {
+            DrawSaveExrInspectorProps();
+            DrawTexLutInspectorProps();
+            DrawCubeInspectorProps();
+        }
+
+
         if (GUI.changed)
         {
             _curveGuiDataState = CurveGuiDataState.MustRecalculate;
@@ -194,7 +249,7 @@ public class HDRPipelineEditor : Editor
                 _curveGuiDataState == CurveGuiDataState.NotCalculated)
             {
                 // colorGamut.setHDRIIndex(hdriIndex);
-                colorGamut.setShowSweep(showSweep, HDRIList[hdriIndex]);
+                colorGamut.setShowSweep(showSweep, hdrPipeline.HDRIList[hdriIndex]);
                 colorGamut.setBleaching(enableBleaching);
                 colorGamut.setIsMultiThreaded(isMultiThreaded);
                 colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
@@ -208,6 +263,121 @@ public class HDRPipelineEditor : Editor
         }
 
         base.serializedObject.ApplyModifiedProperties();
+    }
+    
+    
+    
+     private void DrawSaveExrInspectorProps()
+    {
+        EditorGUILayout.Space(10.0f);
+        EditorGUILayout.LabelField("In-Game Capture ");
+
+        if (GUILayout.Button("Save Game Capture To"))
+        {
+            outPathGameCapture = EditorUtility.SaveFilePanel("In Game capture EXR...", "", "Capture", "exr");
+
+            if (string.IsNullOrEmpty(outPathGameCapture))
+            {
+                Debug.LogError("File path to save game capture is invalid");
+                return;
+            }
+         
+            colorGradingHDR.saveInGameCapture(outPathGameCapture);
+        }
+        else if (outPathGameCapture.Length < 1)
+        {
+            outPathGameCapture = Application.dataPath;
+        }
+
+        outPathGameCapture = EditorGUILayout.TextField("Save to", outPathGameCapture);
+    }
+
+    private void DrawTexLutInspectorProps()
+    {
+        EditorGUILayout.Space(10.0f);
+        EditorGUILayout.LabelField("Color Grading LUT Texture ");
+        foldoutState1DLut = EditorGUILayout.Foldout(foldoutState1DLut, "Generate Texture LUT Options", true);
+        if (foldoutState1DLut)
+        {
+            generateHDRLut = EditorGUILayout.Toggle("HDR", generateHDRLut);
+            if (generateHDRLut == true)
+            {
+                useShaperFunctionTexLut = EditorGUILayout.Toggle("Use Shaper Function", useShaperFunctionTexLut);
+                if (useShaperFunctionTexLut)
+                {
+                    maxRadiometricValueTexLut =
+                        EditorGUILayout.FloatField("Max Radiometric Value", maxRadiometricValueTexLut);
+                }
+
+                useDisplayP3TexLut = EditorGUILayout.Toggle("Convert to Display-P3", useDisplayP3TexLut);
+                // TODO explore the GUILayoutOptions to show that the floating point number is actually a FP value
+            }
+
+            lutDimensionTexLut = EditorGUILayout.IntField("LUT Dimension", lutDimensionTexLut);
+        }
+
+        if (GUILayout.Button("Generate LUT Texture"))
+        {
+            if (generateHDRLut)
+            {
+                defaultTextureFileName = "HDR_Lut" + lutDimensionTexLut +
+                                         (useShaperFunctionTexLut == true ? "PQ" : "Linear") +
+                                         (useDisplayP3TexLut == true ? "DisplayP3" : "sRGB") +
+                                         "MaxRange" + maxRadiometricValueTexLut.ToString();
+            }
+            else
+            {
+                defaultTextureFileName = "SDR_Lut" + lutDimensionTexLut;
+            }
+
+            outPathTextureLut = EditorUtility.SaveFilePanel("Save LUT Texture to...", "", defaultTextureFileName, 
+                (generateHDRLut ? "exr" : "png"));
+
+            if (string.IsNullOrEmpty(outPathTextureLut))
+            {
+                Debug.LogError("File path to save Lut texture is invalid");
+                return;
+            }
+
+            colorGradingHDR.generateTextureLut(outPathTextureLut, lutDimensionTexLut, generateHDRLut, useShaperFunctionTexLut, useDisplayP3TexLut,
+                maxRadiometricValueTexLut);
+        }
+    }
+
+    private void DrawCubeInspectorProps()
+    {
+        EditorGUILayout.Space(10.0f);
+        EditorGUILayout.LabelField("Color Grading .cube LUT File");
+        foldoutStateCubeLut = EditorGUILayout.Foldout(foldoutStateCubeLut, "Generate .cube LUT Options", true);
+        if (foldoutStateCubeLut)
+        {
+            useShaperFunction = EditorGUILayout.Toggle("Use Shaper Function", useShaperFunction);
+            if (useShaperFunction)
+            {
+                maxRadiometricValue = EditorGUILayout.FloatField("Max Radiometric Value", maxRadiometricValue);
+            }
+
+            useDisplayP3 = EditorGUILayout.Toggle("Convert to Display-P3", useDisplayP3);
+            lutDimension = EditorGUILayout.IntField("LUT Dimension", lutDimension);
+        }
+
+        if (GUILayout.Button("Generate .cube LUT File"))
+        {
+            defaultCubeLutFileName = "CubeLut" + lutDimension.ToString() +
+                                     (useShaperFunction == true ? "PQ" : "Linear") +
+                                     (useDisplayP3 == true ? "DisplayP3" : "sRGB") +
+                                     "MaxRange" + maxRadiometricValue.ToString();
+            outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName, 
+                     "cube" );
+
+            if (string.IsNullOrEmpty(outPathCubeLut))
+            {
+                Debug.LogError("File path to save cube Lut file is invalid");
+                return;
+            }
+
+            colorGradingHDR.generateCubeLut(outPathCubeLut, lutDimension, useShaperFunction, useDisplayP3, maxRadiometricValue);
+        }
     }
     
 }

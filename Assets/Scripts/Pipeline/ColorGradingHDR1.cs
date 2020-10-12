@@ -1,14 +1,16 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using System.IO;
 using System.Text;
-using UnityEngine.Experimental.Rendering;
-using UnityEngine.Serialization;
 
-public class ColorGradingHDR1 : MonoBehaviour
+public class ColorGradingHDR1
 {
-    public bool enableColorGrading = true;
+    public bool EnableColorGrading
+    {
+        get => enableColorGrading;
+        set => enableColorGrading = value;
+    }
+
+    private bool enableColorGrading = true;
 
     private ColorGamut1 colorGamut;
     
@@ -26,36 +28,38 @@ public class ColorGradingHDR1 : MonoBehaviour
     
     private RenderTexture decodedRTLUT;
     private RenderTexture interceptDebugRT;
-    
 
-    void Start()
+    public ColorGradingHDR1(Texture2D testTexture, Material colorGradingMat, Material colorGrading3DTextureMat, 
+        Material fullscreenMat)
     {
-        colorGamut = this.GetComponent<ColorGamut1>();
-        if (colorGamut == null)
-        {
-            Debug.LogError("ColorGamut game object cannot be null");
-            return;
-        }
+        this.testTexture = testTexture;
+        this.colorGradingMat = colorGradingMat;
+        this.colorGrading3DTextureMat = colorGrading3DTextureMat;
+        this.fullscreenMat = fullscreenMat;
+    }
 
-        testTexture = colorGamut.getHDRITexture();
+    public void Start(HDRPipeline pipeline, Texture3D hdrLUTToDecode)
+    {
+        // testTexture = colorGamut.getHDRITexture();
         colorGradeRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         toneMapRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         interceptDebugRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
+        
+        hdr3DLutToDecode = hdrLUTToDecode;
     }
     
-    private void OnRenderImage(RenderTexture src, RenderTexture dest)
+    public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
         if (enableColorGrading)
         {
-            Graphics.Blit(testTexture, colorGradeRT, fullscreenMat);
-            Graphics.Blit(colorGradeRT, interceptDebugRT, fullscreenMat);
+            // Graphics.Blit(testTexture, colorGradeRT, fullscreenMat);
+            // Graphics.Blit(src, interceptDebugRT, fullscreenMat);
 
             colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
-            Graphics.Blit(colorGradeRT, toneMapRT, colorGrading3DTextureMat);
-            Graphics.Blit(toneMapRT, dest, toneMapMat);
+            Graphics.Blit(src, dest, colorGrading3DTextureMat);
         }
         else
         {
@@ -63,7 +67,7 @@ public class ColorGradingHDR1 : MonoBehaviour
         }
     }
 
-    private void Update()
+    public void Update()
     {
         if (Input.GetMouseButtonDown(0))
         {

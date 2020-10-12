@@ -268,7 +268,7 @@ Camera:
   m_GameObject: {fileID: 963194225}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
+  m_ClearFlags: 4
   m_BackGroundColor: {r: 0.6666667, g: 0.6666667, b: 0.6666667, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -323,7 +323,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a61a7c3f7c0d1243a0d7bd05329e2b6, type: 3}
   m_Name: 
@@ -398,6 +398,12 @@ MonoBehaviour:
   fullscreenMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1, type: 2}
   toneMapMat: {fileID: 2100000, guid: 5a71417fea58f432cb8bf2574e120075, type: 2}
   hdr3DLutToDecode: {fileID: 0}
+  testTexture: {fileID: 0}
+  colorGradeRT: {fileID: 0}
+  toneMapRT: {fileID: 0}
+  encodedInputTexture: {fileID: 0}
+  decodedRTLUT: {fileID: 0}
+  interceptDebugRT: {fileID: 0}
 --- !u!114 &963194233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -405,11 +411,23 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41ce304c2f43845af8545b7039de6ab6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  colorGamutMat: {fileID: 2100000, guid: 763f07c427001ba4ebdbae681f8e2e40, type: 2}
+  fullScreenTextureMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1,
+    type: 2}
+  sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
+  HDRIList:
+  - {fileID: 2800000, guid: d5d27005e4472af4ab106ce3b2875209, type: 3}
+  colorGradingMat: {fileID: 2100000, guid: 2929c88870f8b4cc1b41367e15ada627, type: 2}
+  colorGrading3DTextureMat: {fileID: 2100000, guid: 83cef61a096da4d9d86919f05dca8030,
+    type: 2}
+  fullscreenMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1, type: 2}
+  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: 826316019308d41b2b8eb46e7fdae2d8,
+    type: 3}
 --- !u!1 &1048242420
 GameObject:
   m_ObjectHideFlags: 0

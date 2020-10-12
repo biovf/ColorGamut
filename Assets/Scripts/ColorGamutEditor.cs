@@ -11,6 +11,7 @@ public class ColorGamutEditor : Editor
     ColorGamut colorGamut;
 
     private float exposure = 1;
+    private int bleachingRatioPower = 2;
     private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
 
     #region Parametric Curve Parameters
@@ -213,7 +214,9 @@ public class ColorGamutEditor : Editor
 
         activeTransferFunction =
             (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
+        EditorGUILayout.Space();
         exposure = EditorGUILayout.Slider("Exposure", exposure, -6.0f, 6.0f);
+        bleachingRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", bleachingRatioPower, 1, 7);
         showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
@@ -236,7 +239,7 @@ public class ColorGamutEditor : Editor
         }
 
         // Only write back values once we are in Play mode
-        if (Application.isPlaying)
+        if (Application.isPlaying && colorGamut.isActiveAndEnabled)
         {
             if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
                 _curveGuiDataState == CurveGuiDataState.NotCalculated)
@@ -248,6 +251,7 @@ public class ColorGamutEditor : Editor
                 colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
                 colorGamut.setExposure(exposure);
                 colorGamut.setActiveTransferFunction(activeTransferFunction);
+                colorGamut.setBleachingRatioPower(bleachingRatioPower);
 
                 // Debug.Log("OnInspectorGUI() - GUI Changed");
                 colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);

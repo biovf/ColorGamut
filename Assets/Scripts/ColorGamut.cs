@@ -84,6 +84,8 @@ public class ColorGamut : MonoBehaviour
     public int CurveLutLength => curveLutLength;
     private int curveLutLength;
 
+    private int bleachingRatioPower;
+
     private enum ColorRange
     {
         InsideGamut,
@@ -111,6 +113,7 @@ public class ColorGamut : MonoBehaviour
     void Start()
     {
         hdriIndex = 0;
+        bleachingRatioPower = 2;
         exposure = 1.0f;
 
         isBleachingActive = false;
@@ -179,16 +182,20 @@ public class ColorGamut : MonoBehaviour
             Color initialHDRIColor = inputTexture.GetPixel(xCoord, yCoord);
             Color finalHDRIColor = hdriTextureTransformed.GetPixel(xCoord, yCoord);
 
-            Debug.Log("Coordinates \t \t " +
-                      "x: " + xCoord + " y: " + yCoord);
+            Vector2 shapedHDRIColor = new Vector2(initialHDRIColor.maxColorComponent, 0.0f);
+            shapedHDRIColor.y = parametricCurve.getYCoordinate(shapedHDRIColor.x, xValues.ToArray(), yValues.ToArray(), tValues.ToArray(),
+                controlPoints);
+
+            Debug.Log("Coordinates \t \t " + "x: " + xCoord + " y: " + yCoord);
             Debug.Log("HDRI pixel color: \t \t" + initialHDRIColor.ToString());
+            Debug.Log("HDRI shaper pixel color: \t" + shapedHDRIColor.ToString());
             Debug.Log("HDRI pixel color * exposure: \t" + (initialHDRIColor * exposure).ToString());
             Debug.Log("Gamut mapped Color:  \t \t" + finalHDRIColor.ToString());
             Debug.Log("--------------------------------------------------------------------------------");
         }
     }
 
-    void OnRenderImage(RenderTexture src, RenderTexture dest)
+    public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
         Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
         colorGamutMat.SetTexture("_MainTex", screenGrab);
@@ -370,7 +377,7 @@ public class ColorGamut : MonoBehaviour
                                     maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
                                         maxRadiometricValue);
                                     hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
-                                        Mathf.Pow(bleachingRatio, 2.0f));
+                                        Mathf.Pow(bleachingRatio, (float)bleachingRatioPower));
 
                                     hdriPixelColor.r = hdriPixelColorVec.x;
                                     hdriPixelColor.g = hdriPixelColorVec.y;
@@ -396,6 +403,20 @@ public class ColorGamut : MonoBehaviour
                                 else if (rawMaxPixelValue > maxRadiometricValue) // Above gamut
                                 {
                                     hdriPixelColor = Color.green;
+                                } else if (rawMaxPixelValue > bleachingXCoord)
+                                {
+                                    if (Mathf.Approximately(bleachingXCoord, 0.0f))
+                                    {
+                                        bleachingXCoord =
+                                            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray);
+                                        hdriPixelColor = rawMaxPixelValue > bleachingXCoord
+                                            ? Color.blue
+                                            : hdriPixelColor;
+                                    }
+                                    else
+                                    {
+                                        hdriPixelColor = Color.blue;
+                                    }
                                 }
                             }
 
@@ -451,6 +472,7 @@ public class ColorGamut : MonoBehaviour
 
     private void ChangeCurveDataState(CurveDataState newState)
     {
+        
         switch (newState)
         {
             case CurveDataState.NotCalculated:
@@ -476,74 +498,74 @@ public class ColorGamut : MonoBehaviour
     }
 
     // Utility methods
+    public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
+    {
+        List<float> xValues = new List<float>(dimension);
+        float step = maxRange / (float) dimension;
+        float stepBias = Shaper.calculateLinearToLog(step);
+        float xCoord = 0.0f;
+    
+        for (int i = 0; i < dimension - 1; ++i)
+        {
+            xCoord = minRadiometricValue + (i * step);
+    
+            if (xCoord < minRadiometricValue)
+                continue;
+    
+            if (Mathf.Approximately(xCoord, maxRange))
+                break;
+    
+            xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
+            // Debug.Log("xCoord: " + xCoord + " \t Shaper Loop Index " +
+            //           Shaper.calculateLinearToLog(step * i) + " " + stepBias);
+        }
+    
+        return xValues;
+    }
+    
+    // Dimension - size of the look up table being created
+    // maxRange - maximum radiometric value we are using
     // public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
     // {
     //     List<float> xValues = new List<float>(dimension);
-    //     float step = maxRange / (float) dimension;
-    //     float stepBias = Shaper.calculateLinearToLog(step);
+    //
+    //     float halfDimensionFlt = (((float) dimension) / 2.0f);
+    //     int halfDimensionInt = dimension / 2;
+    //     // calculate the step used from our minimum radiometric until our mid grey point
+    //     float stepPreMidGrey = (greyPoint.x - minRadiometricValue) / halfDimensionFlt;
+    //     // calculate the step necessary for the second half of the values, from mid grey point until maxRange
+    //     float stepPostMidGrey = (maxRange - greyPoint.x) / (halfDimensionFlt - 1.0f);
     //     float xCoord = 0.0f;
-    //
-    //     for (int i = 0; i < dimension - 1; ++i)
+    //     
+    //     for (int i = 0; i <= halfDimensionInt; ++i)
     //     {
-    //         xCoord = minRadiometricValue + (i * step);
-    //
-    //         if (xCoord < minRadiometricValue)
+    //         xCoord = MinRadiometricValue + (i * stepPreMidGrey);
+    //         
+    //         if (xCoord < MinRadiometricValue)
     //             continue;
     //
     //         if (Mathf.Approximately(xCoord, maxRange))
     //             break;
     //
-    //         xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
-    //         // Debug.Log("xCoord: " + xCoord + " \t Shaper Loop Index " +
-    //         //           Shaper.calculateLinearToLog(step * i) + " " + stepBias);
+    //         xValues.Add(Shaper.calculateLinearToLog(xCoord));
+    //         // Debug.Log("1st half - Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
+    //     }
+    //
+    //     int len = (dimension % 2) == 0 ? halfDimensionInt : halfDimensionInt + 1;
+    //     for (int i = 1; i < len; ++i)
+    //     {
+    //         xCoord = 0.18f + (i * stepPostMidGrey);
+    //         
+    //         if (xCoord < MinRadiometricValue)
+    //             continue;
+    //         
+    //
+    //         xValues.Add(Shaper.calculateLinearToLog(xCoord));
+    //         // Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
     //     }
     //
     //     return xValues;
     // }
-    
-    // Dimension - size of the look up table being created
-    // maxRange - maximum radiometric value we are using
-    public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
-    {
-        List<float> xValues = new List<float>(dimension);
-
-        float halfDimensionFlt = (((float) dimension) / 2.0f);
-        int halfDimensionInt = dimension / 2;
-        // calculate the step used from our minimum radiometric until our mid grey point
-        float stepPreMidGrey = (greyPoint.x - minRadiometricValue) / halfDimensionFlt;
-        // calculate the step necessary for the second half of the values, from mid grey point until maxRange
-        float stepPostMidGrey = (maxRange - greyPoint.x) / (halfDimensionFlt - 1.0f);
-        float xCoord = 0.0f;
-        
-        for (int i = 0; i <= halfDimensionInt; ++i)
-        {
-            xCoord = MinRadiometricValue + (i * stepPreMidGrey);
-            
-            if (xCoord < MinRadiometricValue)
-                continue;
-
-            if (Mathf.Approximately(xCoord, maxRange))
-                break;
-
-            xValues.Add(Shaper.calculateLinearToLog(xCoord));
-            // Debug.Log("1st half - Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
-        }
-
-        int len = (dimension % 2) == 0 ? halfDimensionInt : halfDimensionInt + 1;
-        for (int i = 1; i < len; ++i)
-        {
-            xCoord = 0.18f + (i * stepPostMidGrey);
-            
-            if (xCoord < MinRadiometricValue)
-                continue;
-            
-
-            xValues.Add(Shaper.calculateLinearToLog(xCoord));
-            // Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
-        }
-
-        return xValues;
-    }
 
     public void getParametricCurveValues(out float inSlope, out float originPointX, out float originPointY,
         out float greyPointX, out float greyPointY)
@@ -664,6 +686,13 @@ public class ColorGamut : MonoBehaviour
     {
         this.activeTransferFunction = transferFunction;
         ChangeCurveDataState(CurveDataState.MustRecalculate);
+    }
+
+    public void setBleachingRatioPower(int ratioPower)
+    {
+        this.bleachingRatioPower = ratioPower;
+        ChangeCurveDataState(CurveDataState.MustRecalculate);
+
     }
 
     static public Texture2D GetRTPixels(RenderTexture rt)

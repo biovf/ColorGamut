@@ -5,14 +5,14 @@ using Unity.Collections;
 using Unity.Jobs;
 using Debug = UnityEngine.Debug;
 
-public class ColorGamut1 
+public class ColorGamut1
 {
     public Material colorGamutMat;
     public Material fullScreenTextureMat;
     public Material fullScreenTextureAndSweepMat;
     public Texture2D sweepTexture;
-    // public List<Texture2D> HDRIList;
-    
+    public List<Texture2D> HDRIList;
+
     private TransferFunction activeTransferFunction;
     private float exposure;
 
@@ -89,6 +89,13 @@ public class ColorGamut1
     private CurveDataState curveDataState = CurveDataState.NotCalculated;
     private Camera mainCamera;
 
+    public ColorGamut1(Material colorGamutMat, Material fullscreenTexMat, List<Texture2D> hdriList)
+    {
+        this.HDRIList = hdriList;
+        this.colorGamutMat = colorGamutMat;
+        this.fullScreenTextureMat = fullscreenTexMat;
+    }
+
     public void Start(HDRPipeline pipeline)
     {
         activeTransferFunction = TransferFunction.Max_RGB;
@@ -115,23 +122,29 @@ public class ColorGamut1
         curveLutLength = 1024;
         createParametricCurve(greyPoint, origin);
 
-        // if (HDRIList == null)
-        //     Debug.LogError("HDRIs list is empty");
+        if (HDRIList == null)
+            Debug.LogError("HDRIs list is empty");
 
-        // inputTexture = HDRIList[hdriIndex];
-
-        hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
-        hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
-        textureToSave = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
-        screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
-            RenderTextureReadWrite.Linear);
-        screenGrab.Create();
+        inputTexture = HDRIList[hdriIndex];
         mainCamera = pipeline.gameObject.GetComponent<Camera>();
 
-        if (Application.isPlaying)
-        {
-            pipeline.StartCoroutine("CpuGGMIterative");
-        }
+        // if (Application.isPlaying)
+        // {
+            // if (inputTexture == null)
+            // {
+            //     Debug.LogError("InputTexture is null");
+            //     return;
+            // }
+
+            hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
+            hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
+            textureToSave = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
+            screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
+                RenderTextureReadWrite.Linear);
+            screenGrab.Create();
+            // pipeline.StartCoroutine("CpuGGMIterative");
+
+        // }
     }
 
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
@@ -176,15 +189,21 @@ public class ColorGamut1
         return hdriTextureTransformed;
     }
 
-    // void OnRenderImage(RenderTexture src, RenderTexture dest)
-    // {
-    //     Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
-    //     colorGamutMat.SetTexture("_MainTex", screenGrab);
-    //     Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
-    //     
-    // }
+    public void OnRenderImage(RenderTexture src, RenderTexture dest)
+    {
+        if (hdriTextureTransformed == null || screenGrab == null || fullScreenTextureMat == null)
+        {
+            Debug.LogError("Invalid data on ColorGamut1.OnRenderImage()");
+            return;
+        }
+
+        Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
+        colorGamutMat.SetTexture("_MainTex", screenGrab);
+        Graphics.Blit(screenGrab, dest, fullScreenTextureMat);
+        
+    }
     
-    private IEnumerator CpuGGMIterative()
+    public IEnumerator CpuGGMIterative()
     {
         int counter = maxIterationsPerFrame;
         int hdriPixelArrayLen = 0;
