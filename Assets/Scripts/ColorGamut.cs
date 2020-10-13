@@ -168,7 +168,7 @@ public class ColorGamut : MonoBehaviour
 
         for (int i = 0; i < xValues.Count; i++)
         {
-            Debug.Log("X: " + xValues[i].ToString("F6") + " \t" + "Y: " + yValues[i].ToString("F6") 
+            Debug.Log("Index: \t" + i + "X: " + xValues[i].ToString("F6") + " \t" + "Y: " + yValues[i].ToString("F6") 
                       + " \t" + "t: " + tValues[i].ToString("F6"));
         }
         Debug.Log("--------------------------------------------------------------------------------");
@@ -194,11 +194,6 @@ public class ColorGamut : MonoBehaviour
             Vector2 shapedHDRIColor = new Vector2(initialHDRIColor.maxColorComponent, 0.0f);
             shapedHDRIColor.y = parametricCurve.getYCoordinate(shapedHDRIColor.x, xValues.ToArray(), yValues.ToArray(), tValues.ToArray(),
                 controlPoints);
-
-            if (float.IsNaN(shapedHDRIColor.y))
-            {
-                Debug.Log("Nan Value");
-            }
 
             Debug.Log("Coordinates \t \t " + "x: " + xCoord + " y: " + yCoord);
             Debug.Log("HDRI pixel color: \t \t" + initialHDRIColor.ToString("F6"));

@@ -55,7 +55,9 @@ public class ColorGamutEditor : Editor
 
     private CurveGuiDataState _curveGuiDataState = CurveGuiDataState.NotCalculated;
 
-    List<float> xTempValues;
+    private List<float> xTempValues;
+    private List<float> yTempValues;
+    
     public void OnEnable()
     {
         colorGamut = (ColorGamut) target;
@@ -185,9 +187,11 @@ public class ColorGamutEditor : Editor
 
 
             xTempValues = colorGamut.getXValues();
-            foreach (var item in xTempValues)
+            yTempValues = colorGamut.getYValues();
+            for (int i = 0; i < xTempValues.Count; i++)
             {
-                Handles.DrawWireCube(new Vector3(item, 5.0f), cubeWidgetSize);
+                Handles.DrawWireCube(new Vector3(xTempValues[i], yTempValues[i]), cubeWidgetSize);
+
             }
             foreach (var item in xTempValues)
             {
