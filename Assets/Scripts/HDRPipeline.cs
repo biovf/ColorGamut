@@ -60,7 +60,7 @@ public class HDRPipeline : MonoBehaviour
     {
         colorGamut = new ColorGamut1(colorGamutMat, fullScreenTextureMat, HDRIList);
         colorGamut.Start(this);
-        if (Application.isPlaying)
+        if (Application.isPlaying && this.isActiveAndEnabled)
         {
             StartCoroutine(colorGamut.CpuGGMIterative());
         }

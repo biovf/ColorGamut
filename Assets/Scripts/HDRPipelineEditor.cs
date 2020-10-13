@@ -88,6 +88,9 @@ public class HDRPipelineEditor : Editor
     public void OnEnable()
     {
         hdrPipeline = (HDRPipeline) target;
+        if (!hdrPipeline.isActiveAndEnabled)
+            return;
+        
         colorGamut = hdrPipeline.getColorGamut();
         colorGradingHDR = hdrPipeline.getColorGrading();
         if (colorGamut != null)
@@ -151,6 +154,9 @@ public class HDRPipelineEditor : Editor
     
     void OnSceneGUI()
     {
+        if (!hdrPipeline.isActiveAndEnabled)
+            return;
+        
         if (Application.isPlaying)
         {
             if (debugPoints == null || debugPoints.Count == 0)
@@ -193,6 +199,8 @@ public class HDRPipelineEditor : Editor
 
     public override void OnInspectorGUI()
     {
+        
+        
         base.serializedObject.UpdateIfRequiredOrScript();
         base.serializedObject.Update();
         base.DrawDefaultInspector();
@@ -203,6 +211,9 @@ public class HDRPipelineEditor : Editor
             colorGamut = hdrPipeline.getColorGamut();
             colorGradingHDR = hdrPipeline.getColorGrading();
         }
+
+        if (!hdrPipeline.isActiveAndEnabled)
+            return;
         
         if (hdriNames != null && hdriNames.Count > 0)
         {

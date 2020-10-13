@@ -115,6 +115,7 @@ public class CurveTest
             controlPoints[2], controlPoints[3], controlPoints[4],
             controlPoints[4], controlPoints[5], controlPoints[6]
         };
+        
 
         for (int index = 0; index < inXCoords.Count; index++)
         {
@@ -123,6 +124,7 @@ public class CurveTest
                 Vector2 p0 = controlPointsArray[0 + i];
                 Vector2 p1 = controlPointsArray[1 + i];
                 Vector2 p2 = controlPointsArray[2 + i];
+                
                 float xValue = inXCoords[index];
 
                 if (p0.x <= xValue && xValue <= p2.x)
@@ -149,7 +151,7 @@ public class CurveTest
         float prevDifference = float.MaxValue;
 
         int outIndex = 0;
-        int outIndex2 = -1;
+        int outIndex2 = 0;
         int listSize = inputArray.Length;
         for (int i = 0; i < listSize; i++)
         {
@@ -225,10 +227,11 @@ public class CurveTest
             Debug.Log("Input array of x/y coords or t values have mismatched lengths ");
             return -1.0f;
         }
-
+        
+        // Shape the input x coord in radiometric
         float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord);
 
-        if (false)
+        if (true)
         {
             int idx = 0;
             int idx2 = 0;
@@ -239,7 +242,11 @@ public class CurveTest
             }
 
             // Calculate interpolation factor
-            if (idx < idx2)
+            if (idx == idx2)
+            {
+                return yCoords[idx];
+            } 
+            else if (idx < idx2)
             {
                 float lerpValue = (logInputXCoord - xCoords[idx]) / (xCoords[idx2] - xCoords[idx]);
                 return Mathf.Lerp(yCoords[idx], yCoords[idx2], lerpValue);

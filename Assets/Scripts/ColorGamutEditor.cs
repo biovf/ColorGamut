@@ -174,16 +174,25 @@ public class ColorGamutEditor : Editor
 
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(colorGamut.MaxRadiometricValue, 0.0f)); // Draw X Axis
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f)); // Draw Y axis
+            // Draw auxiliary information on the graph
             Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
             Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f),
                 4.0f); // Draw Y = 1 line
             Handles.DrawDottedLine(new Vector3(0.0f, 1.5f), new Vector3(colorGamut.MaxRadiometricValue, 1.5f),
-            4.0f); // Draw Y = 1 line
+            4.0f); // Draw Y = 1.5 line
+            Handles.DrawDottedLine(new Vector3(0.18f, 0.0f), new Vector3(0.18f, 1.5f), 2.0f); // Draw vertical line from 0.18f
+            Handles.DrawDottedLine(new Vector3(0.0f, 0.18f), new Vector3(0.18f, 0.18f), 2.0f); // Draw vertical line from 0.18f
 
-            // foreach (var item in xTempValues)
-            // {
-            //     Handles.DrawWireCube(new Vector3(item, 5.0f), cubeWidgetSize);
-            // }
+
+            xTempValues = colorGamut.getXValues();
+            foreach (var item in xTempValues)
+            {
+                Handles.DrawWireCube(new Vector3(item, 5.0f), cubeWidgetSize);
+            }
+            foreach (var item in xTempValues)
+            {
+                Handles.DrawWireCube(new Vector3(Shaper.calculateLogToLinear(item), 8.0f), cubeWidgetSize);
+            }
 
             if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
                 _curveGuiDataState == CurveGuiDataState.NotCalculated)

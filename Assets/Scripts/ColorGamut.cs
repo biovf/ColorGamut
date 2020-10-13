@@ -131,6 +131,8 @@ public class ColorGamut : MonoBehaviour
         minRadiometricValue = Mathf.Pow(2.0f, minExposureValue) * greyPoint.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxExposureValue) * greyPoint.x;
 
+        Debug.Log("Minimum Radiometric Value: \t " + minRadiometricValue.ToString("F6"));
+        Debug.Log("Maximum Radiometric Value: \t " + maxRadiometricValue.ToString("F6"));
         origin = new Vector2(minRadiometricValue, 0.00001f);
         curveLutLength = 1024;
         createParametricCurve(greyPoint, origin);
@@ -163,11 +165,18 @@ public class ColorGamut : MonoBehaviour
         xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
+
+        for (int i = 0; i < xValues.Count; i++)
+        {
+            Debug.Log("X: " + xValues[i].ToString("F6") + " \t" + "Y: " + yValues[i].ToString("F6") 
+                      + " \t" + "t: " + tValues[i].ToString("F6"));
+        }
+        Debug.Log("--------------------------------------------------------------------------------");
     }
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Application.isPlaying && Input.GetMouseButtonDown(0))
         {
             int xCoord = (int) Input.mousePosition.x;
             int yCoord = (int) Input.mousePosition.y;
@@ -186,11 +195,16 @@ public class ColorGamut : MonoBehaviour
             shapedHDRIColor.y = parametricCurve.getYCoordinate(shapedHDRIColor.x, xValues.ToArray(), yValues.ToArray(), tValues.ToArray(),
                 controlPoints);
 
+            if (float.IsNaN(shapedHDRIColor.y))
+            {
+                Debug.Log("Nan Value");
+            }
+
             Debug.Log("Coordinates \t \t " + "x: " + xCoord + " y: " + yCoord);
-            Debug.Log("HDRI pixel color: \t \t" + initialHDRIColor.ToString());
-            Debug.Log("HDRI shaper pixel color: \t" + shapedHDRIColor.ToString());
-            Debug.Log("HDRI pixel color * exposure: \t" + (initialHDRIColor * exposure).ToString());
-            Debug.Log("Gamut mapped Color:  \t \t" + finalHDRIColor.ToString());
+            Debug.Log("HDRI pixel color: \t \t" + initialHDRIColor.ToString("F6"));
+            Debug.Log("HDRI shaper pixel color: \t \t" + shapedHDRIColor.ToString("F6"));
+            Debug.Log("HDRI pixel color * exposure: \t" + (initialHDRIColor * exposure).ToString("F6"));
+            Debug.Log("Gamut mapped Color:  \t \t" + finalHDRIColor.ToString("F6"));
             Debug.Log("--------------------------------------------------------------------------------");
         }
     }
@@ -249,7 +263,6 @@ public class ColorGamut : MonoBehaviour
             int quarterSize = hdriPixelArrayLen / 4;
             int halfSize = hdriPixelArrayLen / 2;
             int threeQuartersSize = hdriPixelArrayLen - quarterSize;
-     
             
             if (curveDataState != CurveDataState.Calculated)
             {
@@ -472,7 +485,12 @@ public class ColorGamut : MonoBehaviour
 
     private void ChangeCurveDataState(CurveDataState newState)
     {
-        
+        if (curveDataState == newState)
+        {
+            Debug.LogWarning("Current state is being change to itself again");
+            return;
+        }
+
         switch (newState)
         {
             case CurveDataState.NotCalculated:
@@ -501,25 +519,66 @@ public class ColorGamut : MonoBehaviour
     public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
     {
         List<float> xValues = new List<float>(dimension);
-        float step = maxRange / (float) dimension;
-        float stepBias = Shaper.calculateLinearToLog(step);
-        float xCoord = 0.0f;
-    
-        for (int i = 0; i < dimension - 1; ++i)
+
+        if (true)
         {
-            xCoord = minRadiometricValue + (i * step);
-    
-            if (xCoord < minRadiometricValue)
-                continue;
-    
-            if (Mathf.Approximately(xCoord, maxRange))
-                break;
-    
-            xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
-            // Debug.Log("xCoord: " + xCoord + " \t Shaper Loop Index " +
-            //           Shaper.calculateLinearToLog(step * i) + " " + stepBias);
+            float step = maxRange / (float) dimension;
+            float xCoord = 0.0f;
+
+            for (int i = 0; i < dimension /*- 1*/; ++i)
+            {
+                xCoord = minRadiometricValue + (i * step);
+
+                if (xCoord < minRadiometricValue)
+                    continue;
+
+                // if (Mathf.Approximately(xCoord, maxRange))
+                //     break;
+
+                xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
+                Debug.Log("xCoord: " + xCoord.ToString("F5") + " \t Shaped xCoord: " + xValues[i].ToString("F5"));
+            }
         }
-    
+        else
+        {
+            
+            float halfDimensionFlt = (((float) dimension) / 2.0f);
+            int halfDimensionInt = dimension / 2;
+            // calculate the step used from our minimum radiometric until our mid grey point
+            float stepPreMidGrey = (greyPoint.x - minRadiometricValue) / halfDimensionFlt;
+            // calculate the step necessary for the second half of the values, from mid grey point until maxRange
+            float stepPostMidGrey = (maxRange - greyPoint.x) / (halfDimensionFlt - 1.0f);
+            float xCoord = 0.0f;
+            
+            for (int i = 0; i <= halfDimensionInt; ++i)
+            {
+                xCoord = MinRadiometricValue + (i * stepPreMidGrey);
+                
+                if (xCoord < MinRadiometricValue)
+                    continue;
+            
+                if (Mathf.Approximately(xCoord, maxRange))
+                    break;
+            
+                xValues.Add(Shaper.calculateLinearToLog(xCoord));
+                // Debug.Log("1st half - Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
+            }
+            
+            int len = (dimension % 2) == 0 ? halfDimensionInt : halfDimensionInt + 1;
+            for (int i = 1; i < len; ++i)
+            {
+                xCoord = 0.18f + (i * stepPostMidGrey);
+                
+                if (xCoord < MinRadiometricValue)
+                    continue;
+                
+            
+                xValues.Add(Shaper.calculateLinearToLog(xCoord));
+                // Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
+            }
+        }            
+        Debug.Log("--------------------------------------------------------------------------------");
+
         return xValues;
     }
     
@@ -646,11 +705,16 @@ public class ColorGamut : MonoBehaviour
         return controlPoints;
     }
 
+    
     public List<float> getTValues()
     {
         return tValues;
     }
 
+    public List<float> getXValues()
+    {
+        return xValues;
+    }
     public List<float> getYValues()
     {
         return yValues;
