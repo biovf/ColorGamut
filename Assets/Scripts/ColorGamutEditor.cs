@@ -1,6 +1,7 @@
 ﻿using System;
 using MathNet.Numerics;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -95,13 +96,12 @@ public class ColorGamutEditor : Editor
     {
         parametricCurve = colorGamut.getParametricCurve();
         tValues = colorGamut.getTValues();
-        xValues = colorGamut.initialiseXCoordsInRange(colorGamut.CurveLutLength,
-            colorGamut.MaxRadiometricValue);
+        xValues = colorGamut.getXValues();
+        yValues = colorGamut.getYValues();//parametricCurve.calcYfromXQuadratic(xValues, tValues,            new List<Vector2>(controlPoints));
+        //colorGamut.initialiseXCoordsInRange(colorGamut.CurveLutLength,
+            //colorGamut.MaxRadiometricValue);
 
         debugPoints.Clear();
-        yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
-            new List<Vector2>(controlPoints));
-
         for (int i = 0; i < xValues.Count; i++)
         {
             debugPoints.Add(new Vector3(xValues[i], yValues[i]));
@@ -184,18 +184,18 @@ public class ColorGamutEditor : Editor
             4.0f); // Draw Y = 1.5 line
             Handles.DrawDottedLine(new Vector3(0.18f, 0.0f), new Vector3(0.18f, 1.5f), 2.0f); // Draw vertical line from 0.18f
             Handles.DrawDottedLine(new Vector3(0.0f, 0.18f), new Vector3(0.18f, 0.18f), 2.0f); // Draw vertical line from 0.18f
-
+            Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
+            Handles.DrawDottedLine(new Vector3(0.0f, 0.5f), new Vector3(0.5f, 0.5f), 4.0f); // Draw vertical line from 0.18f
 
             xTempValues = colorGamut.getXValues();
             yTempValues = colorGamut.getYValues();
             for (int i = 0; i < xTempValues.Count; i++)
             {
-                Handles.DrawWireCube(new Vector3(xTempValues[i], yTempValues[i]), cubeWidgetSize);
-
-            }
-            foreach (var item in xTempValues)
-            {
-                Handles.DrawWireCube(new Vector3(Shaper.calculateLogToLinear(item), 8.0f), cubeWidgetSize);
+                Vector3 logPoint = new Vector3(xTempValues[i], yTempValues[i]);
+                Vector3 linearPoint = new Vector3(Shaper.calculateLogToLinear(xTempValues[i]),0.0f);
+                Handles.DrawWireCube(logPoint, cubeWidgetSize);
+                // Handles.DrawWireCube( linearPoint, cubeWidgetSize);
+                Handles.DrawDottedLine(linearPoint, logPoint, 1.0f);
             }
 
             if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
@@ -206,9 +206,9 @@ public class ColorGamutEditor : Editor
             }
 
             Handles.DrawPolyLine(debugPoints.ToArray());
-            Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
-            Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
-            Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
+            // Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
+            // Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
+            // Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
         }
     }
 
@@ -246,6 +246,15 @@ public class ColorGamutEditor : Editor
         greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
         greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
 
+        if (GUILayout.Button("Save Image to Disk"))
+        {
+            string fileName = Time.frameCount.ToString() + ".exr";
+            string outPathTextureLut = EditorUtility.SaveFilePanel("Save Image to Disk", "", fileName,"exr");
+           // Texture2D textureToSave = ColorGamut.GetRTPixels(colorGamut.ScreenGrab);
+            File.WriteAllBytes(@fileName, colorGamut.HdriTextureTransformed.EncodeToEXR());
+        }
+        
+        
         if (GUI.changed)
         {
             _curveGuiDataState = CurveGuiDataState.MustRecalculate;

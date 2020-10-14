@@ -43,8 +43,12 @@ public class ColorGamut : MonoBehaviour
     private const int maxIterationsPerFrame = 100000;
 
     private Texture2D hdriTextureTransformed;
-    private Texture2D textureToSave;
+
+    public Texture2D HdriTextureTransformed => hdriTextureTransformed;
+
     private RenderTexture screenGrab;
+
+    public RenderTexture ScreenGrab => screenGrab;
 
     private AnimationCurve animationCurve;
     private Color[] hdriPixelArray;
@@ -67,10 +71,10 @@ public class ColorGamut : MonoBehaviour
     private float minRadiometricValue;
 
     public float MINExposureValue => minExposureValue;
-    public float minExposureValue;
+    private float minExposureValue;
 
     public float MAXExposureValue => maxExposureValue;
-    public float maxExposureValue;
+    private float maxExposureValue;
 
     public float MaxRadiometricValue => maxRadiometricValue;
     private float maxRadiometricValue;
@@ -126,8 +130,8 @@ public class ColorGamut : MonoBehaviour
         maxDisplayValue = 1.5f;
         minDisplayValue = 0.0f;
         greyPoint = new Vector2(0.18f, 0.18f);
-        minExposureValue = -6.0f;
-        maxExposureValue = 6.0f;
+        minExposureValue = -8.0f;
+        maxExposureValue = 8.0f;
         minRadiometricValue = Mathf.Pow(2.0f, minExposureValue) * greyPoint.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxExposureValue) * greyPoint.x;
 
@@ -144,7 +148,6 @@ public class ColorGamut : MonoBehaviour
 
         hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
         hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
-        textureToSave = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         screenGrab.Create();
@@ -166,12 +169,12 @@ public class ColorGamut : MonoBehaviour
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
 
-        for (int i = 0; i < xValues.Count; i++)
-        {
-            Debug.Log("Index: \t" + i + "X: " + xValues[i].ToString("F6") + " \t" + "Y: " + yValues[i].ToString("F6") 
-                      + " \t" + "t: " + tValues[i].ToString("F6"));
-        }
-        Debug.Log("--------------------------------------------------------------------------------");
+        // for (int i = 0; i < xValues.Count; i++)
+        // {
+        //     Debug.Log("Index: \t" + i + "X: " + xValues[i].ToString("F6") + " \t" + "Y: " + yValues[i].ToString("F6") 
+        //               + " \t" + "t: " + tValues[i].ToString("F6"));
+        // }
+        // Debug.Log("--------------------------------------------------------------------------------");
     }
 
     void Update()
@@ -361,7 +364,11 @@ public class ColorGamut : MonoBehaviour
                         // Calculate Pixel max color and ratio
                         hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
                         ratio = hdriPixelColor / hdriMaxRGBChannel;
-
+                       
+                        // if (hdriMaxRGBChannel < minRadiometricValue && isBleachingActive)
+                        // {
+                        //     Debug.Log("below min");
+                        // }
                         // Transfer function
                         if (activeTransferFunction == TransferFunction.Max_RGB)
                         {
@@ -379,7 +386,6 @@ public class ColorGamut : MonoBehaviour
                                     bleachingRange = maxRadiometricValue - bleachingXCoord;
                                     bleachingRatio = (hdriPixelColor.maxColorComponent - bleachingXCoord) /
                                                      bleachingRange;
-                                    // bleachingRatio = Mathf.Pow(bleachingRatio, 2.0f);
                                     
                                     hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
                                     maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
@@ -395,11 +401,14 @@ public class ColorGamut : MonoBehaviour
                                 }
                             }
 
+                           
+
                             // Get Y value from curve using the array version 
                             float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray,
                                 controlPoints);
 
                             hdriYMaxValue = Mathf.Min(yValue, 1.0f);
+                            ratio.a = 1.0f;
                             hdriPixelColor = hdriYMaxValue * ratio;
 
                             if (showPixelsOutOfGamut)
@@ -522,16 +531,18 @@ public class ColorGamut : MonoBehaviour
 
             for (int i = 0; i < dimension /*- 1*/; ++i)
             {
-                xCoord = minRadiometricValue + (i * step);
+                xCoord = minRadiometricValue + (Mathf.Pow((float)i / (float)dimension, 2.0f) * maxRange);
+                // float step = maxRange / (float) dimension;
+                // xCoord = minRadiometricValue + (i * step);
 
-                if (xCoord < minRadiometricValue)
-                    continue;
+                // if (xCoord < minRadiometricValue)
+                //     continue;
 
                 // if (Mathf.Approximately(xCoord, maxRange))
                 //     break;
 
                 xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
-                Debug.Log("xCoord: " + xCoord.ToString("F5") + " \t Shaped xCoord: " + xValues[i].ToString("F5"));
+                // Debug.Log("xCoord: " + xCoord.ToString("F5") + " \t Shaped xCoord: " + xValues[i].ToString("F5"));
             }
         }
         else
@@ -572,7 +583,7 @@ public class ColorGamut : MonoBehaviour
                 // Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
             }
         }            
-        Debug.Log("--------------------------------------------------------------------------------");
+        // Debug.Log("--------------------------------------------------------------------------------");
 
         return xValues;
     }
@@ -763,7 +774,7 @@ public class ColorGamut : MonoBehaviour
         RenderTexture.active = rt;
 
         // Create a new Texture2D and read the RenderTexture image into it
-        Texture2D tex = new Texture2D(rt.width, rt.height);
+        Texture2D tex = new Texture2D(rt.width, rt.height, TextureFormat.RGBAHalf, false);
         tex.ReadPixels(new Rect(0, 0, tex.width, tex.height), 0, 0);
 
         // Restorie previously active render texture
