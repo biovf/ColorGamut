@@ -82,6 +82,9 @@ public class ColorGamut : MonoBehaviour
     private float minDisplayValue;
 
     private Vector2 greyPoint;
+
+    public Vector2 GreyPoint => greyPoint;
+
     private List<float> xValues;
     private List<float> yValues;
 
@@ -131,7 +134,7 @@ public class ColorGamut : MonoBehaviour
         minDisplayValue = 0.0f;
         greyPoint = new Vector2(0.18f, 0.18f);
         minExposureValue = -8.0f;
-        maxExposureValue = 8.0f;
+        maxExposureValue =  6.0f;
         minRadiometricValue = Mathf.Pow(2.0f, minExposureValue) * greyPoint.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxExposureValue) * greyPoint.x;
 
@@ -163,18 +166,12 @@ public class ColorGamut : MonoBehaviour
     {
         if (parametricCurve == null)
             parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
+        
         controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
-
         xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
-
-        // for (int i = 0; i < xValues.Count; i++)
-        // {
-        //     Debug.Log("Index: \t" + i + "X: " + xValues[i].ToString("F6") + " \t" + "Y: " + yValues[i].ToString("F6") 
-        //               + " \t" + "t: " + tValues[i].ToString("F6"));
-        // }
-        // Debug.Log("--------------------------------------------------------------------------------");
+        
     }
 
     void Update()
@@ -473,10 +470,10 @@ public class ColorGamut : MonoBehaviour
                     }
 
                     hdriTextureTransformed.SetPixels(hdriPixelArray);
-                    hdriTextureTransformed.Apply();
                     Debug.Log("Image Processing has finished");
                 }
-
+                
+                hdriTextureTransformed.Apply();
                 ChangeCurveDataState(CurveDataState.Calculated);
             }
             else
@@ -526,23 +523,11 @@ public class ColorGamut : MonoBehaviour
 
         if (true)
         {
-            float step = maxRange / (float) dimension;
             float xCoord = 0.0f;
-
             for (int i = 0; i < dimension /*- 1*/; ++i)
             {
-                xCoord = minRadiometricValue + (Mathf.Pow((float)i / (float)dimension, 2.0f) * maxRange);
-                // float step = maxRange / (float) dimension;
-                // xCoord = minRadiometricValue + (i * step);
-
-                // if (xCoord < minRadiometricValue)
-                //     continue;
-
-                // if (Mathf.Approximately(xCoord, maxRange))
-                //     break;
-
-                xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
-                // Debug.Log("xCoord: " + xCoord.ToString("F5") + " \t Shaped xCoord: " + xValues[i].ToString("F5"));
+                 xCoord = minRadiometricValue + (Mathf.Pow((float)i / (float)dimension, 2.0f) * maxRange);
+                 xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
             }
         }
         else
@@ -566,7 +551,7 @@ public class ColorGamut : MonoBehaviour
                 if (Mathf.Approximately(xCoord, maxRange))
                     break;
             
-                xValues.Add(Shaper.calculateLinearToLog(xCoord));
+                xValues.Add(Shaper.calculateLinearToLog(xCoord, this.greyPoint.x, minExposureValue, maxExposureValue));
                 // Debug.Log("1st half - Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
             }
             
@@ -579,11 +564,10 @@ public class ColorGamut : MonoBehaviour
                     continue;
                 
             
-                xValues.Add(Shaper.calculateLinearToLog(xCoord));
+                xValues.Add(Shaper.calculateLinearToLog(xCoord, this.greyPoint.x, minExposureValue, maxExposureValue));
                 // Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
             }
         }            
-        // Debug.Log("--------------------------------------------------------------------------------");
 
         return xValues;
     }
@@ -664,7 +648,6 @@ public class ColorGamut : MonoBehaviour
     {
         isSweepActive = isActive;
         ChangeCurveDataState(CurveDataState.MustRecalculate);
-        //sweepPlane.SetActive(isSweepActive);
     }
 
     public bool getIsMultiThreaded()

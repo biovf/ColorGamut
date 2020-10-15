@@ -76,10 +76,6 @@ public class ColorGamutEditor : Editor
         if (_curveGuiDataState == CurveGuiDataState.NotCalculated)
             colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
                 out greyPointY);
-
-        // xTempValues = initialiseXCoordsInRangeTest(colorGamut.CurveLutLength,
-        //     colorGamut.MaxRadiometricValue);
-      
     }
 
     public void OnDisable()
@@ -97,9 +93,7 @@ public class ColorGamutEditor : Editor
         parametricCurve = colorGamut.getParametricCurve();
         tValues = colorGamut.getTValues();
         xValues = colorGamut.getXValues();
-        yValues = colorGamut.getYValues();//parametricCurve.calcYfromXQuadratic(xValues, tValues,            new List<Vector2>(controlPoints));
-        //colorGamut.initialiseXCoordsInRange(colorGamut.CurveLutLength,
-            //colorGamut.MaxRadiometricValue);
+        yValues = colorGamut.getYValues();
 
         debugPoints.Clear();
         for (int i = 0; i < xValues.Count; i++)
@@ -192,10 +186,10 @@ public class ColorGamutEditor : Editor
             for (int i = 0; i < xTempValues.Count; i++)
             {
                 Vector3 logPoint = new Vector3(xTempValues[i], yTempValues[i]);
-                Vector3 linearPoint = new Vector3(Shaper.calculateLogToLinear(xTempValues[i]),0.0f);
+                Vector3 linearPoint = new Vector3(Shaper.calculateLogToLinear(xTempValues[i], colorGamut.GreyPoint.x, colorGamut.MinRadiometricValue, colorGamut.MaxRadiometricValue),0.0f);
                 Handles.DrawWireCube(logPoint, cubeWidgetSize);
                 // Handles.DrawWireCube( linearPoint, cubeWidgetSize);
-                Handles.DrawDottedLine(linearPoint, logPoint, 1.0f);
+                // Handles.DrawDottedLine(linearPoint, logPoint, 1.0f);
             }
 
             if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
@@ -250,7 +244,6 @@ public class ColorGamutEditor : Editor
         {
             string fileName = Time.frameCount.ToString() + ".exr";
             string outPathTextureLut = EditorUtility.SaveFilePanel("Save Image to Disk", "", fileName,"exr");
-           // Texture2D textureToSave = ColorGamut.GetRTPixels(colorGamut.ScreenGrab);
             File.WriteAllBytes(@fileName, colorGamut.HdriTextureTransformed.EncodeToEXR());
         }
         
@@ -275,7 +268,6 @@ public class ColorGamutEditor : Editor
                 colorGamut.setActiveTransferFunction(activeTransferFunction);
                 colorGamut.setBleachingRatioPower(bleachingRatioPower);
 
-                // Debug.Log("OnInspectorGUI() - GUI Changed");
                 colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
                 _curveGuiDataState = CurveGuiDataState.Calculated;
             }

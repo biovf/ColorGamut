@@ -39,6 +39,8 @@ public class CurveTest
     private float maxDisplayValue;
     private float minDisplayValue;
 
+    private Vector2 greyPoint;
+
 
     public CurveTest(float minExposureValue, float maxExposureValue, float maxRadiometricValue, float maxDisplayValue)
     {
@@ -56,7 +58,8 @@ public class CurveTest
     {
         minRadiometricValue = originCoord.x;
         minDisplayValue = originCoord.y;
-
+        this.greyPoint = greyPoint;
+        
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
         // We will design our curve from 3 separate Bezier curves: toe, middle linear section, shoulder
@@ -83,19 +86,19 @@ public class CurveTest
 
         // Create bezier curve for toe
         // P0: toeP0Coords   P1: toeP1Coords   P2: toeP2Coords
-        controlPoints[0] = new Vector2(Shaper.calculateLinearToLog(toeP0Coords.x), toeP0Coords.y);
-        controlPoints[1] = new Vector2(Shaper.calculateLinearToLog(toeP1Coords.x), toeP1Coords.y);
-        controlPoints[2] = new Vector2(Shaper.calculateLinearToLog(toeP2Coords.x), toeP2Coords.y);
+        controlPoints[0] = new Vector2(Shaper.calculateLinearToLog(toeP0Coords.x, greyPoint.x, minExposureValue, maxExposureValue), toeP0Coords.y);
+        controlPoints[1] = new Vector2(Shaper.calculateLinearToLog(toeP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), toeP1Coords.y);
+        controlPoints[2] = new Vector2(Shaper.calculateLinearToLog(toeP2Coords.x, greyPoint.x, minExposureValue, maxExposureValue), toeP2Coords.y);
 
         // Create bezier for middle section
         // P0: toeP2Coords   P1: midP1Coords   P2: shP0Coords
-        controlPoints[3] = new Vector2(Shaper.calculateLinearToLog(midP1Coords.x), midP1Coords.y);
+        controlPoints[3] = new Vector2(Shaper.calculateLinearToLog(midP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), midP1Coords.y);
 
         // Create bezier curve for shoulder
         // P0: shP0Coords    P1: shP1Coords    P2: shP2Coords
-        controlPoints[4] = new Vector2(Shaper.calculateLinearToLog(shP0Coords.x), shP0Coords.y);
-        controlPoints[5] = new Vector2(Shaper.calculateLinearToLog(shP1Coords.x), shP1Coords.y);
-        controlPoints[6] = new Vector2(Shaper.calculateLinearToLog(shP2Coords.x), shP2Coords.y);
+        controlPoints[4] = new Vector2(Shaper.calculateLinearToLog(shP0Coords.x, greyPoint.x, minExposureValue, maxExposureValue), shP0Coords.y);
+        controlPoints[5] = new Vector2(Shaper.calculateLinearToLog(shP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), shP1Coords.y);
+        controlPoints[6] = new Vector2(Shaper.calculateLinearToLog(shP2Coords.x, greyPoint.x, minExposureValue, maxExposureValue), shP2Coords.y);
 
         return controlPoints;
     }
@@ -229,7 +232,7 @@ public class CurveTest
         }
         
         // Shape the input x coord in radiometric
-        float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord);
+        float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
 
         if (true)
         {

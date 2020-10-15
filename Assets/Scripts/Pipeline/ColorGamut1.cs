@@ -488,7 +488,7 @@ public class ColorGamut1
             if (Mathf.Approximately(xCoord, maxRange))
                 break;
 
-            xValues.Add(Shaper.calculateLinearToLog(xCoord));
+            xValues.Add(Shaper.calculateLinearToLog(xCoord, this.greyPoint.x, minExposureValue, maxExposureValue));
             // Debug.Log("1st half - Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
         }
 
@@ -501,7 +501,7 @@ public class ColorGamut1
                 continue;
             
 
-            xValues.Add(Shaper.calculateLinearToLog(xCoord));
+            xValues.Add(Shaper.calculateLinearToLog(xCoord, this.greyPoint.x, minExposureValue, maxExposureValue));
             // Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
         }
 
