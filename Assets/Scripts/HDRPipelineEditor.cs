@@ -10,6 +10,7 @@ public class HDRPipelineEditor : Editor
     HDRPipeline hdrPipeline;
     private ColorGamut1 colorGamut;
     private float exposure = 1;
+    private int bleachingRatioPower = 2;
     private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
 
     #region Parametric Curve Parameters
@@ -84,7 +85,9 @@ public class HDRPipelineEditor : Editor
 
     private CurveGuiDataState _curveGuiDataState = CurveGuiDataState.NotCalculated;
 
-    List<float> xTempValues;
+    private List<float> xTempValues;
+    private List<float> yTempValues;
+    
     public void OnEnable()
     {
         hdrPipeline = (HDRPipeline) target;
@@ -139,13 +142,10 @@ public class HDRPipelineEditor : Editor
     {
         parametricCurve = colorGamut.getParametricCurve();
         tValues = colorGamut.getTValues();
-        xValues = colorGamut.initialiseXCoordsInRange(colorGamut.CurveLutLength,
-            colorGamut.MaxRadiometricValue);
+        xValues = colorGamut.getXValues();
+        yValues = colorGamut.getYValues();
 
         debugPoints.Clear();
-        yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues,
-            new List<Vector2>(controlPoints));
-
         for (int i = 0; i < xValues.Count; i++)
         {
             debugPoints.Add(new Vector3(xValues[i], yValues[i]));
@@ -179,9 +179,27 @@ public class HDRPipelineEditor : Editor
 
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(colorGamut.MaxRadiometricValue, 0.0f)); // Draw X Axis
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f)); // Draw Y axis
+            // Draw auxiliary information on the graph
             Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
             Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f),
                 4.0f); // Draw Y = 1 line
+            Handles.DrawDottedLine(new Vector3(0.0f, 1.5f), new Vector3(colorGamut.MaxRadiometricValue, 1.5f),
+            4.0f); // Draw Y = 1.5 line
+            Handles.DrawDottedLine(new Vector3(0.18f, 0.0f), new Vector3(0.18f, 1.5f), 2.0f); // Draw vertical line from 0.18f
+            Handles.DrawDottedLine(new Vector3(0.0f, 0.18f), new Vector3(0.18f, 0.18f), 2.0f); // Draw vertical line from 0.18f
+            Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
+            Handles.DrawDottedLine(new Vector3(0.0f, 0.5f), new Vector3(0.5f, 0.5f), 4.0f); // Draw vertical line from 0.18f
+
+            xTempValues = colorGamut.getXValues();
+            yTempValues = colorGamut.getYValues();
+            for (int i = 0; i < xTempValues.Count; i++)
+            {
+                Vector3 logPoint = new Vector3(xTempValues[i], yTempValues[i]);
+                Vector3 linearPoint = new Vector3(Shaper.calculateLogToLinear(xTempValues[i], colorGamut.GreyPoint.x, colorGamut.MinRadiometricValue, colorGamut.MaxRadiometricValue),0.0f);
+                Handles.DrawWireCube(logPoint, cubeWidgetSize);
+                // Handles.DrawWireCube( linearPoint, cubeWidgetSize);
+                // Handles.DrawDottedLine(linearPoint, logPoint, 1.0f);
+            }
 
             if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
                 _curveGuiDataState == CurveGuiDataState.NotCalculated)
@@ -191,9 +209,9 @@ public class HDRPipelineEditor : Editor
             }
 
             Handles.DrawPolyLine(debugPoints.ToArray());
-            Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
-            Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
-            Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
+            // Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
+            // Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
+            // Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
         }
     }
 
@@ -222,7 +240,9 @@ public class HDRPipelineEditor : Editor
 
         activeTransferFunction =
             (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
+        EditorGUILayout.Space();
         exposure = EditorGUILayout.Slider("Exposure", exposure, -6.0f, 6.0f);
+        bleachingRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", bleachingRatioPower, 1, 7);
         showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
@@ -266,8 +286,8 @@ public class HDRPipelineEditor : Editor
                 colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
                 colorGamut.setExposure(exposure);
                 colorGamut.setActiveTransferFunction(activeTransferFunction);
+                colorGamut.setBleachingRatioPower(bleachingRatioPower);
 
-                // Debug.Log("OnInspectorGUI() - GUI Changed");
                 colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
                 _curveGuiDataState = CurveGuiDataState.Calculated;
             }

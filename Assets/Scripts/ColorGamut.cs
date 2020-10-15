@@ -361,11 +361,7 @@ public class ColorGamut : MonoBehaviour
                         // Calculate Pixel max color and ratio
                         hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
                         ratio = hdriPixelColor / hdriMaxRGBChannel;
-                       
-                        // if (hdriMaxRGBChannel < minRadiometricValue && isBleachingActive)
-                        // {
-                        //     Debug.Log("below min");
-                        // }
+
                         // Transfer function
                         if (activeTransferFunction == TransferFunction.Max_RGB)
                         {
@@ -397,8 +393,6 @@ public class ColorGamut : MonoBehaviour
                                     ratio = hdriPixelColor / hdriMaxRGBChannel;
                                 }
                             }
-
-                           
 
                             // Get Y value from curve using the array version 
                             float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray,
@@ -433,10 +427,6 @@ public class ColorGamut : MonoBehaviour
                                     }
                                 }
                             }
-
-                            // Sweep texture
-                            //sweepMaxRGBChannel = animationCurve.Evaluate(sweepMaxRGBChannel);
-                            //sweepPixelColor = sweepMaxRGBChannel * sweepRatio;
 
                             activeTransferFunction = TransferFunction.Max_RGB;
                         }
@@ -482,7 +472,6 @@ public class ColorGamut : MonoBehaviour
             }
         }
     }
-
 
     private void ChangeCurveDataState(CurveDataState newState)
     {
@@ -694,7 +683,6 @@ public class ColorGamut : MonoBehaviour
         return controlPoints;
     }
 
-    
     public List<float> getTValues()
     {
         return tValues;
