@@ -31,7 +31,7 @@ public class LutGenerator
     return lutTexture;
   }
   
-  public static Color[] generateHdrTexLut(int sliceLength, float maxValue, bool useShaper = true)
+  public static Color[] generateHdrTexLutPQShape(int sliceLength, float maxValue, bool useShaper = true)
   {
     PQShaper pqShaper = new PQShaper();
     float redCounter = 0.0f;
@@ -64,7 +64,41 @@ public class LutGenerator
 
     return lutTexture;
   }
-  
+  // Uses Log2 shaper
+  public static Color[] generateHdrTexLut(int sliceLength, float maxValue, bool useShaper,
+    Vector2 midGrey, float minExposure, float maxExposure)
+  {
+    float redCounter = 0.0f;
+    float greenCounter = 0.0f;
+    float blueCounter = 0.0f;
+    float pixelColorStride = maxValue / (float)(sliceLength - 1);
+    int textureWidth = sliceLength * sliceLength;
+    int lutArrayLen = sliceLength * sliceLength * sliceLength;
+    
+    Color[] lutTexture = new Color[lutArrayLen];
+    lutTexture[0] = Color.black;
+    
+    for (int i = 1; i < lutArrayLen; i++)
+    {
+      redCounter   = (i % sliceLength)  == 0 ?  0.0f : redCounter + pixelColorStride;
+      greenCounter = (i % textureWidth) == 0 ? greenCounter + pixelColorStride : greenCounter;
+      blueCounter  = (i % textureWidth) == 0 ? 0.0f : ((i % sliceLength) == 0 ?  
+        blueCounter + pixelColorStride : blueCounter);
+      
+      if (useShaper == true)
+      {
+        lutTexture[i] = new Color(Shaper.calculateLinearToLog(redCounter, midGrey.x, minExposure, maxExposure),
+                                  Shaper.calculateLinearToLog(greenCounter, midGrey.x, minExposure, maxExposure),
+                                  Shaper.calculateLinearToLog(blueCounter, midGrey.x, minExposure, maxExposure));
+      }
+      else
+      {
+        lutTexture[i] = new Color(redCounter, greenCounter, blueCounter);
+      }
+    }
+
+    return lutTexture;
+  }
   
   
 }

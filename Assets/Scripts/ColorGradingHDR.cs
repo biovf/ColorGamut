@@ -68,7 +68,7 @@ public class ColorGradingHDR : MonoBehaviour
     {
         Debug.Log("Generating .cube LUT of size " + lutDimension.ToString());
         
-        Color[] hdr1DLut = LutGenerator.generateHdrTexLut(lutDimension, maxRadiometricValue, useShaperFunction);
+        Color[] hdr1DLut = LutGenerator.generateHdrTexLutPQShape(lutDimension, maxRadiometricValue, useShaperFunction);
         CubeLutExporter.saveLutAsCube(hdr1DLut, fileName, lutDimension, Vector3.zero,
             new Vector3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue), true);
     }
@@ -101,7 +101,7 @@ public class ColorGradingHDR : MonoBehaviour
         if (generateHDRLut)
         {
             Debug.Log("Generating HDR texture Lut");
-            lutColorArray = LutGenerator.generateHdrTexLut(lutDimension, maxRadiometricValue, useShaperFunction);
+            lutColorArray = LutGenerator.generateHdrTexLutPQShape(lutDimension, maxRadiometricValue, useShaperFunction);
            
             Debug.Log("Saving HDR texture Lut to disk");
             SaveToDisk(lutColorArray, fileName, lutDimension * lutDimension, lutDimension);

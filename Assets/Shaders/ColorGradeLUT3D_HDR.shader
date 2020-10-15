@@ -4,6 +4,9 @@
     {
         _MainTex ("Texture", 2D) = "white" {}
         _LUT ("Color Grading LUT", 3D) = "white" {}
+        _MaxExposureValue ("Max Exposure", Int) = 6
+        _MinExposureValue ("Min Exposure", Int) = -8
+        _MidGreyX ("Middle Grey X value", Float) = 0.18
     }
     SubShader
     {
@@ -40,51 +43,21 @@
 
             sampler2D_half _MainTex;
             sampler3D_half _LUT;
-
-            // SMPTE ST.2084 (PQ) transfer functions
-            // 1.0 = 100nits, 100.0 = 10knits
-            #define DEFAULT_MAX_PQ 100.0
-
-            struct ParamsPQ
-            {
-                float N, M;
-                float C1, C2, C3;
-            };
-
-            static const ParamsPQ PQ =
-            {
-                2610.0 / 4096.0 / 4.0, // N
-                2523.0 / 4096.0 * 128.0, // M
-                3424.0 / 4096.0, // C1
-                2413.0 / 4096.0 * 32.0, // C2
-                2392.0 / 4096.0 * 32.0, // C3
-            };
-
-            float3 LinearToPQ(float3 x, float maxPQValue)
-            {
-                x = pow(x / maxPQValue, PQ.N);
-                float3 nd = (PQ.C1 + PQ.C2 * x) / (1.0 + PQ.C3 * x);
-                return pow(nd, PQ.M);
-            }
-
-            float3 PQToLinear(float3 x, float maxPQValue)
-            {
-                x = pow(x, rcp(PQ.M));
-                float3 nd = max(x - PQ.C1, 0.0) / (PQ.C2 - (PQ.C3 * x));
-                return pow(nd, rcp(PQ.N)) * maxPQValue;
-            }
-
+            float _MaxExposureValue;
+            float _MinExposureValue;
+            float _MidGreyX;
+        
+           
             half4 frag(v2f i) : SV_Target
             {
                 half3 col = (tex2D(_MainTex, i.uv).rgb);
-                col = LinearToPQ(col, 100.0);
+                col.rgb = clamp(col.rgb, 0.0, 1.0) * (_MaxExposureValue - _MinExposureValue) + _MinExposureValue;
+                col.rgb = pow(2.0f, col.rgb) * _MidGreyX;
                 
                 half3 scale = (33.0 - 1.0) / 33.0;
                 half3 offset = 1.0 / (2.0 * 33.0);
                 // half3 uvw = col * half3(32.0, 32.0, 32.0) * half3(1.0/33.0,1.0/33.0,1.0/33.0)  + half3(1.0/33.0,1.0/33.0,1.0/33.0) * 0.5;
                 half4 finalCol = tex3D(_LUT, scale * col + offset);
-
-                finalCol.rgb = PQToLinear(finalCol, 100.0);
 
                 // half srgbEotf = 1.0 / 2.2;
                 // finalCol.rgb = pow(finalCol.rgb, half3(srgbEotf, srgbEotf, srgbEotf));
