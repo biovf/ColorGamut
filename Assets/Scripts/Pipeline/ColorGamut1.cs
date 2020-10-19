@@ -123,8 +123,15 @@ public class ColorGamut1
         maxDisplayValue = 1.5f;
         minDisplayValue = 0.0f;
         greyPoint = new Vector2(0.18f, 0.18f);
-        minExposureValue = -8.0f;
+        minExposureValue = -6.0f;
         maxExposureValue =  6.0f;
+
+        float logNormalisedValue = Mathf.Clamp01(6.0f / 12.0f);
+        float midgrey =  Mathf.Pow(2.0f, logNormalisedValue);
+        logNormalisedValue = Mathf.Clamp01(8.0f / 14.0f);
+        midgrey =  Mathf.Pow(2.0f, logNormalisedValue);
+        
+        
         minRadiometricValue = Mathf.Pow(2.0f, minExposureValue) * greyPoint.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxExposureValue) * greyPoint.x;
 
@@ -451,7 +458,7 @@ public class ColorGamut1
                                 }
                             }
                         }
-
+                        // Debug.Log("hdriPixelColor: " + hdriPixelColor.ToString("F6"));
                         hdriPixelArray[i].r = hdriPixelColor.r;//Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
                         hdriPixelArray[i].g = hdriPixelColor.g;//Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
                         hdriPixelArray[i].b = hdriPixelColor.b;//Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
@@ -470,6 +477,14 @@ public class ColorGamut1
                 yield return new WaitForEndOfFrame();
             }
         }
+    }
+
+    public void exportTransferFunction(string fileName)
+    {
+        Vector3 minDisplayValueVec = new Vector3(minDisplayValue, minDisplayValue, minDisplayValue);
+        Vector3 maxDisplayValueVec = new Vector3(maxDisplayValue, maxDisplayValue, maxDisplayValue);
+
+        CubeLutExporter.saveLutAsCube(yValues.ToArray(), fileName, yValues.Count, minDisplayValueVec, maxDisplayValueVec, false);
     }
 
     private void ChangeCurveDataState(CurveDataState newState)

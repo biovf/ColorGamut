@@ -105,12 +105,16 @@ public class ColorGradingHDR1
             int inGameCapturePixelsLen = inGameCapturePixels.Length;
             for (int i = 0; i < inGameCapturePixelsLen; i++)
             {
-                inGameCapturePixels[i].r = Shaper.calculateLinearToLog(inGameCapturePixels[i].r, colorGamut.GreyPoint.x,
+                inGameCapturePixels[i].r = Shaper.calculateLinearToLog(Mathf.Max(0.0f, inGameCapturePixels[i].r), colorGamut.GreyPoint.x,
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-                inGameCapturePixels[i].g = Shaper.calculateLinearToLog(inGameCapturePixels[i].g, colorGamut.GreyPoint.x,
+                inGameCapturePixels[i].g = Shaper.calculateLinearToLog(Mathf.Max(0.0f,inGameCapturePixels[i].g), colorGamut.GreyPoint.x,
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-                inGameCapturePixels[i].b = Shaper.calculateLinearToLog(inGameCapturePixels[i].b, colorGamut.GreyPoint.x,
+                inGameCapturePixels[i].b = Shaper.calculateLinearToLog(Mathf.Max(0.0f, inGameCapturePixels[i].b), colorGamut.GreyPoint.x,
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
+                if(float.IsNaN(inGameCapturePixels[i].r) || float.IsInfinity(inGameCapturePixels[i].r) ||
+                   float.IsNaN(inGameCapturePixels[i].g) || float.IsInfinity(inGameCapturePixels[i].g) ||
+                   float.IsNaN(inGameCapturePixels[i].b) || float.IsInfinity(inGameCapturePixels[i].b))
+                    Debug.Log("Nan");
             }
         }
 
@@ -154,24 +158,6 @@ public class ColorGradingHDR1
 
         return tex;
     }
-    
-    // private Color[] decodeHDRLutPQToLinear(Color[] lutPixels, float maxValue)
-    // {
-    //     Debug.Log("Starting to decode LUT with max value " + maxValue.ToString());
-    //     PQShaper pqShaper = new PQShaper();
-    //     int lutPixelsLen = lutPixels.Length;
-    //     Vector3 tmpColorVec = Vector3.zero;
-    //     
-    //     for (int i = 0; i < lutPixelsLen; i++)
-    //     {
-    //         tmpColorVec.Set(lutPixels[i].r, lutPixels[i].g, lutPixels[i].b);
-    //         Vector3 resultColor = pqShaper.PQToLinear(tmpColorVec, maxValue);
-    //         lutPixels[i] = new Color(resultColor.x, resultColor.y, resultColor.z, lutPixels[i].a);
-    //     }
-    //
-    //     Debug.Log("Finished decoding LUT");
-    //     return lutPixels;
-    // }
 
     private Color[] applyShaperToTexture(Color[] pixels)
     {
@@ -191,23 +177,7 @@ public class ColorGradingHDR1
         Debug.Log("Finished encoding LUT");
         return pixels;
     }
-    
-    // private Color[] applyPQToTexture(Color[] pixels)
-    // {
-    //     Debug.Log("Starting to encode LUT");
-    //     PQShaper pqShaper = new PQShaper();
-    //     Vector3 tmpColorVec = Vector3.zero;
-    //     int pixelsLen = pixels.Length;
-    //     for (int i = 0; i < pixelsLen; i++)
-    //     {
-    //         tmpColorVec.Set(pixels[i].r, pixels[i].g, pixels[i].b);
-    //         Vector3 resultColor = pqShaper.LinearToPQ(tmpColorVec);
-    //         pixels[i] = new Color(resultColor.x, resultColor.y, resultColor.z, pixels[i].a);
-    //     }
-    //
-    //     Debug.Log("Finished encoding LUT");
-    //     return pixels;
-    // }
+  
     
     private void SaveToDisk(Color[] pixels, string fileName, int width, int height, bool useExr = true)
     {

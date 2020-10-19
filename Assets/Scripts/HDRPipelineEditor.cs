@@ -257,7 +257,21 @@ public class HDRPipelineEditor : Editor
         originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
         greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
         greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
+        
+        if (GUILayout.Button("Export transfer function for Resolve"))
+        {
+            defaultCubeLutFileName = "CubeLut" + lutDimension.ToString();
+            outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName,"cube" );
 
+            if (string.IsNullOrEmpty(outPathCubeLut))
+            {
+                Debug.LogError("File path to save cube Lut file is invalid");
+                return;
+            }
+
+            colorGamut.exportTransferFunction(outPathCubeLut);
+        }
+        
         isColorGradingTabOpen = EditorGUILayout.InspectorTitlebar(isColorGradingTabOpen, hdrPipeline);
         if (isColorGradingTabOpen)
         {
@@ -265,7 +279,6 @@ public class HDRPipelineEditor : Editor
             DrawTexLutInspectorProps();
             DrawCubeInspectorProps();
         }
-
 
         if (GUI.changed)
         {
@@ -294,8 +307,6 @@ public class HDRPipelineEditor : Editor
 
         base.serializedObject.ApplyModifiedProperties();
     }
-    
-    
     
      private void DrawSaveExrInspectorProps()
     {
