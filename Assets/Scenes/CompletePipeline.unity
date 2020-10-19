@@ -322,7 +322,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a61a7c3f7c0d1243a0d7bd05329e2b6, type: 3}
   m_Name: 
@@ -334,7 +334,7 @@ MonoBehaviour:
     type: 2}
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
   HDRIList:
-  - {fileID: 2800000, guid: 56b8b8acf41edbd47a77073f331aa3c2, type: 3}
+  - {fileID: 2800000, guid: bd000266b35516c4fbdae6c97a7001fd, type: 3}
   - {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
   - {fileID: 2800000, guid: 31b2f0f274714624ea704f37624dca58, type: 3}
   - {fileID: 2800000, guid: bedbb785de66cdb4c8b507ef388afa93, type: 3}
@@ -383,7 +383,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41ce304c2f43845af8545b7039de6ab6, type: 3}
   m_Name: 
@@ -393,12 +393,12 @@ MonoBehaviour:
     type: 2}
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
   HDRIList:
-  - {fileID: 2800000, guid: d5d27005e4472af4ab106ce3b2875209, type: 3}
+  - {fileID: 2800000, guid: 8fed653403204bf4db084fc160f64979, type: 3}
   colorGradingMat: {fileID: 2100000, guid: 2929c88870f8b4cc1b41367e15ada627, type: 2}
   colorGrading3DTextureMat: {fileID: 2100000, guid: 83cef61a096da4d9d86919f05dca8030,
     type: 2}
   fullscreenMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1, type: 2}
-  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: 63ab93b3c04f544398074b5770bc52ae,
+  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: 9e776371a7c3e4f53a698870fe09ad90,
     type: 3}
 --- !u!1 &1048242420
 GameObject:

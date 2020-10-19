@@ -57,17 +57,17 @@ public class ColorGradingHDR1
     
     public void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        if (enableColorGrading)
-        {
+        // if (enableColorGrading)
+        // {
             // Graphics.Blit(testTexture, colorGradeRT, fullscreenMat);
             Graphics.Blit(src, interceptDebugRT, fullscreenMat);
             colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
             Graphics.Blit(src, dest, colorGrading3DTextureMat);
-        }
-        else
-        {
-            Graphics.Blit(testTexture, dest, fullscreenMat);
-        }
+        // }
+        // else
+        // {
+        //     Graphics.Blit(testTexture, dest, fullscreenMat);
+        // }
     }
 
     public void Update()
@@ -93,23 +93,27 @@ public class ColorGradingHDR1
             new Vector3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue), true);
     }
 
-    public void saveInGameCapture(string saveFilePath)
+    public void saveInGameCapture(string saveFilePath, bool shapeImage)
     {
         Vector3 colorVec = Vector3.zero;
 
         Texture2D inGameCapture = toTexture2D(interceptDebugRT);
         Color[] inGameCapturePixels = inGameCapture.GetPixels();
-        // int inGameCapturePixelsLen = inGameCapturePixels.Length;
 
-        // for (int i = 0; i < inGameCapturePixelsLen; i++)
-        // {
-        //     inGameCapturePixels[i].r = Shaper.calculateLinearToLog(inGameCapturePixels[i].r, colorGamut.GreyPoint.x,
-        //         colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-        //     inGameCapturePixels[i].g = Shaper.calculateLinearToLog(inGameCapturePixels[i].r, colorGamut.GreyPoint.x,
-        //         colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-        //     inGameCapturePixels[i].b = Shaper.calculateLinearToLog(inGameCapturePixels[i].r, colorGamut.GreyPoint.x, 
-        //         colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-        // }
+        if (shapeImage)
+        {
+            int inGameCapturePixelsLen = inGameCapturePixels.Length;
+            for (int i = 0; i < inGameCapturePixelsLen; i++)
+            {
+                inGameCapturePixels[i].r = Shaper.calculateLinearToLog(inGameCapturePixels[i].r, colorGamut.GreyPoint.x,
+                    colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
+                inGameCapturePixels[i].g = Shaper.calculateLinearToLog(inGameCapturePixels[i].g, colorGamut.GreyPoint.x,
+                    colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
+                inGameCapturePixels[i].b = Shaper.calculateLinearToLog(inGameCapturePixels[i].b, colorGamut.GreyPoint.x,
+                    colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
+            }
+        }
+
         SaveToDisk(inGameCapturePixels, saveFilePath, inGameCapture.width, inGameCapture.height);
     }
 

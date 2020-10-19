@@ -42,8 +42,9 @@ public class HDRPipelineEditor : Editor
     private List<float> yValues;
     private List<Vector3> debugPoints = new List<Vector3>();
 
+    // Color grading member variables
     private Vector3 cubeWidgetSize = new Vector3(0.01f, 0.01f, 0.01f);
-
+    
     #region CubeLut Variables
 
     private bool useShaperFunction = true;
@@ -71,10 +72,10 @@ public class HDRPipelineEditor : Editor
     private string outPathGameCapture = "";
     #endregion
 
-    private bool colorGradingEditorFold = false;
+    private bool isColorGradingTabOpen = true;
     private ColorGradingHDR1 colorGradingHDR;
-    
-    
+    private bool shapeImage = true;
+
     // Prototype the state approach to test caching of data
     private enum CurveGuiDataState
     {
@@ -217,8 +218,6 @@ public class HDRPipelineEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        
-        
         base.serializedObject.UpdateIfRequiredOrScript();
         base.serializedObject.Update();
         base.DrawDefaultInspector();
@@ -259,8 +258,8 @@ public class HDRPipelineEditor : Editor
         greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
         greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
 
-        colorGradingEditorFold = EditorGUILayout.InspectorTitlebar(colorGradingEditorFold, hdrPipeline);
-        if (colorGradingEditorFold)
+        isColorGradingTabOpen = EditorGUILayout.InspectorTitlebar(isColorGradingTabOpen, hdrPipeline);
+        if (isColorGradingTabOpen)
         {
             DrawSaveExrInspectorProps();
             DrawTexLutInspectorProps();
@@ -302,8 +301,10 @@ public class HDRPipelineEditor : Editor
     {
         EditorGUILayout.Space(10.0f);
         EditorGUILayout.LabelField("In-Game Capture ");
+        
+        shapeImage = EditorGUILayout.Toggle("Apply Shaper to exported capture", shapeImage);
 
-        if (GUILayout.Button("Save Game Capture To"))
+        if (GUILayout.Button("Export Game Capture To Resolve"))
         {
             outPathGameCapture = EditorUtility.SaveFilePanel("In Game capture EXR...", "", "Capture", "exr");
 
@@ -313,7 +314,7 @@ public class HDRPipelineEditor : Editor
                 return;
             }
          
-            colorGradingHDR.saveInGameCapture(outPathGameCapture);
+            colorGradingHDR.saveInGameCapture(outPathGameCapture, shapeImage);
         }
         else if (outPathGameCapture.Length < 1)
         {

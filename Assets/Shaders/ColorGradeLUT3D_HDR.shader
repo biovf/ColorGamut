@@ -47,7 +47,6 @@
             float _MinExposureValue;
             float _MidGreyX;
         
-           
             half4 frag(v2f i) : SV_Target
             {
                 half3 col = (tex2D(_MainTex, i.uv).rgb);
@@ -57,11 +56,11 @@
                 half3 scale = (33.0 - 1.0) / 33.0;
                 half3 offset = 1.0 / (2.0 * 33.0);
                 // half3 uvw = col * half3(32.0, 32.0, 32.0) * half3(1.0/33.0,1.0/33.0,1.0/33.0)  + half3(1.0/33.0,1.0/33.0,1.0/33.0) * 0.5;
-                half4 finalCol = tex3D(_LUT, scale * col + offset);
+                col = tex3D(_LUT, scale * col + offset).rgb;
 
                 // half srgbEotf = 1.0 / 2.2;
                 // finalCol.rgb = pow(finalCol.rgb, half3(srgbEotf, srgbEotf, srgbEotf));
-                return finalCol;
+                return half4(col, 1.0);
             }
             ENDCG
         }

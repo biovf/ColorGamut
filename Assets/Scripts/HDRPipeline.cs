@@ -21,10 +21,13 @@ public class HDRPipeline : MonoBehaviour
     private ColorGradingHDR1 colorGrading;
 
     private RenderTexture renderBuffer;
+    private RenderTexture hdriRenderTexture;
     
     void Start()
     {
         renderBuffer = new RenderTexture(HDRIList[0].width, HDRIList[0].height, 0, RenderTextureFormat.ARGBHalf,
+            RenderTextureReadWrite.Linear);
+        hdriRenderTexture = new RenderTexture(HDRIList[0].width, HDRIList[0].height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         initialiseColorGamut();
     }
@@ -32,28 +35,39 @@ public class HDRPipeline : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (colorGamut != null)
-        {
-            colorGamut.Update();
-        }
-
         if (colorGrading != null)
         {
             colorGrading.Update();
+        }
+        
+        if (colorGamut != null)
+        {
+            colorGamut.Update();
         }
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        if (colorGamut != null)
-        {
-            colorGamut.OnRenderImage(src, renderBuffer);
-        }
+        Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
 
         if (colorGrading != null)
         {
-            colorGrading.OnRenderImage(renderBuffer, dest);
+            colorGrading.OnRenderImage(hdriRenderTexture, renderBuffer);
         }
+        if (colorGamut != null)
+        {
+            colorGamut.OnRenderImage(renderBuffer, dest);
+        }
+        
+        // if (colorGamut != null)
+        // {
+        //     colorGamut.OnRenderImage(src, renderBuffer);
+        // }
+        //
+        // if (colorGrading != null)
+        // {
+        //     colorGrading.OnRenderImage(renderBuffer, dest);
+        // }
     }
     
     private void initialiseColorGamut()

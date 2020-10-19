@@ -453,9 +453,9 @@ public class ColorGamut : MonoBehaviour
                             }
                         }
 
-                        hdriPixelArray[i].r = Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
-                        hdriPixelArray[i].g = Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
-                        hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
+                        hdriPixelArray[i].r = hdriPixelColor.r;//Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
+                        hdriPixelArray[i].g = hdriPixelColor.g;//Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
+                        hdriPixelArray[i].b = hdriPixelColor.b;//Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
                         hdriPixelArray[i].a = 1.0f;
                     }
 

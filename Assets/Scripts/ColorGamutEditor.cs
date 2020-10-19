@@ -244,7 +244,7 @@ public class ColorGamutEditor : Editor
         {
             string fileName = Time.frameCount.ToString() + ".exr";
             string outPathTextureLut = EditorUtility.SaveFilePanel("Save Image to Disk", "", fileName,"exr");
-            File.WriteAllBytes(@fileName, colorGamut.HdriTextureTransformed.EncodeToEXR());
+            File.WriteAllBytes(@outPathTextureLut, colorGamut.HdriTextureTransformed.EncodeToEXR());
         }
         
         
