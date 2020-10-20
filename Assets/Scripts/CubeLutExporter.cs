@@ -14,12 +14,10 @@ public class CubeLutExporter
         fileContents.Append("TITLE \"" + fileName + "\"");
         fileContents.AppendLine();
         
-        fileContents.Append("DOMAIN_MIN " + Convert.ToInt32(domainMin.x).ToString() + " " + 
-                       Convert.ToInt32(domainMin.y).ToString() + " " + Convert.ToInt32(domainMin.z).ToString());
+        fileContents.Append("DOMAIN_MIN " + domainMin.x.ToString() + " " + domainMin.y.ToString() + " " + domainMin.z.ToString());
         fileContents.AppendLine();
         
-        fileContents.Append("DOMAIN_MAX " + Convert.ToInt32(domainMax.x).ToString() + " " + 
-                       Convert.ToInt32(domainMax.y).ToString() + " " + Convert.ToInt32(domainMax.z).ToString());
+        fileContents.Append("DOMAIN_MAX " + domainMax.x.ToString() + " " + domainMax.y.ToString() + " " + domainMax.z.ToString());
         fileContents.AppendLine();
         
         if (convertTo3DLut == false)
@@ -66,12 +64,10 @@ public class CubeLutExporter
         fileContents.Append("TITLE \"" + fileName + "\"");
         fileContents.AppendLine();
         
-        fileContents.Append("DOMAIN_MIN " + Convert.ToInt32(domainMin.x).ToString() + " " + 
-                       Convert.ToInt32(domainMin.y).ToString() + " " + Convert.ToInt32(domainMin.z).ToString());
+        fileContents.Append("DOMAIN_MIN " + domainMin.x.ToString() + " " + domainMin.y.ToString() + " " + domainMin.z.ToString());
         fileContents.AppendLine();
         
-        fileContents.Append("DOMAIN_MAX " + Convert.ToInt32(domainMax.x).ToString() + " " + 
-                       Convert.ToInt32(domainMax.y).ToString() + " " + Convert.ToInt32(domainMax.z).ToString());
+        fileContents.Append("DOMAIN_MAX " + domainMax.x.ToString() + " " + domainMax.y.ToString() + " " + domainMax.z.ToString());
         fileContents.AppendLine();
         
         if (convertTo3DLut == false)

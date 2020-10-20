@@ -240,7 +240,7 @@ public class HDRPipelineEditor : Editor
         activeTransferFunction =
             (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
         EditorGUILayout.Space();
-        exposure = EditorGUILayout.Slider("Exposure", exposure, -6.0f, 6.0f);
+        exposure = EditorGUILayout.Slider("Exposure", exposure, colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
         bleachingRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", bleachingRatioPower, 1, 7);
         showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
@@ -258,7 +258,7 @@ public class HDRPipelineEditor : Editor
         greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
         greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
         
-        if (GUILayout.Button("Export transfer function for Resolve"))
+        if (GUILayout.Button("Export transfer function to Resolve"))
         {
             defaultCubeLutFileName = "CubeLut" + lutDimension.ToString();
             outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName,"cube" );
@@ -315,7 +315,7 @@ public class HDRPipelineEditor : Editor
         
         shapeImage = EditorGUILayout.Toggle("Apply Shaper to exported capture", shapeImage);
 
-        if (GUILayout.Button("Export Game Capture To Resolve"))
+        if (GUILayout.Button("Export Game Capture to Resolve"))
         {
             outPathGameCapture = EditorUtility.SaveFilePanel("In Game capture EXR...", "", "Capture", "exr");
 

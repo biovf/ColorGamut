@@ -117,7 +117,7 @@ public class ColorGamut1
         isSweepActive = false;
 
         // Parametric curve
-        slope = 2.2f;
+        slope = 1.2f;
         slopeMin = 1.02f;
         slopeMax = 4.5f;
         maxDisplayValue = 1.5f;
@@ -125,12 +125,6 @@ public class ColorGamut1
         greyPoint = new Vector2(0.18f, 0.18f);
         minExposureValue = -6.0f;
         maxExposureValue =  6.0f;
-
-        float logNormalisedValue = Mathf.Clamp01(6.0f / 12.0f);
-        float midgrey =  Mathf.Pow(2.0f, logNormalisedValue);
-        logNormalisedValue = Mathf.Clamp01(8.0f / 14.0f);
-        midgrey =  Mathf.Pow(2.0f, logNormalisedValue);
-        
         
         minRadiometricValue = Mathf.Pow(2.0f, minExposureValue) * greyPoint.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxExposureValue) * greyPoint.x;
@@ -481,10 +475,21 @@ public class ColorGamut1
 
     public void exportTransferFunction(string fileName)
     {
-        Vector3 minDisplayValueVec = new Vector3(minDisplayValue, minDisplayValue, minDisplayValue);
-        Vector3 maxDisplayValueVec = new Vector3(maxDisplayValue, maxDisplayValue, maxDisplayValue);
+        // Set the DOMAIN_MIN and DOMAIN_MAX ranges
+        Vector3 minDisplayValueVec = Vector3.zero;//new Vector3(minDisplayValue, minDisplayValue, minDisplayValue);
+        Vector3 maxDisplayValueVec = Vector3.one;//new Vector3(maxDisplayValue, maxDisplayValue, maxDisplayValue);
 
-        CubeLutExporter.saveLutAsCube(yValues.ToArray(), fileName, yValues.Count, minDisplayValueVec, maxDisplayValueVec, false);
+        // @TODO - implement the actual sRGB spec calculation
+        float[] yValuesEOTF = new float[yValues.Count];
+        for (int i = 0; i < yValues.Count; i++)
+        {
+            // Normalise our Y values to go from 0.0 to 1.0 
+            float tmpVal = (yValues[i] - minDisplayValue) / (maxDisplayValue - minDisplayValue);
+            // Encode the inverse EOTF and store it in the array of Y values
+            yValuesEOTF[i] = Mathf.Pow(tmpVal, (1.0f / 2.2f));
+        }
+        // Pass data to be converted and written to disk as a .cube file
+        CubeLutExporter.saveLutAsCube(yValuesEOTF, fileName, yValues.Count, minDisplayValueVec, maxDisplayValueVec, false);
     }
 
     private void ChangeCurveDataState(CurveDataState newState)

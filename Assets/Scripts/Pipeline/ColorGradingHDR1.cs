@@ -62,6 +62,9 @@ public class ColorGradingHDR1
             // Graphics.Blit(testTexture, colorGradeRT, fullscreenMat);
             Graphics.Blit(src, interceptDebugRT, fullscreenMat);
             colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
+            colorGrading3DTextureMat.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
+            colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
+            colorGrading3DTextureMat.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
             Graphics.Blit(src, dest, colorGrading3DTextureMat);
         // }
         // else
@@ -111,10 +114,10 @@ public class ColorGradingHDR1
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
                 inGameCapturePixels[i].b = Shaper.calculateLinearToLog(Mathf.Max(0.0f, inGameCapturePixels[i].b), colorGamut.GreyPoint.x,
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-                if(float.IsNaN(inGameCapturePixels[i].r) || float.IsInfinity(inGameCapturePixels[i].r) ||
-                   float.IsNaN(inGameCapturePixels[i].g) || float.IsInfinity(inGameCapturePixels[i].g) ||
-                   float.IsNaN(inGameCapturePixels[i].b) || float.IsInfinity(inGameCapturePixels[i].b))
-                    Debug.Log("Nan");
+                // if(float.IsNaN(inGameCapturePixels[i].r) || float.IsInfinity(inGameCapturePixels[i].r) ||
+                //    float.IsNaN(inGameCapturePixels[i].g) || float.IsInfinity(inGameCapturePixels[i].g) ||
+                //    float.IsNaN(inGameCapturePixels[i].b) || float.IsInfinity(inGameCapturePixels[i].b))
+                //     Debug.Log("Nan");
             }
         }
 

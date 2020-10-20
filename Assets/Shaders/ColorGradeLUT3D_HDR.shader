@@ -4,8 +4,8 @@
     {
         _MainTex ("Texture", 2D) = "white" {}
         _LUT ("Color Grading LUT", 3D) = "white" {}
-        _MaxExposureValue ("Max Exposure", Int) = 6
-        _MinExposureValue ("Min Exposure", Int) = -8
+        _MaxExposureValue ("Max Exposure", float) = 6.0
+        _MinExposureValue ("Min Exposure", float) = -8.0
         _MidGreyX ("Middle Grey X value", Float) = 0.18
     }
     SubShader
@@ -56,11 +56,9 @@
                 half3 scale = (33.0 - 1.0) / 33.0;
                 half3 offset = 1.0 / (2.0 * 33.0);
                 // half3 uvw = col * half3(32.0, 32.0, 32.0) * half3(1.0/33.0,1.0/33.0,1.0/33.0)  + half3(1.0/33.0,1.0/33.0,1.0/33.0) * 0.5;
-                col = tex3D(_LUT, scale * col + offset).rgb;
+                half3 rgba = tex3D(_LUT, scale * col + offset).rgb;
 
-                // half srgbEotf = 1.0 / 2.2;
-                // finalCol.rgb = pow(finalCol.rgb, half3(srgbEotf, srgbEotf, srgbEotf));
-                return half4(col, 1.0);
+                return half4(rgba, 1.0);
             }
             ENDCG
         }
