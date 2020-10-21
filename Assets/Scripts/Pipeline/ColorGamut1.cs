@@ -117,7 +117,7 @@ public class ColorGamut1
         isSweepActive = false;
 
         // Parametric curve
-        slope = 1.2f;
+        slope = 2.5f;
         slopeMin = 1.02f;
         slopeMax = 4.5f;
         maxDisplayValue = 1.5f;
@@ -162,6 +162,8 @@ public class ColorGamut1
         
     }
 
+    
+    
     public void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -479,17 +481,31 @@ public class ColorGamut1
         Vector3 minDisplayValueVec = Vector3.zero;//new Vector3(minDisplayValue, minDisplayValue, minDisplayValue);
         Vector3 maxDisplayValueVec = Vector3.one;//new Vector3(maxDisplayValue, maxDisplayValue, maxDisplayValue);
 
+        CurveTest parametricCurveTmp = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
+        Vector2[] controlPointsTmp = parametricCurve.createControlPoints(origin, greyPoint, slope);
+        List<float> xValuesTmp = initialiseXCoordsInRange(10000, maxRadiometricValue);
+        List<float> tValuesTmp = parametricCurve.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
+        List<float> yValuesTmp = parametricCurve.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
+        
+        // List<float> xValuesTmp2 = initialiseXCoordsInRange(4096, maxRadiometricValue);
+        // List<float> tValuesTmp2 = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
+        // List<float> yValuesTmp2 = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
+        
         // @TODO - implement the actual sRGB spec calculation
-        float[] yValuesEOTF = new float[yValues.Count];
-        for (int i = 0; i < yValues.Count; i++)
+        float[] yValuesEOTF = new float[yValuesTmp.Count];
+        int i = 0;
+        for (i = 0; i < yValuesTmp.Count; i++)
         {
+            if (yValuesTmp[i] >= 1.0f)
+                break;
             // Normalise our Y values to go from 0.0 to 1.0 
-            float tmpVal = (yValues[i] - minDisplayValue) / (maxDisplayValue - minDisplayValue);
+            // float tmpVal = (yValues[i] - minDisplayValue) / (maxDisplayValue - minDisplayValue);
             // Encode the inverse EOTF and store it in the array of Y values
-            yValuesEOTF[i] = Mathf.Pow(tmpVal, (1.0f / 2.2f));
+            yValuesEOTF[i] = Mathf.Pow(yValuesTmp[i], (1.0f / 2.2f));
+            // yValuesEOTF[i] = yValues[i];
         }
         // Pass data to be converted and written to disk as a .cube file
-        CubeLutExporter.saveLutAsCube(yValuesEOTF, fileName, yValues.Count, minDisplayValueVec, maxDisplayValueVec, false);
+        CubeLutExporter.saveLutAsCube(yValuesEOTF, fileName, i/*yValues.Count*/, minDisplayValueVec, maxDisplayValueVec, false);
     }
 
     private void ChangeCurveDataState(CurveDataState newState)

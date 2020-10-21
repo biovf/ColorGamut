@@ -22,7 +22,7 @@ public class CubeLutExporter
         
         if (convertTo3DLut == false)
         {
-            int texPixelsLen = inputLutTex.Length;
+            int texPixelsLen = lutDim;//inputLutTex.Length;
             int lut1DSize = texPixelsLen;
             fileContents.Append("LUT_1D_SIZE " + lut1DSize.ToString());
             fileContents.AppendLine();
