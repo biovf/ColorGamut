@@ -232,8 +232,8 @@ public class CurveTest
         }
         
         // Shape the input x coord in radiometric
-        float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
-
+        // float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
+        float logInputXCoord = inputXCoord;
         if (true)
         {
             int idx = 0;

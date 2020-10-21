@@ -30,6 +30,7 @@ public class HDRPipeline : MonoBehaviour
         hdriRenderTexture = new RenderTexture(HDRIList[0].width, HDRIList[0].height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         initialiseColorGamut();
+        initialiseColorGrading();
     }
     
     // Update is called once per frame
@@ -48,36 +49,32 @@ public class HDRPipeline : MonoBehaviour
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
-        Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
-
-        if (colorGrading != null)
-        {
-            colorGrading.OnRenderImage(hdriRenderTexture, renderBuffer);
-        }
-        if (colorGamut != null)
-        {
-            colorGamut.OnRenderImage(renderBuffer, dest);
-        }
+         Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
         
-        // if (colorGamut != null)
-        // {
-        //     colorGamut.OnRenderImage(src, renderBuffer);
-        // }
-        //
-        // if (colorGrading != null)
-        // {
-        //     colorGrading.OnRenderImage(renderBuffer, dest);
-        // }
+         if (colorGrading != null)
+         {
+             colorGrading.OnRenderImage(hdriRenderTexture, renderBuffer);
+         }
+         if (colorGamut != null)
+         {
+             if (colorGamut.CurveState == ColorGamut1.CurveDataState.NotCalculated)
+                 StartCoroutine(colorGamut.ApplyTransferFunction(renderBuffer));
+         }
+         
+        // colorGamut.OnRenderImage(renderBuffer, dest);
+        if(colorGamut.CurveState == ColorGamut1.CurveDataState.Calculated)
+            Graphics.Blit(colorGamut.HdriTextureTransformed, dest, fullScreenTextureMat);
+
     }
     
     private void initialiseColorGamut()
     {
         colorGamut = new ColorGamut1(colorGamutMat, fullScreenTextureMat, HDRIList);
         colorGamut.Start(this);
-        if (Application.isPlaying && this.isActiveAndEnabled)
-        {
-            StartCoroutine(colorGamut.CpuGGMIterative());
-        }
+        // if (Application.isPlaying && this.isActiveAndEnabled)
+        // {
+        //     StartCoroutine(colorGamut.CpuGGMIterative());
+        // }
 
     }
 

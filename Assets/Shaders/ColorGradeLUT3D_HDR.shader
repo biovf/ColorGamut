@@ -46,19 +46,35 @@
             float _MaxExposureValue;
             float _MinExposureValue;
             float _MidGreyX;
+
+             float calculateLinearToLog(float linearRadValue, float midGreyX, float minExposureValue, float maxExposureValue)
+            {
+                if (linearRadValue < 0.0f)
+                    linearRadValue = minExposureValue;
+
+                float dynamicRange = maxExposureValue - minExposureValue;
+                float logRadiometricVal = clamp(log2(linearRadValue / midGreyX), minExposureValue, maxExposureValue);
+                return (logRadiometricVal - minExposureValue) / dynamicRange;
+            }
         
             half4 frag(v2f i) : SV_Target
             {
                 half3 col = (tex2D(_MainTex, i.uv).rgb);
-                col.rgb = clamp(col.rgb, 0.0, 1.0) * (_MaxExposureValue - _MinExposureValue) + _MinExposureValue;
-                col.rgb = pow(2.0f, col.rgb) * _MidGreyX;
+                col.r = calculateLinearToLog(col.r, _MidGreyX, _MinExposureValue, _MaxExposureValue);
+                col.g = calculateLinearToLog(col.g, _MidGreyX, _MinExposureValue, _MaxExposureValue);
+                col.b = calculateLinearToLog(col.b, _MidGreyX, _MinExposureValue, _MaxExposureValue);
+                // col.rgb = pow(col.rgb, (1.0/2.2));
+                // col.rgb = clamp(col.rgb, 0.0, 1.0) * (_MaxExposureValue - _MinExposureValue) + _MinExposureValue;
+                // col.rgb = pow(2.0f, col.rgb) * _MidGreyX;
                 
                 half3 scale = (33.0 - 1.0) / 33.0;
                 half3 offset = 1.0 / (2.0 * 33.0);
-                // half3 uvw = col * half3(32.0, 32.0, 32.0) * half3(1.0/33.0,1.0/33.0,1.0/33.0)  + half3(1.0/33.0,1.0/33.0,1.0/33.0) * 0.5;
-                half3 rgba = tex3D(_LUT, scale * col + offset).rgb;
+                half3 gradedCol = tex3D(_LUT, scale * col + offset).rgb;
 
-                return half4(rgba, 1.0);
+                return half4(gradedCol, 1.0);
+                //return half4(pow(gradedCol, 2.2), 1.0);
+                // return half4(col, 1.0);
+
             }
             ENDCG
         }

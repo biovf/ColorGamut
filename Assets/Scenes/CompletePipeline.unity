@@ -267,7 +267,7 @@ Camera:
   m_GameObject: {fileID: 963194225}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
+  m_ClearFlags: 4
   m_BackGroundColor: {r: 0.6666667, g: 0.6666667, b: 0.6666667, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -398,7 +398,7 @@ MonoBehaviour:
   colorGrading3DTextureMat: {fileID: 2100000, guid: 83cef61a096da4d9d86919f05dca8030,
     type: 2}
   fullscreenMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1, type: 2}
-  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: ba07c615f5b8e45c7be77822764363df,
+  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: c405951355c254565b79aed4236148e9,
     type: 3}
 --- !u!1 &1048242420
 GameObject:

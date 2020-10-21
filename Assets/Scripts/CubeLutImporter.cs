@@ -21,6 +21,7 @@ class CubeLutImporter : ScriptedImporter
 
         var tex = new Texture3D(lutSize, lutSize, lutSize, TextureFormat.RGBAHalf, false)
         {
+            // @TODO enable trilinear
             filterMode = FilterMode.Bilinear,
             wrapMode = TextureWrapMode.Clamp,
             anisoLevel = 0
