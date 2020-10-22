@@ -394,11 +394,11 @@ MonoBehaviour:
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
   HDRIList:
   - {fileID: 2800000, guid: 5f41883751562fc4c889cfdcf94174eb, type: 3}
-  colorGradingMat: {fileID: 2100000, guid: 2929c88870f8b4cc1b41367e15ada627, type: 2}
   colorGrading3DTextureMat: {fileID: 2100000, guid: 83cef61a096da4d9d86919f05dca8030,
     type: 2}
   fullscreenMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1, type: 2}
-  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: c405951355c254565b79aed4236148e9,
+  log2Shaper: {fileID: 2100000, guid: 7f881f138f00c4f999ca0c898c0c69d3, type: 2}
+  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: 0e954cbf4695e4a5abd906eb6797eef9,
     type: 3}
 --- !u!1 &1048242420
 GameObject:

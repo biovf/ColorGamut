@@ -220,7 +220,60 @@ public class CurveTest
         return closest;
     }
 
+    public float getYCoordinateLogXInput(float inputXCoord, float[] xCoords, float[] yCoords, float[] tValues,
+        Vector2[] controlPoints)
+    {
+        if (xCoords.Length <= 0 || yCoords.Length <= 0 || tValues.Length <= 0)
+        {
+            Debug.Log("Input array of x/y coords or t values have mismatched lengths ");
+            return -1.0f;
+        }
+        
+        // Shape the input x coord in radiometric
+        //float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
+        float logInputXCoord = inputXCoord;
+        if (true)
+        {
+            int idx = 0;
+            int idx2 = 0;
+            BilinearClosestTo(xCoords, logInputXCoord, out idx, out idx2);
+            if (idx >= tValues.Length || idx2 >= tValues.Length)
+            {
+                Debug.LogError("Index " + idx.ToString() + "or Index " + idx2.ToString() + " is invalid");
+            }
 
+            // Calculate interpolation factor
+            if (idx == idx2)
+            {
+                return yCoords[idx];
+            } 
+            else if (idx < idx2)
+            {
+                float lerpValue = (logInputXCoord - xCoords[idx]) / (xCoords[idx2] - xCoords[idx]);
+                return Mathf.Lerp(yCoords[idx], yCoords[idx2], lerpValue);
+            }
+            else
+            {
+                float lerpValue = (logInputXCoord - xCoords[idx2]) / (xCoords[idx] - xCoords[idx2]);
+                return Mathf.Lerp(yCoords[idx2], yCoords[idx], lerpValue);
+            }
+        }
+        else
+        {
+            int idx = 0;
+            ClosestTo(xCoords, logInputXCoord, out idx);
+            if (idx >= tValues.Length || idx >= yCoords.Length)
+            {
+                Debug.LogError("Index " + idx.ToString() + " is invalid");
+            }
+
+            return yCoords[idx];
+        }
+        
+        return -1.0f;
+    }
+    
+    
     // Array based implementation
     public float getYCoordinate(float inputXCoord, float[] xCoords, float[] yCoords, float[] tValues,
         Vector2[] controlPoints)
@@ -232,8 +285,8 @@ public class CurveTest
         }
         
         // Shape the input x coord in radiometric
-        // float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
-        float logInputXCoord = inputXCoord;
+        float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
+        // float logInputXCoord = inputXCoord;
         if (true)
         {
             int idx = 0;

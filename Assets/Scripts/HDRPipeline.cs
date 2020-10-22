@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode]
+// [ExecuteInEditMode]
 public class HDRPipeline : MonoBehaviour
 {
     // Gamut Mapping public variables
@@ -12,9 +12,9 @@ public class HDRPipeline : MonoBehaviour
     public List<Texture2D> HDRIList;
 
     // Color Grading public variables
-    public Material colorGradingMat;
     public Material colorGrading3DTextureMat;
     public Material fullscreenMat;
+    public Material log2Shaper;
     public Texture3D hdr3DLutToDecode;
     
     private ColorGamut1 colorGamut;
@@ -31,6 +31,9 @@ public class HDRPipeline : MonoBehaviour
             RenderTextureReadWrite.Linear);
         initialiseColorGamut();
         initialiseColorGrading();
+
+        Color[] tex3D = hdr3DLutToDecode.GetPixels();
+        
     }
     
     // Update is called once per frame
@@ -62,8 +65,13 @@ public class HDRPipeline : MonoBehaviour
          }
          
         // colorGamut.OnRenderImage(renderBuffer, dest);
-        if(colorGamut.CurveState == ColorGamut1.CurveDataState.Calculated)
+        if (colorGamut.CurveState == ColorGamut1.CurveDataState.Calculated)
+        {
+            fullScreenTextureMat.SetTexture("_MainTex", colorGamut.HdriTextureTransformed);
             Graphics.Blit(colorGamut.HdriTextureTransformed, dest, fullScreenTextureMat);
+
+        }
+
 
     }
     
@@ -87,8 +95,8 @@ public class HDRPipeline : MonoBehaviour
     
     private void initialiseColorGrading()
     {
-        colorGrading = new ColorGradingHDR1(colorGamut.getHDRITexture(), colorGradingMat, colorGrading3DTextureMat, 
-            fullscreenMat);
+        colorGrading = new ColorGradingHDR1(colorGamut.getHDRITexture(), colorGrading3DTextureMat, 
+            fullscreenMat, log2Shaper);
         colorGrading.Start(this, hdr3DLutToDecode);
     }
     

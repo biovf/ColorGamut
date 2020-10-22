@@ -12,10 +12,7 @@ public static class Shaper
             linearRadValue = minExposureValue;
 
         float dynamicRange = maxExposureValue - minExposureValue;
-        
         float logRadiometricVal = Mathf.Clamp(Mathf.Log(linearRadValue / midGreyX, 2.0f), minExposureValue, maxExposureValue);
-        
-        
         if (true)
         {
             return (logRadiometricVal - minExposureValue) / dynamicRange;

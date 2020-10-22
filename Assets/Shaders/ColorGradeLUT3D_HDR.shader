@@ -60,9 +60,9 @@
             half4 frag(v2f i) : SV_Target
             {
                 half3 col = (tex2D(_MainTex, i.uv).rgb);
-                col.r = calculateLinearToLog(col.r, _MidGreyX, _MinExposureValue, _MaxExposureValue);
-                col.g = calculateLinearToLog(col.g, _MidGreyX, _MinExposureValue, _MaxExposureValue);
-                col.b = calculateLinearToLog(col.b, _MidGreyX, _MinExposureValue, _MaxExposureValue);
+                // col.r = calculateLinearToLog(col.r, _MidGreyX, _MinExposureValue, _MaxExposureValue);
+                // col.g = calculateLinearToLog(col.g, _MidGreyX, _MinExposureValue, _MaxExposureValue);
+                // col.b = calculateLinearToLog(col.b, _MidGreyX, _MinExposureValue, _MaxExposureValue);
                 // col.rgb = pow(col.rgb, (1.0/2.2));
                 // col.rgb = clamp(col.rgb, 0.0, 1.0) * (_MaxExposureValue - _MinExposureValue) + _MinExposureValue;
                 // col.rgb = pow(2.0f, col.rgb) * _MidGreyX;

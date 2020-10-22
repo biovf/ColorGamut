@@ -14,10 +14,10 @@ public class ColorGradingHDR1
 
     private ColorGamut1 colorGamut;
     
-    public Material colorGradingMat;
-    public Material colorGrading3DTextureMat;
-    public Material fullscreenMat;
-    public Material toneMapMat;
+    private Material colorGrading3DTextureMat;
+    private Material fullscreenMat;
+    private Material log2Shaper;
+    private Material toneMapMat;
     
     public Texture3D hdr3DLutToDecode;
     private Texture2D testTexture;
@@ -30,13 +30,13 @@ public class ColorGradingHDR1
     private RenderTexture interceptDebugRT;
 
     private HDRPipeline pipeline;
-    public ColorGradingHDR1(Texture2D testTexture, Material colorGradingMat, Material colorGrading3DTextureMat, 
-        Material fullscreenMat)
+    public ColorGradingHDR1(Texture2D testTexture, Material colorGrading3DTextureMat, 
+        Material fullscreenMat, Material log2Shaper)
     {
         this.testTexture = testTexture;
-        this.colorGradingMat = colorGradingMat;
         this.colorGrading3DTextureMat = colorGrading3DTextureMat;
         this.fullscreenMat = fullscreenMat;
+        this.log2Shaper = log2Shaper;
     }
 
     public void Start(HDRPipeline pipeline, Texture3D hdrLUTToDecode)
@@ -61,6 +61,13 @@ public class ColorGradingHDR1
         // {
             // Graphics.Blit(testTexture, colorGradeRT, fullscreenMat);
             Graphics.Blit(src, interceptDebugRT, fullscreenMat);
+            // Apply shader to src data
+            log2Shaper.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
+            log2Shaper.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
+            log2Shaper.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
+            Graphics.Blit(src, src, log2Shaper);
+            // Graphics.Blit(dest, src, fullscreenMat);
+            
             colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
             colorGrading3DTextureMat.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
             colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
@@ -114,10 +121,6 @@ public class ColorGradingHDR1
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
                 inGameCapturePixels[i].b = Shaper.calculateLinearToLog(Mathf.Max(0.0f, inGameCapturePixels[i].b), colorGamut.GreyPoint.x,
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-                // if(float.IsNaN(inGameCapturePixels[i].r) || float.IsInfinity(inGameCapturePixels[i].r) ||
-                //    float.IsNaN(inGameCapturePixels[i].g) || float.IsInfinity(inGameCapturePixels[i].g) ||
-                //    float.IsNaN(inGameCapturePixels[i].b) || float.IsInfinity(inGameCapturePixels[i].b))
-                //     Debug.Log("Nan");
             }
         }
 
@@ -153,7 +156,6 @@ public class ColorGradingHDR1
     private Texture2D toTexture2D(RenderTexture rTex)
     {
         Texture2D tex = new Texture2D(rTex.width, rTex.height, TextureFormat.RGBAHalf, false, true);
-        
         RenderTexture.active = rTex;
         tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
         tex.Apply();
