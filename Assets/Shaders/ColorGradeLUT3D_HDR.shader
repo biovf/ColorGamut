@@ -5,7 +5,7 @@
         _MainTex ("Texture", 2D) = "white" {}
         _LUT ("Color Grading LUT", 3D) = "white" {}
         _MaxExposureValue ("Max Exposure", float) = 6.0
-        _MinExposureValue ("Min Exposure", float) = -8.0
+        _MinExposureValue ("Min Exposure", float) = -6.0
         _MidGreyX ("Middle Grey X value", Float) = 0.18
     }
     SubShader

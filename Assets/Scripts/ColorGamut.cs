@@ -336,6 +336,7 @@ public class ColorGamut : MonoBehaviour
                             yield return new WaitForEndOfFrame();
                         }
 
+                    
                         // Full dynamic range of image
                         hdriPixelColor = hdriPixelArray[i] * exposure;
                         rawMaxPixelValue = hdriPixelColor.maxColorComponent;
@@ -393,7 +394,7 @@ public class ColorGamut : MonoBehaviour
                                     ratio = hdriPixelColor / hdriMaxRGBChannel;
                                 }
                             }
-
+                           
                             // Get Y value from curve using the array version 
                             float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray,
                                 controlPoints);

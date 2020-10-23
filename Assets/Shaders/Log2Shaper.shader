@@ -4,7 +4,7 @@
     {
         _MainTex ("Texture", 2D) = "white" {}
         _MaxExposureValue ("Max Exposure", float) = 6.0
-        _MinExposureValue ("Min Exposure", float) = -8.0
+        _MinExposureValue ("Min Exposure", float) = -6.0
         _MidGreyX ("Middle Grey X value", Float) = 0.18
     }
     SubShader
@@ -41,7 +41,6 @@
             }
 
             sampler2D_half _MainTex;
-            sampler3D_half _LUT;
             float _MaxExposureValue;
             float _MinExposureValue;
             float _MidGreyX;
@@ -59,6 +58,7 @@
             half4 frag(v2f i) : SV_Target
             {
                 half4 col = tex2D(_MainTex, i.uv);
+                col.rgb = max(half3(0.0, 0.0, 0.0), col.rgb);
                 col.r = calculateLinearToLog(col.r, _MidGreyX, _MinExposureValue, _MaxExposureValue);
                 col.g = calculateLinearToLog(col.g, _MidGreyX, _MinExposureValue, _MaxExposureValue);
                 col.b = calculateLinearToLog(col.b, _MidGreyX, _MinExposureValue, _MaxExposureValue);

@@ -198,18 +198,18 @@ public class ColorGamut1
         return hdriTextureTransformed;
     }
 
-    public void OnRenderImage(RenderTexture src, RenderTexture dest)
-    {
-        if (hdriTextureTransformed == null || screenGrab == null || fullScreenTextureMat == null)
-        {
-            Debug.LogError("Invalid data on ColorGamut1.OnRenderImage()");
-            return;
-        }
-
-        // Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
-        colorGamutMat.SetTexture("_MainTex", hdriTextureTransformed);
-        Graphics.Blit(hdriTextureTransformed, dest, fullScreenTextureMat);
-    }
+    // public void OnRenderImage(RenderTexture src, RenderTexture dest)
+    // {
+    //     if (hdriTextureTransformed == null || screenGrab == null || fullScreenTextureMat == null)
+    //     {
+    //         Debug.LogError("Invalid data on ColorGamut1.OnRenderImage()");
+    //         return;
+    //     }
+    //
+    //     // Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
+    //     colorGamutMat.SetTexture("_MainTex", hdriTextureTransformed);
+    //     Graphics.Blit(hdriTextureTransformed, dest, fullScreenTextureMat);
+    // }
 
     public IEnumerator ApplyTransferFunction(RenderTexture inputRenderTexture)
     {
@@ -271,9 +271,33 @@ public class ColorGamut1
             //     yield return new WaitForEndOfFrame();
             // }
 
-            // if(float.IsNaN(hdriPixelArray[i].r) || float.IsNaN(hdriPixelArray[i].g) || float.IsNaN(hdriPixelArray[i].r))
-            //     Debug.Log("NaN");            
+            if(float.IsNaN(hdriPixelArray[i].r) || float.IsNaN(hdriPixelArray[i].g) || float.IsNaN(hdriPixelArray[i].r))
+                Debug.Log("NaN");      
+            
+            
+            Color tempColor = hdriPixelArray[i];
+            if(
+                (Mathf.Approximately(tempColor.r, 0.5f) && 
+                Mathf.Approximately(tempColor.g, 0.5f)  && 
+                Mathf.Approximately(tempColor.b, 0.5f)) ||
+               ((tempColor.r > 0.50f && tempColor.r < 0.51f) && 
+                (tempColor.g > 0.50f && tempColor.g < 0.51f) && 
+                (tempColor.b > 0.50f && tempColor.b < 0.51f))
+               // ||
+               // (Mathf.Approximately(tempColor.r, 0.43f) && 
+               //  Mathf.Approximately(tempColor.g, 0.43f)  && 
+               //  Mathf.Approximately(tempColor.b, 0.43f)) ||
+               //  ((tempColor.r > 0.42f && tempColor.r < 0.44f) && 
+               //   (tempColor.g > 0.42f && tempColor.g < 0.44f) && 
+               //   (tempColor.b > 0.42f && tempColor.b < 0.44f)))
+               )
+                Debug.Log("hasjdhja");
+            
             // Full dynamic range of image
+            hdriPixelArray[i].r = Mathf.Max(0.0f, hdriPixelArray[i].r);
+            hdriPixelArray[i].g = Mathf.Max(0.0f, hdriPixelArray[i].g);
+            hdriPixelArray[i].b = Mathf.Max(0.0f, hdriPixelArray[i].b);
+
             hdriPixelColor = hdriPixelArray[i] * exposure;
             rawMaxPixelValue = hdriPixelColor.maxColorComponent;
             ratio = Color.blue;
