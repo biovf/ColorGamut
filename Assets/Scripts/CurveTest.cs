@@ -86,23 +86,81 @@ public class CurveTest
 
         // Create bezier curve for toe
         // P0: toeP0Coords   P1: toeP1Coords   P2: toeP2Coords
-        controlPoints[0] = new Vector2(Shaper.calculateLinearToLog(toeP0Coords.x, greyPoint.x, minExposureValue, maxExposureValue), toeP0Coords.y);
-        controlPoints[1] = new Vector2(Shaper.calculateLinearToLog(toeP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), toeP1Coords.y);
-        controlPoints[2] = new Vector2(Shaper.calculateLinearToLog(toeP2Coords.x, greyPoint.x, minExposureValue, maxExposureValue), toeP2Coords.y);
+        controlPoints[0] = new Vector2(Shaper.calculateLinearToLog2(toeP0Coords.x, greyPoint.x, minExposureValue, maxExposureValue), toeP0Coords.y);
+        controlPoints[1] = new Vector2(Shaper.calculateLinearToLog2(toeP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), toeP1Coords.y);
+        controlPoints[2] = new Vector2(Shaper.calculateLinearToLog2(toeP2Coords.x, greyPoint.x, minExposureValue, maxExposureValue), toeP2Coords.y);
 
         // Create bezier for middle section
         // P0: toeP2Coords   P1: midP1Coords   P2: shP0Coords
-        controlPoints[3] = new Vector2(Shaper.calculateLinearToLog(midP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), midP1Coords.y);
+        controlPoints[3] = new Vector2(Shaper.calculateLinearToLog2(midP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), midP1Coords.y);
 
         // Create bezier curve for shoulder
         // P0: shP0Coords    P1: shP1Coords    P2: shP2Coords
-        controlPoints[4] = new Vector2(Shaper.calculateLinearToLog(shP0Coords.x, greyPoint.x, minExposureValue, maxExposureValue), shP0Coords.y);
-        controlPoints[5] = new Vector2(Shaper.calculateLinearToLog(shP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), shP1Coords.y);
-        controlPoints[6] = new Vector2(Shaper.calculateLinearToLog(shP2Coords.x, greyPoint.x, minExposureValue, maxExposureValue), shP2Coords.y);
+        controlPoints[4] = new Vector2(Shaper.calculateLinearToLog2(shP0Coords.x, greyPoint.x, minExposureValue, maxExposureValue), shP0Coords.y);
+        controlPoints[5] = new Vector2(Shaper.calculateLinearToLog2(shP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), shP1Coords.y);
+        controlPoints[6] = new Vector2(Shaper.calculateLinearToLog2(shP2Coords.x, greyPoint.x, minExposureValue, maxExposureValue), shP2Coords.y);
 
         return controlPoints;
     }
 
+    
+    // log2 x coordinates and log10 y coordinates
+     public Vector2[] createControlPointsLog2Log10(Vector2 originCoord, Vector2 greyPoint, float slope)
+    {
+        minRadiometricValue = originCoord.x;
+        minDisplayValue = originCoord.y;
+        this.greyPoint = greyPoint;
+        
+        Vector2[] controlPoints = new Vector2[7];
+        // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
+        // We will design our curve from 3 separate Bezier curves: toe, middle linear section, shoulder
+        Vector2 toeP0Coords = originCoord; // originCoord of plot
+        Vector2 toeP1Coords = new Vector2(0.0f, 0.0f); // We don't know where it will be yet
+        Vector2 toeP2Coords = new Vector2(0.0f, 0.085f);
+        Vector2 midP1Coords = new Vector2(0.0f, 0.0f); // Unknown at this point
+        Vector2 shP0Coords = greyPoint;
+        Vector2 shP1Coords = new Vector2(0.0f, 1.5f); // Unknown at this point
+        Vector2 shP2Coords = new Vector2(maxRadiometricValue, maxDisplayValue);
+
+        // calculate y intersection when y = 0
+        float b = calculateLineYIntercept(greyPoint.x, greyPoint.y, slope);
+        // Calculate the coords for P1 in the first segment
+        float xP1Coord = calculateLineX(0.0f, b, slope);
+        toeP1Coords.y = 0.001f;
+        toeP1Coords.x = xP1Coord;
+        // Calculate the toe's P2 using an already known Y value and the equation y = mx + b 
+        toeP2Coords.x = calculateLineX(toeP2Coords.y, b, slope);
+        // Calculate the middle linear's section (x, y) coords
+        midP1Coords = (shP0Coords + toeP2Coords) / 2.0f;
+        // calculate shoulder's P1 which amounts to knowing the x value when y = 1.0 
+        shP1Coords.x = calculateLineX(shP1Coords.y, b, slope);
+
+        // Create bezier curve for toe
+        // P0: toeP0Coords   P1: toeP1Coords   P2: toeP2Coords
+        controlPoints[0] = new Vector2(Shaper.calculateLinearToLog2(toeP0Coords.x, greyPoint.x, minExposureValue, maxExposureValue), 
+            Shaper.calculateLinearToLog10(toeP0Coords.y, greyPoint.x, minExposureValue, maxExposureValue));
+        controlPoints[1] = new Vector2(Shaper.calculateLinearToLog2(toeP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), 
+            Shaper.calculateLinearToLog10(toeP1Coords.y, greyPoint.x, minExposureValue, maxExposureValue));
+        controlPoints[2] = new Vector2(Shaper.calculateLinearToLog2(toeP2Coords.x, greyPoint.x, minExposureValue, maxExposureValue), 
+            Shaper.calculateLinearToLog10(toeP2Coords.y, greyPoint.x, minExposureValue, maxExposureValue));
+
+        // Create bezier for middle section
+        // P0: toeP2Coords   P1: midP1Coords   P2: shP0Coords
+        controlPoints[3] = new Vector2(Shaper.calculateLinearToLog2(midP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), 
+            Shaper.calculateLinearToLog10(midP1Coords.y, greyPoint.x, minExposureValue, maxExposureValue));
+
+        // Create bezier curve for shoulder
+        // P0: shP0Coords    P1: shP1Coords    P2: shP2Coords
+        controlPoints[4] = new Vector2(Shaper.calculateLinearToLog2(shP0Coords.x, greyPoint.x, minExposureValue, maxExposureValue), 
+            Shaper.calculateLinearToLog10(shP0Coords.y, greyPoint.x, minExposureValue, maxExposureValue));
+        controlPoints[5] = new Vector2(Shaper.calculateLinearToLog2(shP1Coords.x, greyPoint.x, minExposureValue, maxExposureValue), 
+            Shaper.calculateLinearToLog10(shP1Coords.y, greyPoint.x, minExposureValue, maxExposureValue));
+        controlPoints[6] = new Vector2(Shaper.calculateLinearToLog2(shP2Coords.x, greyPoint.x, minExposureValue, maxExposureValue), 
+            Shaper.calculateLinearToLog10(shP2Coords.y, greyPoint.x, minExposureValue, maxExposureValue));
+
+        return controlPoints;
+    }
+    
     public List<float> calcYfromXQuadratic(List<float> inXCoords, List<float> tValues, List<Vector2> controlPoints)
     {
         if (inXCoords.Count <= 0 || tValues.Count <= 0)
@@ -230,7 +288,7 @@ public class CurveTest
         }
         
         // Shape the input x coord in radiometric
-        //float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
+        //float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
         float logInputXCoord = inputXCoord;
         if (true)
         {
@@ -285,7 +343,7 @@ public class CurveTest
         }
         
         // Shape the input x coord in radiometric
-        float logInputXCoord = Shaper.calculateLinearToLog(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
+        float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
         // float logInputXCoord = inputXCoord;
         if (true)
         {

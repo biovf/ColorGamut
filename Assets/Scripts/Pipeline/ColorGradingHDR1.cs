@@ -115,11 +115,11 @@ public class ColorGradingHDR1
             int inGameCapturePixelsLen = inGameCapturePixels.Length;
             for (int i = 0; i < inGameCapturePixelsLen; i++)
             {
-                inGameCapturePixels[i].r = Shaper.calculateLinearToLog(Mathf.Max(0.0f, inGameCapturePixels[i].r), colorGamut.GreyPoint.x,
+                inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(Mathf.Max(0.0f, inGameCapturePixels[i].r), colorGamut.GreyPoint.x,
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-                inGameCapturePixels[i].g = Shaper.calculateLinearToLog(Mathf.Max(0.0f,inGameCapturePixels[i].g), colorGamut.GreyPoint.x,
+                inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(Mathf.Max(0.0f,inGameCapturePixels[i].g), colorGamut.GreyPoint.x,
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-                inGameCapturePixels[i].b = Shaper.calculateLinearToLog(Mathf.Max(0.0f, inGameCapturePixels[i].b), colorGamut.GreyPoint.x,
+                inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(Mathf.Max(0.0f, inGameCapturePixels[i].b), colorGamut.GreyPoint.x,
                     colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
             }
         }
@@ -171,11 +171,11 @@ public class ColorGradingHDR1
         int pixelsLen = pixels.Length;
         for (int i = 0; i < pixelsLen; i++)
         {
-            pixels[i].r = Shaper.calculateLinearToLog(pixels[i].r, colorGamut.GreyPoint.x,
+            pixels[i].r = Shaper.calculateLinearToLog2(pixels[i].r, colorGamut.GreyPoint.x,
                 colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-            pixels[i].g = Shaper.calculateLinearToLog(pixels[i].g, colorGamut.GreyPoint.x,
+            pixels[i].g = Shaper.calculateLinearToLog2(pixels[i].g, colorGamut.GreyPoint.x,
                 colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-            pixels[i].b = Shaper.calculateLinearToLog(pixels[i].b, colorGamut.GreyPoint.x,
+            pixels[i].b = Shaper.calculateLinearToLog2(pixels[i].b, colorGamut.GreyPoint.x,
                 colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
         }
 

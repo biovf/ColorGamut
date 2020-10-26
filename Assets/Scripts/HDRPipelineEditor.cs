@@ -196,7 +196,7 @@ public class HDRPipelineEditor : Editor
             for (int i = 0; i < xTempValues.Count; i++)
             {
                 Vector3 logPoint = new Vector3(xTempValues[i], yTempValues[i]);
-                Vector3 linearPoint = new Vector3(Shaper.calculateLogToLinear(xTempValues[i], colorGamut.GreyPoint.x, colorGamut.MinRadiometricValue, colorGamut.MaxRadiometricValue),0.0f);
+                Vector3 linearPoint = new Vector3(Shaper.calculateLog2ToLinear(xTempValues[i], colorGamut.GreyPoint.x, colorGamut.MinRadiometricValue, colorGamut.MaxRadiometricValue),0.0f);
                 Handles.DrawWireCube(logPoint, cubeWidgetSize);
                 // Handles.DrawWireCube( linearPoint, cubeWidgetSize);
                 // Handles.DrawDottedLine(linearPoint, logPoint, 1.0f);

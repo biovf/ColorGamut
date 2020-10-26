@@ -87,9 +87,9 @@ public class LutGenerator
       
       if (useShaper == true)
       {
-        lutTexture[i] = new Color(Shaper.calculateLinearToLog(redCounter, midGrey.x, minExposure, maxExposure),
-                                  Shaper.calculateLinearToLog(greenCounter, midGrey.x, minExposure, maxExposure),
-                                  Shaper.calculateLinearToLog(blueCounter, midGrey.x, minExposure, maxExposure));
+        lutTexture[i] = new Color(Shaper.calculateLinearToLog2(redCounter, midGrey.x, minExposure, maxExposure),
+                                  Shaper.calculateLinearToLog2(greenCounter, midGrey.x, minExposure, maxExposure),
+                                  Shaper.calculateLinearToLog2(blueCounter, midGrey.x, minExposure, maxExposure));
       }
       else
       {

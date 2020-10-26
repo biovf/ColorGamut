@@ -275,23 +275,6 @@ public class ColorGamut1
                 Debug.Log("NaN");      
             
             
-            Color tempColor = hdriPixelArray[i];
-            if(
-                (Mathf.Approximately(tempColor.r, 0.5f) && 
-                Mathf.Approximately(tempColor.g, 0.5f)  && 
-                Mathf.Approximately(tempColor.b, 0.5f)) ||
-               ((tempColor.r > 0.50f && tempColor.r < 0.51f) && 
-                (tempColor.g > 0.50f && tempColor.g < 0.51f) && 
-                (tempColor.b > 0.50f && tempColor.b < 0.51f))
-               // ||
-               // (Mathf.Approximately(tempColor.r, 0.43f) && 
-               //  Mathf.Approximately(tempColor.g, 0.43f)  && 
-               //  Mathf.Approximately(tempColor.b, 0.43f)) ||
-               //  ((tempColor.r > 0.42f && tempColor.r < 0.44f) && 
-               //   (tempColor.g > 0.42f && tempColor.g < 0.44f) && 
-               //   (tempColor.b > 0.42f && tempColor.b < 0.44f)))
-               )
-                Debug.Log("hasjdhja");
             
             // Full dynamic range of image
             hdriPixelArray[i].r = Mathf.Max(0.0f, hdriPixelArray[i].r);
@@ -716,7 +699,7 @@ public class ColorGamut1
             for (int i = 0; i < dimension /*- 1*/; ++i)
             {
                 xCoord = minRadiometricValue + (Mathf.Pow((float) i / (float) dimension, 2.0f) * maxRange);
-                xValues.Add(Shaper.calculateLinearToLog(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
+                xValues.Add(Shaper.calculateLinearToLog2(xCoord, greyPoint.x, minExposureValue, maxExposureValue));
             }
         }
         else
@@ -739,7 +722,7 @@ public class ColorGamut1
                 if (Mathf.Approximately(xCoord, maxRange))
                     break;
 
-                xValues.Add(Shaper.calculateLinearToLog(xCoord, this.greyPoint.x, minExposureValue, maxExposureValue));
+                xValues.Add(Shaper.calculateLinearToLog2(xCoord, this.greyPoint.x, minExposureValue, maxExposureValue));
                 // Debug.Log("1st half - Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
             }
 
@@ -752,7 +735,7 @@ public class ColorGamut1
                     continue;
 
 
-                xValues.Add(Shaper.calculateLinearToLog(xCoord, this.greyPoint.x, minExposureValue, maxExposureValue));
+                xValues.Add(Shaper.calculateLinearToLog2(xCoord, this.greyPoint.x, minExposureValue, maxExposureValue));
                 // Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
             }
         }

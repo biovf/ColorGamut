@@ -6,10 +6,10 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-[CustomEditor(typeof(ColorGamut))]
-public class ColorGamutEditor : Editor
+[CustomEditor(typeof(ColorGamutShaped))]
+public class ColorGamutShapedEditor : Editor
 {
-    ColorGamut colorGamut;
+    ColorGamutShaped colorGamut;
 
     private float exposure = 1;
     private int bleachingRatioPower = 2;
@@ -61,7 +61,7 @@ public class ColorGamutEditor : Editor
     
     public void OnEnable()
     {
-        colorGamut = (ColorGamut) target;
+        colorGamut = (ColorGamutShaped) target;
         hdriNames = new List<string>();
         if (colorGamut.HDRIList != null)
         {
@@ -158,7 +158,7 @@ public class ColorGamutEditor : Editor
                 _curveGuiDataState = CurveGuiDataState.NotCalculated;
 
 
-            colorGamut = (ColorGamut) target;
+            colorGamut = (ColorGamutShaped) target;
             controlPoints = colorGamut.getControlPoints();
             Vector2 p0 = controlPoints[0];
             Vector2 p1 = controlPoints[1];
@@ -208,7 +208,7 @@ public class ColorGamutEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        colorGamut = (ColorGamut) target;
+        colorGamut = (ColorGamutShaped) target;
 
         base.serializedObject.UpdateIfRequiredOrScript();
         base.serializedObject.Update();
