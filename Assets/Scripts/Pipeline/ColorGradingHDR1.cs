@@ -66,8 +66,8 @@ public class ColorGradingHDR1
             log2Shaper.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
             log2Shaper.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
             Graphics.Blit(src, dest, log2Shaper);
-            Texture2D destTexture = toTexture2D(dest);
-            Color[] hdriPixelArray = destTexture.GetPixels();
+            // Texture2D destTexture = toTexture2D(dest);
+            // Color[] hdriPixelArray = destTexture.GetPixels();
 
             Graphics.Blit(dest, src, fullscreenMat);
             
@@ -76,8 +76,8 @@ public class ColorGradingHDR1
             colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
             colorGrading3DTextureMat.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
             Graphics.Blit(src, dest, colorGrading3DTextureMat);
-            destTexture = toTexture2D(dest);
-            Color[] hdriPixelArray2 = destTexture.GetPixels();
+            // destTexture = toTexture2D(dest);
+            // Color[] hdriPixelArray2 = destTexture.GetPixels();
     }
 
     public void Update()

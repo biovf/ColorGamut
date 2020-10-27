@@ -348,18 +348,19 @@ public class ColorGamutShaped : MonoBehaviour
                         }
 
 
+                        hdriPixelArray[i] = hdriPixelArray[i] * exposure;
                         // Shape image
-                        Color tmpHdriPixelArray = new Color();
-                        tmpHdriPixelArray.r = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].r),
+                        Color log2HdriPixelArray = new Color();
+                        log2HdriPixelArray.r = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].r),
                             greyPoint.x, minExposureValue,
                             maxExposureValue);
-                        tmpHdriPixelArray.g = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].g),
+                        log2HdriPixelArray.g = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].g),
                             greyPoint.x, minExposureValue,
                             maxExposureValue);
-                        tmpHdriPixelArray.b = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].b),
+                        log2HdriPixelArray.b = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].b),
                             greyPoint.x, minExposureValue,
                             maxExposureValue);
-                        hdriPixelColor = tmpHdriPixelArray * exposure;
+                        hdriPixelColor = log2HdriPixelArray;
                         rawMaxPixelValue = hdriPixelColor.maxColorComponent;
                         ratio = Color.blue;
                         // Secondary Nuance Grade, guardrails
@@ -370,14 +371,6 @@ public class ColorGamutShaped : MonoBehaviour
                             hdriPixelColor.g = maxRadiometricValue;
                             hdriPixelColor.b = maxRadiometricValue;
                         }
-                        // Add guardrails for minimum values
-                        // if (hdriPixelColor.r < minRadiometricValue || hdriPixelColor.g < minRadiometricValue ||
-                        //     hdriPixelColor.b < minRadiometricValue)
-                        // {
-                        //     hdriPixelColor.r = minRadiometricValue;
-                        //     hdriPixelColor.g = minRadiometricValue;
-                        //     hdriPixelColor.b = minRadiometricValue;
-                        // }                        
 
 
                         // Calculate Pixel max color and ratio

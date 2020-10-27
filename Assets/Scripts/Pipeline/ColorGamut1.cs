@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -119,7 +120,7 @@ public class ColorGamut1
         isSweepActive = false;
 
         // Parametric curve
-        slope = 2.2f;
+        slope = 1.02f;
         slopeMin = 1.02f;
         slopeMax = 4.5f;
         maxDisplayValue = 1.5f;
@@ -157,7 +158,7 @@ public class ColorGamut1
         if (parametricCurve == null)
             parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
 
-        controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
+        controlPoints = parametricCurve.createControlPointsLog2Log10(origin, greyPoint, slope);
         xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
@@ -265,17 +266,6 @@ public class ColorGamut1
                           "%");
             }
 
-            // if (counter <= 0)
-            // {
-            //     counter = maxIterationsPerFrame;
-            //     yield return new WaitForEndOfFrame();
-            // }
-
-            if(float.IsNaN(hdriPixelArray[i].r) || float.IsNaN(hdriPixelArray[i].g) || float.IsNaN(hdriPixelArray[i].r))
-                Debug.Log("NaN");      
-            
-            
-            
             // Full dynamic range of image
             hdriPixelArray[i].r = Mathf.Max(0.0f, hdriPixelArray[i].r);
             hdriPixelArray[i].g = Mathf.Max(0.0f, hdriPixelArray[i].g);
@@ -295,8 +285,18 @@ public class ColorGamut1
 
             // Calculate Pixel max color and ratio
             hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
-            ratio = hdriPixelColor / hdriMaxRGBChannel;
-
+            // ratio = hdriPixelColor / hdriMaxRGBChannel;
+            Color tempHdriPixelColor = new Color(
+                Shaper.calculateLog2ToLinear(hdriPixelColor.r, greyPoint.x, minExposureValue,
+                    maxExposureValue),
+                Shaper.calculateLog2ToLinear(hdriPixelColor.g, greyPoint.x, minExposureValue,
+                    maxExposureValue),
+                Shaper.calculateLog2ToLinear(hdriPixelColor.b, greyPoint.x, minExposureValue,
+                    maxExposureValue));
+            float tmpHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(hdriMaxRGBChannel, greyPoint.x,
+                minExposureValue, maxExposureValue);
+            ratio = tempHdriPixelColor / tmpHdriMaxRGBChannel;
+            
             bleachingXCoord = 0.0f; // Intersect of x on Y = 1
 
             // if (isBleachingActive)
@@ -328,8 +328,10 @@ public class ColorGamut1
             // }
 
             // Get Y value from curve using the array version 
-            float yValue = parametricCurve.getYCoordinateLogXInput(hdriMaxRGBChannel, xCoordsArray, yCoordsArray,
-                tValuesArray, controlPoints);
+            float yValue = Shaper.calculateLog10ToLinear(
+                parametricCurve.getYCoordinateLogXInput(hdriMaxRGBChannel,
+                    xCoordsArray, yCoordsArray, tValuesArray, controlPoints),
+                greyPoint.x, minExposureValue, maxExposureValue);
 
             hdriYMaxValue = Mathf.Min(yValue, 1.0f);
             ratio.a = 1.0f;
@@ -630,7 +632,7 @@ public class ColorGamut1
 
         CurveTest parametricCurveTmp =
             new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
-        Vector2[] controlPointsTmp = parametricCurveTmp.createControlPoints(origin, greyPoint, slope);
+        Vector2[] controlPointsTmp = parametricCurveTmp.createControlPointsLog2Log10(origin, greyPoint, slope);
         List<float> xValuesTmp = initialiseXCoordsInRange(10000, maxRadiometricValue);
         List<float> tValuesTmp = parametricCurveTmp.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
         List<float> yValuesTmp =
@@ -646,7 +648,9 @@ public class ColorGamut1
             // Normalise our Y values to go from 0.0 to 1.0 
             // float tmpVal = (yValues[i] - minDisplayValue) / (maxDisplayValue - minDisplayValue);
             // Encode the inverse EOTF and store it in the array of Y values
-            yValuesEOTF[i] = Mathf.Pow(yValuesTmp[i], (1.0f / 2.2f));
+            float yValueLinear =
+                Shaper.calculateLog10ToLinear(Math.Max(0.0f, yValuesTmp[i]), greyPoint.x, minExposureValue, maxExposureValue);
+            yValuesEOTF[i] = Mathf.Pow(yValueLinear, (1.0f / 2.2f));
             // yValuesEOTF[i] = yValues[i];
         }
 
