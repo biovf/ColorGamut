@@ -167,7 +167,7 @@ public class ColorGamut : MonoBehaviour
         if (parametricCurve == null)
             parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
         
-        controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
+        controlPoints = parametricCurve.createControlPointsXinLog2(origin, greyPoint, slope);
         xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));

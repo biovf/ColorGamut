@@ -59,6 +59,9 @@ public class ColorGamutShaped : MonoBehaviour
 
     // Parametric curve variables
     private float slope;
+
+    public float Slope => slope;
+
     private Vector2 origin;
     private CurveTest parametricCurve = null;
     private Vector2[] controlPoints;
@@ -81,6 +84,9 @@ public class ColorGamutShaped : MonoBehaviour
     public float MaxRadiometricValue => maxRadiometricValue;
     private float maxRadiometricValue;
     private float maxDisplayValue;
+
+    public float MAXDisplayValue => maxDisplayValue;
+
     private float minDisplayValue;
 
     private Vector2 greyPoint;
@@ -129,7 +135,7 @@ public class ColorGamutShaped : MonoBehaviour
         isSweepActive = false;
 
         // Parametric curve
-        slope = 1.02f;
+        slope = 2.0f;
         slopeMin = 1.02f;
         slopeMax = 4.5f;
         maxDisplayValue = 1.5f;
@@ -169,14 +175,14 @@ public class ColorGamutShaped : MonoBehaviour
         if (parametricCurve == null)
             parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
 
-        Vector2[] controlPointsTmp = parametricCurve.createControlPoints(origin, this.greyPoint, slope);
+        Vector2[] controlPointsTmp = parametricCurve.createControlPointsXinLog2(origin, this.greyPoint, slope);
         List<float> xValuesTmp = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
         List<float> tValuesTmp = parametricCurve.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
         List<float> yValuesTmp =
             parametricCurve.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
         exportDualColumnDataToCSV(xValuesTmp.ToArray(), yValuesTmp.ToArray(), "Log2Linear.csv");
 
-        // controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
+        // controlPoints = parametricCurve.createControlPointsXinLog2(origin, greyPoint, slope);
         controlPoints = parametricCurve.createControlPointsLog2Log10(origin, this.greyPoint, slope);
         xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
         tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
