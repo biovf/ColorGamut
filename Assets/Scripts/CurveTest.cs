@@ -295,8 +295,7 @@ public class CurveTest
         arrayIndex2 = outIndex2;
         return closest;
     }
-
-
+    
     // Assumption: the input float[] is always sorted from smallest to largest values
     public static float ClosestTo(float[] inputArray, float target, out int arrayIndex)
     {
@@ -339,7 +338,6 @@ public class CurveTest
         }
         
         // Shape the input x coord in radiometric
-        //float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
         float logInputXCoord = inputXCoord;
         if (true)
         {
@@ -351,6 +349,11 @@ public class CurveTest
                 Debug.LogError("Index " + idx.ToString() + "or Index " + idx2.ToString() + " is invalid");
             }
 
+            float linearInputXCoord =
+                Shaper.calculateLog2ToLinear(logInputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
+            float linearXCoordIdx = Shaper.calculateLog2ToLinear(xCoords[idx], greyPoint.x, minExposureValue, maxExposureValue);
+            float linearXCoordIdx2 = Shaper.calculateLog2ToLinear(xCoords[idx2], greyPoint.x, minExposureValue, maxExposureValue);
+
             // Calculate interpolation factor
             if (idx == idx2)
             {
@@ -358,12 +361,14 @@ public class CurveTest
             } 
             else if (idx < idx2)
             {
-                float lerpValue = (logInputXCoord - xCoords[idx]) / (xCoords[idx2] - xCoords[idx]);
+                // float lerpValue = (logInputXCoord - xCoords[idx]) / (xCoords[idx2] - xCoords[idx]);
+                float lerpValue = (linearInputXCoord - linearXCoordIdx) / (linearXCoordIdx2 - linearXCoordIdx);
                 return Mathf.Lerp(yCoords[idx], yCoords[idx2], lerpValue);
             }
             else
             {
-                float lerpValue = (logInputXCoord - xCoords[idx2]) / (xCoords[idx] - xCoords[idx2]);
+                // float lerpValue = (logInputXCoord - xCoords[idx2]) / (xCoords[idx] - xCoords[idx2]);
+                float lerpValue = (linearInputXCoord - linearXCoordIdx2) / (linearXCoordIdx - linearXCoordIdx2);
                 return Mathf.Lerp(yCoords[idx2], yCoords[idx], lerpValue);
             }
         }

@@ -124,7 +124,7 @@ public class ColorGamutShapedEditor : Editor
         for (int i = 0; i < xValuesLinear.Count; i++)
         {
             debugPointsLinear.Add(new Vector3(Shaper.calculateLinearToLog2(xValuesLinear[i], 0.18f, colorGamut.MINExposureValue, colorGamut.MAXExposureValue), 
-                Shaper.calculateLinearToLog10(yValuesLinear[i], 0.18f, colorGamut.MINExposureValue, colorGamut.MAXExposureValue)));
+                Mathf.Log10(yValuesLinear[i] + 1.0f)));
         }
     }
 
@@ -140,54 +140,6 @@ public class ColorGamutShapedEditor : Editor
 
         return xValues;
     }
-
-    //  Temp
-   // public List<float> initialiseXCoordsInRangeTest(int dimension, float maxRange)
-   //  {
-   //      List<float> xValues = new List<float>(dimension);
-   //  
-   //      // Use 
-   //      float step = maxRange / (float) dimension;
-   //
-   //      float xCoord = 0.0f;
-   //      for (int i = 0; i < dimension; ++i)
-   //      {
-   //          xCoord = colorGamut.MinRadiometricValue + (i * step);
-   //          xValues.Add(Shaper.calculateLinearToLog2((1.0f/(xCoord + 0.0001f)))); //Mathf.Pow(xCoord, 2.0f));
-   //      }
-   //
-   //      // for (int i = 0; i <= (dimension/2); ++i)
-   //      // {
-   //      //     xCoord = colorGamut.MinRadiometricValue + (i * stepPreMidGrey);
-   //      //     
-   //      //     if (xCoord < colorGamut.MinRadiometricValue)
-   //      //         continue;
-   //      //
-   //      //     if (Mathf.Approximately(xCoord, maxRange))
-   //      //         break;
-   //      //
-   //      //     xValues.Add(Shaper.calculateLinearToLog2(xCoord));
-   //      //     Debug.Log("1st half - Index: " + i + " xCoord: " + xCoord + " \t Shaped Value " + xValues[i] + " \t ");
-   //      // }
-   //      //
-   //      // int len = (dimension % 2) == 0 ? dimension / 2 : (dimension / 2) + 1;
-   //      // for (int i = 1; i < len; ++i)
-   //      // {
-   //      //     xCoord = 0.18f + (i * stepPostMidGrey);
-   //      //      
-   //      //     if (xCoord < colorGamut.MinRadiometricValue)
-   //      //         continue;
-   //      //
-   //      //     // if (Mathf.Approximately(xCoord, maxRange))
-   //      //     //     break;
-   //      //
-   //      //     xValues.Add(Shaper.calculateLinearToLog2(xCoord));
-   //      //     Debug.Log("2nd half -Index: " + (xValues.Count - 1) + " xCoord: " + xCoord + " \t Shaped Value " + xValues[xValues.Count - 1] + " \t ");
-   //      // }
-   //  
-   //      return xValues;
-   //  }
-
 
     void OnSceneGUI()
     {
