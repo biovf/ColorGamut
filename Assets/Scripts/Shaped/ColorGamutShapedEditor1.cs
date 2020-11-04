@@ -11,7 +11,7 @@ public class ColorGamutShapedEditor : Editor
 {
     ColorGamutShaped colorGamut;
 
-    private float exposure = 1;
+    private float exposure = 0;
     private int bleachingRatioPower = 2;
     private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
 
@@ -211,7 +211,7 @@ public class ColorGamutShapedEditor : Editor
             // Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
             
             // Draw linear curve
-            Handles.DrawPolyLine(debugPointsLinear.ToArray());
+            //Handles.DrawPolyLine(debugPointsLinear.ToArray());
             // Handles.DrawWireCube(new Vector3(p1Linear.x, p1Linear.y), cubeWidgetSize * 2.0f);
             // Handles.DrawWireCube(new Vector3(p3Linear.x, p3Linear.y), cubeWidgetSize * 2.0f);
             // Handles.DrawWireCube(new Vector3(p5Linear.x, p5Linear.y), cubeWidgetSize * 2.0f);
@@ -234,7 +234,7 @@ public class ColorGamutShapedEditor : Editor
         activeTransferFunction =
             (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
         EditorGUILayout.Space();
-        exposure = EditorGUILayout.Slider("Exposure", exposure, -6.0f, 6.0f);
+        exposure = EditorGUILayout.Slider("Exposure", exposure, -32.0f, 32.0f);
         bleachingRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", bleachingRatioPower, 1, 7);
         showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
@@ -280,7 +280,7 @@ public class ColorGamutShapedEditor : Editor
                 colorGamut.setActiveTransferFunction(activeTransferFunction);
                 colorGamut.setBleachingRatioPower(bleachingRatioPower);
 
-                colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
+                //              colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
                 _curveGuiDataState = CurveGuiDataState.Calculated;
             }
         }

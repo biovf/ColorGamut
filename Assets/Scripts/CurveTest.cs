@@ -39,7 +39,7 @@ public class CurveTest
     private float maxDisplayValue;
     private float minDisplayValue;
 
-    private Vector2 greyPoint;
+    private Vector2 localGreyPoint;
 
 
     public CurveTest(float minExposureValue, float maxExposureValue, float maxRadiometricValue, float maxDisplayValue)
@@ -48,27 +48,29 @@ public class CurveTest
         this.maxExposureValue = maxExposureValue;
         this.maxRadiometricValue = maxRadiometricValue;
         this.maxDisplayValue = maxDisplayValue;
+
     }
-    
+
     public Vector2[] createControlPointsinLinear(Vector2 originCoord, Vector2 greyPoint, float slope)
     {
-        minRadiometricValue = originCoord.x;
-        minDisplayValue = originCoord.y;
-        this.greyPoint = greyPoint;
-        
+        minRadiometricValue = Shaper.calculateLinearToLog2(originCoord.x, greyPoint.x, minExposureValue, maxExposureValue);
+        minDisplayValue = Mathf.Pow(originCoord.y, 1.0f/2.2f);
+        localGreyPoint = new Vector2(Shaper.calculateLinearToLog2(greyPoint.x,greyPoint.x, minExposureValue, maxExposureValue), Mathf.Pow(greyPoint.y, 1.0f / 2.2f)); 
+        float toeP2YCoord = Mathf.Pow(0.085f, 1.0f / 2.2f);
+
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
         // We will design our curve from 3 separate Bezier curves: toe, middle linear section, shoulder
         Vector2 toeP0Coords = originCoord; // originCoord of plot
         Vector2 toeP1Coords = new Vector2(0.0f, 0.0f); // We don't know where it will be yet
-        Vector2 toeP2Coords = new Vector2(0.0f, 0.085f);
+        Vector2 toeP2Coords = new Vector2(0.0f, toeP2YCoord);
         Vector2 midP1Coords = new Vector2(0.0f, 0.0f); // Unknown at this point
-        Vector2 shP0Coords = greyPoint;
-        Vector2 shP1Coords = new Vector2(0.0f, 1.5f); // Unknown at this point
-        Vector2 shP2Coords = new Vector2(maxRadiometricValue, maxDisplayValue);
+        Vector2 shP0Coords = this.localGreyPoint;
+        Vector2 shP1Coords = new Vector2(0.0f, maxDisplayValue); // Unknown at this point
+        Vector2 shP2Coords = new Vector2(Shaper.calculateLinearToLog2(maxRadiometricValue, greyPoint.x, minExposureValue, maxExposureValue), maxDisplayValue);
 
         // calculate y intersection when y = 0
-        float b = calculateLineYIntercept(greyPoint.x, greyPoint.y, slope);
+        float b = calculateLineYIntercept(this.localGreyPoint.x, this.localGreyPoint.y, slope);
         // Calculate the coords for P1 in the first segment
         float xP1Coord = calculateLineX(0.0f, b, slope);
         toeP1Coords.y = 0.001f;
@@ -109,7 +111,7 @@ public class CurveTest
     {
         minRadiometricValue = originCoord.x;
         minDisplayValue = originCoord.y;
-        this.greyPoint = greyPoint;
+        this.localGreyPoint = greyPoint;
         
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
@@ -160,7 +162,7 @@ public class CurveTest
     {
         minRadiometricValue = originCoord.x;
         minDisplayValue = originCoord.y;
-        this.greyPoint = greyPoint;
+        this.localGreyPoint = greyPoint;
         
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
@@ -171,7 +173,7 @@ public class CurveTest
         Vector2 midP1Coords = new Vector2(0.0f, 0.0f); // Unknown at this point
         Vector2 shP0Coords = greyPoint;
         Vector2 shP1Coords = new Vector2(0.0f, 1.5f); // Unknown at this point
-        Vector2 shP2Coords = new Vector2(maxRadiometricValue, maxDisplayValue);
+        Vector2 shP2Coords = new Vector2(Shaper.calculateLinearToLog2(maxRadiometricValue, greyPoint.x, minExposureValue, maxExposureValue), maxDisplayValue);
 
         // calculate y intersection when y = 0
         float b = calculateLineYIntercept(greyPoint.x, greyPoint.y, slope);
@@ -350,9 +352,9 @@ public class CurveTest
             }
 
             float linearInputXCoord =
-                Shaper.calculateLog2ToLinear(logInputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
-            float linearXCoordIdx = Shaper.calculateLog2ToLinear(xCoords[idx], greyPoint.x, minExposureValue, maxExposureValue);
-            float linearXCoordIdx2 = Shaper.calculateLog2ToLinear(xCoords[idx2], greyPoint.x, minExposureValue, maxExposureValue);
+                Shaper.calculateLog2ToLinear(logInputXCoord, localGreyPoint.x, minExposureValue, maxExposureValue);
+            float linearXCoordIdx = Shaper.calculateLog2ToLinear(xCoords[idx], localGreyPoint.x, minExposureValue, maxExposureValue);
+            float linearXCoordIdx2 = Shaper.calculateLog2ToLinear(xCoords[idx2], localGreyPoint.x, minExposureValue, maxExposureValue);
 
             // Calculate interpolation factor
             if (idx == idx2)
@@ -399,7 +401,7 @@ public class CurveTest
         }
         
         // Shape the input x coord in radiometric
-        float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, greyPoint.x, minExposureValue, maxExposureValue);
+        float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, localGreyPoint.x, minExposureValue, maxExposureValue);
         // float logInputXCoord = inputXCoord;
         if (true)
         {
@@ -499,9 +501,10 @@ public class CurveTest
                 // check if it is complex
                 for (int idx = 0; idx < roots.Length; idx++)
                 {
-                    if (tmpRoot < 0.0f || (roots[idx].Real >= 0.0f && roots[idx].Real <= 1.0f))
+                    float rootAtIndex = (float) roots[idx].Real;
+                    if (tmpRoot < 0.0f || (rootAtIndex >= 0.0f && rootAtIndex <= 1.0f))
                     {
-                        tmpRoot = (float) roots[idx].Real;
+                        tmpRoot = rootAtIndex;
                     }
                 }
 
@@ -558,9 +561,10 @@ public class CurveTest
                     // check if it is complex
                     for (int idx = 0; idx < roots.Length; idx++)
                     {
-                        if (tmpRoot < 0.0f || (roots[idx].Real >= 0.0f && roots[idx].Real <= 1.0f))
+                        float rootAtIndex = (float) roots[idx].Real;
+                        if (tmpRoot < 0.0f || (rootAtIndex >= 0.0f && rootAtIndex <= 1.0f) || Mathf.Approximately(rootAtIndex, 1.0f))
                         {
-                            tmpRoot = (float) roots[idx].Real;
+                            tmpRoot = rootAtIndex;
                         }
                     }
 

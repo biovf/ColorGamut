@@ -222,4 +222,4 @@ MonoBehaviour:
     type: 2}
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
   HDRIList:
-  - {fileID: 2800000, guid: 6f4fa7cff76a44224bb110d440e13610, type: 3}
+  - {fileID: 2800000, guid: 13b0793a5c665854f958efe67c21e386, type: 3}
