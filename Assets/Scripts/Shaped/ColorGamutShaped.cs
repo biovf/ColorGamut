@@ -175,7 +175,7 @@ public class ColorGamutShaped : MonoBehaviour
         if (parametricCurve == null)
             parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
 
-        Vector2[] controlPointsTmp = parametricCurve.createControlPointsinLinear(origin, this.greyPoint, slope);
+        Vector2[] controlPointsTmp = parametricCurve.createControlPoints(origin, this.greyPoint, slope);
         List<float> xValuesTmp = initialiseXCoordsInRange(curveLutLength, controlPointsTmp[6].x, false);
         // @TODO FIX ME
         xValuesTmp[xValuesTmp.Count - 1] = 1.0f;

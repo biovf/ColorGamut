@@ -113,7 +113,7 @@ public class ColorGamutShapedEditor : Editor
         // Linear curve
         parametricCurveLinear = new CurveTest(colorGamut.MINExposureValue, colorGamut.MAXExposureValue, 
             colorGamut.MaxRadiometricValue, colorGamut.MAXDisplayValue );
-        controlPointsLinear = parametricCurveLinear.createControlPointsinLinear(
+        controlPointsLinear = parametricCurveLinear.createControlPoints(
             new Vector2(colorGamut.MinRadiometricValue, 0.00001f), new Vector2(0.18f, 0.18f), 2.0f);
         xValuesLinear = initialiseXCoordsInRange(1024, colorGamut.MaxRadiometricValue);
         tValuesLinear = parametricCurveLinear.calcTfromXquadratic(xValuesLinear.ToArray(), controlPointsLinear);

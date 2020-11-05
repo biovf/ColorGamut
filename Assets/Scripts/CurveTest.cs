@@ -51,7 +51,7 @@ public class CurveTest
 
     }
 
-    public Vector2[] createControlPointsinLinear(Vector2 originCoord, Vector2 greyPoint, float slope)
+    public Vector2[] createControlPoints(Vector2 originCoord, Vector2 greyPoint, float slope)
     {
         minRadiometricValue = Shaper.calculateLinearToLog2(originCoord.x, greyPoint.x, minExposureValue, maxExposureValue);
         minDisplayValue = Mathf.Pow(originCoord.y, 1.0f/2.2f);
