@@ -246,8 +246,8 @@ public class ColorGamut1
         int counter = maxIterationsPerFrame;
         int hdriPixelArrayLen = 0;
 
-        float hdriMaxRGBChannel = 0.0f;
-        float bleachingXCoord = 0.0f;
+        float logHdriMaxRGBChannel = 0.0f;
+        float bleachingXCoordLinear = 0.0f;
         float bleachingRange = 0.0f;
 
         float bleachingRatio = 0.0f;
@@ -300,76 +300,90 @@ public class ColorGamut1
             hdriPixelArray[i].g = Mathf.Max(0.0f, hdriPixelArray[i].g);
             hdriPixelArray[i].b = Mathf.Max(0.0f, hdriPixelArray[i].b);
 
-            hdriPixelColor = hdriPixelArray[i] * exposure;
-            rawMaxPixelValue = hdriPixelColor.maxColorComponent;
+
+            hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);
+            // Shape image
+            //Color log2HdriPixelArray = new Color();
+            //log2HdriPixelArray.r = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].r),
+            //    greyPoint.x, minExposureValue, maxExposureValue);
+            //log2HdriPixelArray.g = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].g),
+            //    greyPoint.x, minExposureValue, maxExposureValue);
+            //log2HdriPixelArray.b = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].b),
+            //    greyPoint.x, minExposureValue, maxExposureValue);
+
             ratio = Color.blue;
+            // Calculate Pixel max color and ratio
+            logHdriMaxRGBChannel = hdriPixelArray[i].maxColorComponent;
+            Color linearHdriPixelColor = new Color(
+                Shaper.calculateLog2ToLinear(hdriPixelArray[i].r, greyPoint.x, minExposureValue,
+                    maxExposureValue),
+                Shaper.calculateLog2ToLinear(hdriPixelArray[i].g, greyPoint.x, minExposureValue,
+                    maxExposureValue),
+                Shaper.calculateLog2ToLinear(hdriPixelArray[i].b, greyPoint.x, minExposureValue,
+                    maxExposureValue));
+
+            float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, greyPoint.x,
+                minExposureValue, maxExposureValue);
+
+            ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+
+            rawMaxPixelValue = linearHdriMaxRGBChannel;
+
             // Secondary Nuance Grade, guardrails
-            if (hdriPixelColor.r > maxRadiometricValue || hdriPixelColor.g > maxRadiometricValue ||
-                hdriPixelColor.b > maxRadiometricValue)
+            if (linearHdriPixelColor.r > maxRadiometricValue ||
+                linearHdriPixelColor.g > maxRadiometricValue ||
+                linearHdriPixelColor.b > maxRadiometricValue)
             {
-                hdriPixelColor.r = maxRadiometricValue;
-                hdriPixelColor.g = maxRadiometricValue;
-                hdriPixelColor.b = maxRadiometricValue;
+                linearHdriPixelColor.r = maxRadiometricValue;
+                linearHdriPixelColor.g = maxRadiometricValue;
+                linearHdriPixelColor.b = maxRadiometricValue;
             }
 
-            // Calculate Pixel max color and ratio
-            hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
-            // ratio = hdriPixelColor / hdriMaxRGBChannel;
-            Color tempHdriPixelColor = new Color(
-                Shaper.calculateLog2ToLinear(hdriPixelColor.r, greyPoint.x, minExposureValue,
-                    maxExposureValue),
-                Shaper.calculateLog2ToLinear(hdriPixelColor.g, greyPoint.x, minExposureValue,
-                    maxExposureValue),
-                Shaper.calculateLog2ToLinear(hdriPixelColor.b, greyPoint.x, minExposureValue,
-                    maxExposureValue));
-            float tmpHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(hdriMaxRGBChannel, greyPoint.x,
-                minExposureValue, maxExposureValue);
-            ratio = tempHdriPixelColor / tmpHdriMaxRGBChannel;
+            bleachingXCoordLinear = 0.0f; // Intersect of x on Y = 1
 
-            bleachingXCoord = 0.0f; // Intersect of x on Y = 1
+            if (isBleachingActive)
+            {
+                // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
+                bleachingXCoordLinear = Shaper.calculateLog2ToLinear(
+                        parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray),
+                        greyPoint.x, minExposureValue, maxExposureValue);
 
-            // if (isBleachingActive)
-            // {
-            //     // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
-            //     bleachingXCoord =
-            //         parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray);
-            //
-            //     if (hdriPixelColor.r > bleachingXCoord || hdriPixelColor.g > bleachingXCoord ||
-            //         hdriPixelColor.b > bleachingXCoord)
-            //     {
-            //         bleachingRange = maxRadiometricValue - bleachingXCoord;
-            //         bleachingRatio = (hdriPixelColor.maxColorComponent - bleachingXCoord) /
-            //                          bleachingRange;
-            //
-            //
-            //         hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
-            //         maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
-            //             maxRadiometricValue);
-            //         hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
-            //             Mathf.Pow(bleachingRatio, (float) bleachingRatioPower));
-            //
-            //         hdriPixelColor.r = hdriPixelColorVec.x;
-            //         hdriPixelColor.g = hdriPixelColorVec.y;
-            //         hdriPixelColor.b = hdriPixelColorVec.z;
-            //
-            //         ratio = hdriPixelColor / hdriMaxRGBChannel;
-            //     }
-            // }
+                if (linearHdriPixelColor.r > bleachingXCoordLinear ||
+                    linearHdriPixelColor.g > bleachingXCoordLinear ||
+                    linearHdriPixelColor.b > bleachingXCoordLinear)
+                {
+                    bleachingRange = maxRadiometricValue - bleachingXCoordLinear;
+                    bleachingRatio = (linearHdriPixelColor.maxColorComponent - bleachingXCoordLinear) /
+                                     bleachingRange;
+
+                    hdriPixelColorVec.Set(linearHdriPixelColor.r, linearHdriPixelColor.g,
+                        linearHdriPixelColor.b);
+                    maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
+                        maxRadiometricValue);
+                    hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec, Mathf.SmoothStep(0.0f, 1.0f, bleachingRatio)
+                        /*bleachingRatio / (bleachingRatio + 1.0f));*/ /*Mathf.Pow(bleachingRatio, (float)bleachingRatioPower)*/);
+
+                    linearHdriPixelColor.r = hdriPixelColorVec.x;
+                    linearHdriPixelColor.g = hdriPixelColorVec.y;
+                    linearHdriPixelColor.b = hdriPixelColorVec.z;
+
+                    ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+                }
+            }
 
             // Get Y value from curve using the array version 
-            float yValue = Shaper.calculateLog10ToLinear(
-                parametricCurve.getYCoordinateLogXInput(hdriMaxRGBChannel,
-                    xCoordsArray, yCoordsArray, tValuesArray, controlPoints),
-                greyPoint.x, minExposureValue, maxExposureValue);
+            float yValue = parametricCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel,
+                xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
+            yValue = Mathf.Pow(yValue, 2.2f);
 
             hdriYMaxValue = Mathf.Min(yValue, 1.0f);
             ratio.a = 1.0f;
             hdriPixelColor = hdriYMaxValue * ratio;
 
 
-            hdriPixelArray[i].r = hdriPixelColor.r; //Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
-            hdriPixelArray[i].g = hdriPixelColor.g; //Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
-            hdriPixelArray[i].b = hdriPixelColor.b; //Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
+            hdriPixelArray[i].r = hdriPixelColor.r; 
+            hdriPixelArray[i].g = hdriPixelColor.g; 
+            hdriPixelArray[i].b = hdriPixelColor.b; 
             hdriPixelArray[i].a = 1.0f;
         }
 
@@ -675,13 +689,11 @@ public class ColorGamut1
         Vector3 minDisplayValueVec = Vector3.zero; //new Vector3(minDisplayValue, minDisplayValue, minDisplayValue);
         Vector3 maxDisplayValueVec = Vector3.one; //new Vector3(maxDisplayValue, maxDisplayValue, maxDisplayValue);
 
-        CurveTest parametricCurveTmp =
-            new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
-        Vector2[] controlPointsTmp = parametricCurveTmp.createControlPointsLog2Log10(origin, greyPoint, slope);
-        List<float> xValuesTmp = initialiseXCoordsInRange(10000, maxRadiometricValue);
-        List<float> tValuesTmp = parametricCurveTmp.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
-        List<float> yValuesTmp =
-            parametricCurveTmp.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
+        //CurveTest parametricCurveTmp = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
+        //Vector2[] controlPointsTmp = parametricCurveTmp.createControlPointsLog2Log10(origin, greyPoint, slope);
+        List<float> xValuesTmp = xValues;//initialiseXCoordsInRange(10000, maxRadiometricValue);
+        List<float> tValuesTmp = tValues;//parametricCurveTmp.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
+        List<float> yValuesTmp = yValues;//parametricCurveTmp.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
 
         // @TODO - implement the actual sRGB spec calculation
         float[] yValuesEOTF = new float[yValuesTmp.Count];
@@ -693,10 +705,13 @@ public class ColorGamut1
             // Normalise our Y values to go from 0.0 to 1.0 
             // float tmpVal = (yValues[i] - minDisplayValue) / (maxDisplayValue - minDisplayValue);
             // Encode the inverse EOTF and store it in the array of Y values
-            float yValueLinear =
-                Shaper.calculateLog10ToLinear(Math.Max(0.0f, yValuesTmp[i]), greyPoint.x, minExposureValue, maxExposureValue);
-            yValuesEOTF[i] = Mathf.Pow(yValueLinear, (1.0f / 2.2f));
-            // yValuesEOTF[i] = yValues[i];
+            //float yValueLinear =
+            //    Shaper.calculateLog10ToLinear(Math.Max(0.0f, yValuesTmp[i]), greyPoint.x, minExposureValue, maxExposureValue);
+            //yValuesEOTF[i] = Mathf.Pow(yValueLinear, (1.0f / 2.2f));
+
+            // Log2 to Linear encoded + 1/2.2
+
+            yValuesEOTF[i] = yValuesTmp[i];
         }
 
         // Pass data to be converted and written to disk as a .cube file

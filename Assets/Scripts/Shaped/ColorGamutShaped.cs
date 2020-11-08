@@ -135,7 +135,7 @@ public class ColorGamutShaped : MonoBehaviour
         isSweepActive = false;
 
         // Parametric curve
-        slope = 3.0f;
+        slope = 2.0f;
         slopeMin = 1.02f;
         slopeMax = 4.5f;
         maxDisplayValue = 2.0f;
