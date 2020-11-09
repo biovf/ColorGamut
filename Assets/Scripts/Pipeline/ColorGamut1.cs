@@ -121,9 +121,9 @@ public class ColorGamut1
 
         hdriIndex = 0;
         bleachingRatioPower = 2;
-        exposure = 1.0f;
+        exposure = 0.0f;
 
-        isBleachingActive = false;
+        isBleachingActive = true;
         isSweepActive = false;
 
         // Parametric curve
@@ -152,7 +152,7 @@ public class ColorGamut1
         mainCamera = pipeline.gameObject.GetComponent<Camera>();
 
         hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
-        hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
+        hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false, true);
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         screenGrab.Create();
@@ -296,9 +296,9 @@ public class ColorGamut1
             }
 
             // Full dynamic range of image
-            hdriPixelArray[i].r = Mathf.Max(0.0f, hdriPixelArray[i].r);
-            hdriPixelArray[i].g = Mathf.Max(0.0f, hdriPixelArray[i].g);
-            hdriPixelArray[i].b = Mathf.Max(0.0f, hdriPixelArray[i].b);
+            // hdriPixelArray[i].r = Mathf.Max(0.0f, hdriPixelArray[i].r);
+            // hdriPixelArray[i].g = Mathf.Max(0.0f, hdriPixelArray[i].g);
+            // hdriPixelArray[i].b = Mathf.Max(0.0f, hdriPixelArray[i].b);
 
 
             hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);

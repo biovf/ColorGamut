@@ -40,7 +40,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _LUT:
-        m_Texture: {fileID: 8534537815417165676, guid: 0e954cbf4695e4a5abd906eb6797eef9,
+        m_Texture: {fileID: 8534537815417165676, guid: 40f6a44842f56404799d3a1fbfd5ae0c,
           type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}

@@ -70,6 +70,8 @@ public class ColorGradingHDR1
         //
         // Graphics.Blit(dest, src, fullscreenMat);
             
+        Graphics.Blit(src, interceptDebugRT, fullscreenMat);
+
         colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
         colorGrading3DTextureMat.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
         colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);

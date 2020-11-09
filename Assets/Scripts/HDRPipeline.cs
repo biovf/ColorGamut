@@ -13,7 +13,6 @@ public class HDRPipeline : MonoBehaviour
 
     // Color Grading public variables
     public Material colorGrading3DTextureMat;
-    public Material fullscreenMat;
     public Material log2Shaper;
     public Texture3D hdr3DLutToDecode;
     
@@ -35,7 +34,8 @@ public class HDRPipeline : MonoBehaviour
         Color[] tex3D = hdr3DLutToDecode.GetPixels();
         
     }
-    
+
+    private bool recalcImage = true;
     // Update is called once per frame
     void Update()
     {
@@ -47,6 +47,11 @@ public class HDRPipeline : MonoBehaviour
         if (colorGamut != null)
         {
             colorGamut.Update();
+        }
+
+        if (Input.GetKeyUp(KeyCode.P))
+        {
+            recalcImage = true;
         }
     }
 
@@ -67,7 +72,7 @@ public class HDRPipeline : MonoBehaviour
       
          if (colorGamut != null)
          {
-             if (colorGamut.CurveState == ColorGamut1.CurveDataState.NotCalculated)
+             if (colorGamut.CurveState == ColorGamut1.CurveDataState.NotCalculated || recalcImage == false)
                  StartCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
          }
          if (colorGrading != null && colorGamut.CurveState == ColorGamut1.CurveDataState.Calculated)
@@ -109,7 +114,7 @@ public class HDRPipeline : MonoBehaviour
     private void initialiseColorGrading()
     {
         colorGrading = new ColorGradingHDR1(colorGamut.getHDRITexture(), colorGrading3DTextureMat, 
-            fullscreenMat, log2Shaper);
+            fullScreenTextureMat, log2Shaper);
         colorGrading.Start(this, hdr3DLutToDecode);
     }
     

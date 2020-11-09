@@ -223,11 +223,11 @@ MonoBehaviour:
   colorGradingMat: {fileID: 2100000, guid: 2929c88870f8b4cc1b41367e15ada627, type: 2}
   colorGrading3DTextureMat: {fileID: 2100000, guid: 83cef61a096da4d9d86919f05dca8030,
     type: 2}
-  fullscreenMat: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2, type: 2}
+  fullscreenMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1, type: 2}
   toneMapMat: {fileID: 2100000, guid: 5a71417fea58f432cb8bf2574e120075, type: 2}
-  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: 877fe0ba166dd48e8aaf8b2ec952cf8f,
+  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: 6c145e9e494654dd7873b5554bdc4182,
     type: 3}
-  testTexture: {fileID: 2800000, guid: db99ae3fe802242e1b9b85ddcb7dedaa, type: 3}
+  testTexture: {fileID: 2800000, guid: 6f4fa7cff76a44224bb110d440e13610, type: 3}
 --- !u!114 &963194230
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -240,11 +240,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b4ce7ed36a574d7a8b12de7736b62ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  colorGradingMat: {fileID: 2100000, guid: 2093b6b71017042388fc0c11f863b22b, type: 2}
-  fullscreenMat: {fileID: 2100000, guid: 04f1621f3b429864daf0ff5e03ea5c99, type: 2}
-  colorLUT: {fileID: 2800000, guid: 0a7a7d7626add421dbbb73cca44fc6e2, type: 3}
-  inputTexture: {fileID: 2800000, guid: b8b31ad426c244cdcb70edebf9e62cad, type: 3}
-  secondPlane: {fileID: 1380646434}
 --- !u!114 &963194231
 MonoBehaviour:
   m_ObjectHideFlags: 0

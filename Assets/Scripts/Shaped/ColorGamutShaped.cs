@@ -129,9 +129,9 @@ public class ColorGamutShaped : MonoBehaviour
     {
         hdriIndex = 0;
         bleachingRatioPower = 2;
-        exposure = 1.0f;
+        exposure = 0.0f;
 
-        isBleachingActive = false;
+        isBleachingActive = true;
         isSweepActive = false;
 
         // Parametric curve
@@ -158,7 +158,7 @@ public class ColorGamutShaped : MonoBehaviour
         inputTexture = HDRIList[hdriIndex];
 
         hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
-        hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false);
+        hdriTextureTransformed = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false, true);
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         screenGrab.Create();
