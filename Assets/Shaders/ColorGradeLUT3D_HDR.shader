@@ -71,10 +71,9 @@
                 half3 offset = 1.0 / (2.0 * 33.0);
                 half3 gradedCol = tex3D(_LUT, scale * col + offset).rgb;
 
+                // return half4(pow(gradedCol, 2.2), 1.0);
                 return half4(gradedCol, 1.0);
-                //return half4(pow(gradedCol, 2.2), 1.0);
                 // return half4(col, 1.0);
-
             }
             ENDCG
         }

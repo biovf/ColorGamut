@@ -54,22 +54,35 @@ public class HDRPipeline : MonoBehaviour
     {
          Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
         
-         if (colorGrading != null)
-         {
-             colorGrading.OnRenderImage(hdriRenderTexture, renderBuffer);
-         }
+         // if (colorGrading != null)
+         // {
+         //     colorGrading.OnRenderImage(hdriRenderTexture, renderBuffer);
+         // }
+         // if (colorGamut != null)
+         // {
+         //     if (colorGamut.CurveState == ColorGamut1.CurveDataState.NotCalculated)
+         //         StartCoroutine(colorGamut.ApplyTransferFunction(renderBuffer));
+         // }
+         
+      
          if (colorGamut != null)
          {
              if (colorGamut.CurveState == ColorGamut1.CurveDataState.NotCalculated)
-                 StartCoroutine(colorGamut.ApplyTransferFunction(renderBuffer));
+                 StartCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
+         }
+         if (colorGrading != null && colorGamut.CurveState == ColorGamut1.CurveDataState.Calculated)
+         {
+             Debug.Log("Started Color Grading image");
+             colorGrading.OnRenderImage(colorGamut.HdriTextureTransformed, renderBuffer);
+             Debug.Log("Finished color grading the image");
          }
          
         // colorGamut.OnRenderImage(renderBuffer, dest);
         if (colorGamut.CurveState == ColorGamut1.CurveDataState.Calculated)
         {
-            fullScreenTextureMat.SetTexture("_MainTex", colorGamut.HdriTextureTransformed);
-            Graphics.Blit(colorGamut.HdriTextureTransformed, dest, fullScreenTextureMat);
-
+            Debug.Log("Displaying finished image");
+            fullScreenTextureMat.SetTexture("_MainTex", renderBuffer/*colorGamut.HdriTextureTransformed*/);
+            Graphics.Blit(/*colorGamut.HdriTextureTransformed*/renderBuffer, dest, fullScreenTextureMat);
         }
 
 

@@ -284,5 +284,5 @@ MonoBehaviour:
     type: 2}
   fullscreenMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1, type: 2}
   log2Shaper: {fileID: 2100000, guid: 7f881f138f00c4f999ca0c898c0c69d3, type: 2}
-  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: 5398fc45861c4f54d8da6ae5b3ca6406,
+  hdr3DLutToDecode: {fileID: 8534537815417165676, guid: 6c145e9e494654dd7873b5554bdc4182,
     type: 3}
