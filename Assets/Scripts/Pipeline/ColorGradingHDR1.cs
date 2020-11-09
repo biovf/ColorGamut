@@ -132,18 +132,17 @@ public class ColorGradingHDR1
         Texture2D inGameCapture = toTexture2D(interceptDebugRT);
         Color[] inGameCapturePixels = inGameCapture.GetPixels();
 
-        if (shapeImage)
+        //if (shapeImage)
+        //{
+
+        //}
+
+        int inGameCapturePixelsLen = inGameCapturePixels.Length;
+        for (int i = 0; i < inGameCapturePixelsLen; i++)
         {
-            int inGameCapturePixelsLen = inGameCapturePixels.Length;
-            for (int i = 0; i < inGameCapturePixelsLen; i++)
-            {
-                inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(Mathf.Max(0.0f, inGameCapturePixels[i].r), colorGamut.GreyPoint.x,
-                    colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-                inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(Mathf.Max(0.0f,inGameCapturePixels[i].g), colorGamut.GreyPoint.x,
-                    colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-                inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(Mathf.Max(0.0f, inGameCapturePixels[i].b), colorGamut.GreyPoint.x,
-                    colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-            }
+            inGameCapturePixels[i].r = Mathf.Pow(inGameCapturePixels[i].r, 1.0f / 2.2f);
+            inGameCapturePixels[i].g = Mathf.Pow(inGameCapturePixels[i].g, 1.0f / 2.2f);
+            inGameCapturePixels[i].b = Mathf.Pow(inGameCapturePixels[i].b, 1.0f / 2.2f);
         }
 
         SaveToDisk(inGameCapturePixels, saveFilePath, inGameCapture.width, inGameCapture.height);
