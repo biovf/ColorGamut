@@ -166,31 +166,17 @@ public class ColorGamut1
             parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
 
         Vector2[] controlPointsTmp = parametricCurve.createControlPoints(origin, this.greyPoint, slope);
-        List<float> xValuesTmp = initialiseXCoordsInRange(curveLutLength, controlPointsTmp[6].x, false);
-        // @TODO FIX ME
-        // xValuesTmp[xValuesTmp.Count - 1] = 1.0f;
+        List<float> xValuesTmp = initialiseXCoordsInRange(curveLutLength, controlPointsTmp[6].x);
         List<float> tValuesTmp = parametricCurve.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
         List<float> yValuesTmp =
             parametricCurve.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
-
-        //for (int i = 0; i < xValuesTmp.Count; i++)
-        //{
-        //    xValuesTmp[i] = Shaper.calculateLinearToLog2(xValuesTmp[i], greyPoint.x, minExposureValue, maxExposureValue);
-        //}
+        
         //exportDualColumnDataToCSV(xValuesTmp.ToArray(), yValuesTmp.ToArray(), "PostLog2Linear.csv");
 
-        // controlPoints = parametricCurve.createControlPointsXinLog2(origin, greyPoint, slope);
         controlPoints = controlPointsTmp;//parametricCurve.createControlPointsXinLog2(origin, this.greyPoint, slope);
         xValues = xValuesTmp;//initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
         tValues = tValuesTmp;// parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues = yValuesTmp;// parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
-
-
-        //controlPoints = parametricCurve.createControlPointsXinLog2(origin, this.greyPoint, slope);
-        //xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
-        //tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
-        //yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
-        //exportDualColumnDataToCSV(xValues.ToArray(), yValues.ToArray(), "Log2Linear.csv");
     }
 
     public void Update()
@@ -751,29 +737,17 @@ public class ColorGamut1
         // }
     }
     // Utility methods
-    public List<float> initialiseXCoordsInRange(int dimension, float maxRange, bool useLog2Shaper = true)
+    public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
     {
         List<float> xValues = new List<float>(dimension);
-
-        if (useLog2Shaper)
+        
+        float xCoord = 0.0f;
+        for (int i = 0; i < dimension; ++i)
         {
-            float xCoord = 0.0f;
-            for (int i = 0; i < dimension /*- 1*/; ++i)
-            {
-                xCoord = minRadiometricValue + (Mathf.Pow((float)i / (float)dimension, 2.0f) * maxRange);
-                xValues.Add(Shaper.calculateLinearToLog2(xCoord, greyPoint.x, minExposureValue,
-                    maxExposureValue));
-            }
+            xCoord = minRadiometricValue + (Mathf.Pow((float)i / (float)dimension, 2.0f) * maxRange);
+            xValues.Add(Mathf.Clamp01(xCoord));
         }
-        else
-        {
-            float xCoord = 0.0f;
-            for (int i = 0; i < dimension; ++i)
-            {
-                xCoord = minRadiometricValue + (Mathf.Pow((float)i / (float)dimension, 2.0f) * maxRange);
-                xValues.Add(Mathf.Clamp01(xCoord));
-            }
-        }
+      
 
         return xValues;
     }
