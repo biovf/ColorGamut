@@ -31,11 +31,10 @@ public class HDRPipeline : MonoBehaviour
         initialiseColorGamut();
         initialiseColorGrading();
 
-        Color[] tex3D = hdr3DLutToDecode.GetPixels();
+        // Color[] tex3D = hdr3DLutToDecode.GetPixels();
         
     }
 
-    private bool recalcImage = true;
     // Update is called once per frame
     void Update()
     {
@@ -49,10 +48,7 @@ public class HDRPipeline : MonoBehaviour
             colorGamut.Update();
         }
 
-        if (Input.GetKeyUp(KeyCode.P))
-        {
-            recalcImage = true;
-        }
+ 
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
@@ -72,13 +68,13 @@ public class HDRPipeline : MonoBehaviour
       
          if (colorGamut != null)
          {
-             if (colorGamut.CurveState == ColorGamut1.CurveDataState.NotCalculated || recalcImage == false)
+             if (colorGamut.CurveState == ColorGamut1.CurveDataState.NotCalculated)
                  StartCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
          }
          if (colorGrading != null && colorGamut.CurveState == ColorGamut1.CurveDataState.Calculated)
          {
              Debug.Log("Started Color Grading image");
-             colorGrading.OnRenderImage(colorGamut.HdriTextureTransformed, renderBuffer);
+             colorGrading.OnRenderImage(colorGamut.HdriTextureTransformed, renderBuffer, hdr3DLutToDecode);
              Debug.Log("Finished color grading the image");
          }
          
@@ -122,6 +118,7 @@ public class HDRPipeline : MonoBehaviour
     {
         if(colorGrading == null)
             initialiseColorGrading();
+        
         return colorGrading;
     }
 }

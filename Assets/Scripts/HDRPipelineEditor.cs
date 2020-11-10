@@ -221,13 +221,11 @@ public class HDRPipelineEditor : Editor
         base.serializedObject.UpdateIfRequiredOrScript();
         base.serializedObject.Update();
         base.DrawDefaultInspector();
-
-        if (colorGamut == null)
-        {
-            hdrPipeline = (HDRPipeline) target;
-            colorGamut = hdrPipeline.getColorGamut();
-            colorGradingHDR = hdrPipeline.getColorGrading();
-        }
+    
+        hdrPipeline = (HDRPipeline) target;
+        colorGamut = hdrPipeline.getColorGamut();
+        colorGradingHDR = hdrPipeline.getColorGrading();
+     
 
         if (!hdrPipeline.isActiveAndEnabled)
             return;

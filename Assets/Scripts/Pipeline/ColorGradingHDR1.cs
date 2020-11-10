@@ -23,8 +23,6 @@ public class ColorGradingHDR1
     private Texture2D testTexture;
 
     private RenderTexture colorGradeRT;
-    private RenderTexture toneMapRT;
-    private Texture2D encodedInputTexture;
     
     private RenderTexture decodedRTLUT;
     private RenderTexture interceptDebugRT;
@@ -44,8 +42,6 @@ public class ColorGradingHDR1
         // testTexture = colorGamut.getHDRITexture();
         colorGradeRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
-        toneMapRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
-            RenderTextureReadWrite.Linear);
         interceptDebugRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         
@@ -56,22 +52,11 @@ public class ColorGradingHDR1
     }
     
     
-    public void OnRenderImage(Texture src, RenderTexture dest)
+    public void OnRenderImage(Texture src, RenderTexture dest, Texture3D LUT)
     {
-        // if (enableColorGrading)
-        // {
-        // Graphics.Blit(src, interceptDebugRT, fullscreenMat);
-        // // Apply shader to src data
-        // log2Shaper.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
-        // log2Shaper.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
-        // log2Shaper.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
-        // Graphics.Blit(src, dest, log2Shaper);
-        //
-        //
-        // Graphics.Blit(dest, src, fullscreenMat);
-            
         Graphics.Blit(src, interceptDebugRT, fullscreenMat);
 
+        hdr3DLutToDecode = LUT;
         colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
         colorGrading3DTextureMat.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
         colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
@@ -80,27 +65,27 @@ public class ColorGradingHDR1
 
     }
     
-    public void OnRenderImage(RenderTexture src, RenderTexture dest)
-    {
-        // if (enableColorGrading)
-        // {
-            Graphics.Blit(src, interceptDebugRT, fullscreenMat);
-            // Apply shader to src data
-            log2Shaper.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
-            log2Shaper.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
-            log2Shaper.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
-            Graphics.Blit(src, dest, log2Shaper);
-
-
-            Graphics.Blit(dest, src, fullscreenMat);
-            
-            colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
-            colorGrading3DTextureMat.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
-            colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
-            colorGrading3DTextureMat.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
-            Graphics.Blit(src, dest, colorGrading3DTextureMat);
-
-    }
+    // public void OnRenderImage(RenderTexture src, RenderTexture dest)
+    // {
+    //     // if (enableColorGrading)
+    //     // {
+    //         Graphics.Blit(src, interceptDebugRT, fullscreenMat);
+    //         // Apply shader to src data
+    //         log2Shaper.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
+    //         log2Shaper.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
+    //         log2Shaper.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
+    //         Graphics.Blit(src, dest, log2Shaper);
+    //
+    //
+    //         Graphics.Blit(dest, src, fullscreenMat);
+    //         
+    //         colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
+    //         colorGrading3DTextureMat.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
+    //         colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
+    //         colorGrading3DTextureMat.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
+    //         Graphics.Blit(src, dest, colorGrading3DTextureMat);
+    //
+    // }
 
     public void Update()
     {
@@ -137,13 +122,13 @@ public class ColorGradingHDR1
 
         //}
 
-        int inGameCapturePixelsLen = inGameCapturePixels.Length;
-        for (int i = 0; i < inGameCapturePixelsLen; i++)
-        {
-            inGameCapturePixels[i].r = Mathf.Pow(inGameCapturePixels[i].r, 1.0f / 2.2f);
-            inGameCapturePixels[i].g = Mathf.Pow(inGameCapturePixels[i].g, 1.0f / 2.2f);
-            inGameCapturePixels[i].b = Mathf.Pow(inGameCapturePixels[i].b, 1.0f / 2.2f);
-        }
+        // int inGameCapturePixelsLen = inGameCapturePixels.Length;
+        // for (int i = 0; i < inGameCapturePixelsLen; i++)
+        // {
+        //     inGameCapturePixels[i].r = Mathf.Pow(inGameCapturePixels[i].r, 1.0f / 2.2f);
+        //     inGameCapturePixels[i].g = Mathf.Pow(inGameCapturePixels[i].g, 1.0f / 2.2f);
+        //     inGameCapturePixels[i].b = Mathf.Pow(inGameCapturePixels[i].b, 1.0f / 2.2f);
+        // }
 
         SaveToDisk(inGameCapturePixels, saveFilePath, inGameCapture.width, inGameCapture.height);
     }
@@ -181,7 +166,7 @@ public class ColorGradingHDR1
         tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
         tex.Apply();
         RenderTexture.active = null;
-
+         File.WriteAllBytes("toTexture2D.exr", tex.EncodeToEXR());
         return tex;
     }
 

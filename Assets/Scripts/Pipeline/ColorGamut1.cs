@@ -381,9 +381,9 @@ public class ColorGamut1
             hdriPixelColor = hdriYMaxValue * ratio;
 
 
-            hdriPixelArray[i].r = hdriPixelColor.r; 
-            hdriPixelArray[i].g = hdriPixelColor.g; 
-            hdriPixelArray[i].b = hdriPixelColor.b; 
+            hdriPixelArray[i].r = Mathf.Pow(hdriPixelColor.r, 1.0f/2.2f); 
+            hdriPixelArray[i].g = Mathf.Pow(hdriPixelColor.g, 1.0f/2.2f);  
+            hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, 1.0f/2.2f);  
             hdriPixelArray[i].a = 1.0f;
         }
 
