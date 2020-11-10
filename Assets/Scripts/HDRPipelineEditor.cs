@@ -290,15 +290,15 @@ public class HDRPipelineEditor : Editor
                 _curveGuiDataState == CurveGuiDataState.NotCalculated)
             {
                 // colorGamut.setHDRIIndex(hdriIndex);
-                colorGamut.setShowSweep(showSweep, hdrPipeline.HDRIList[hdriIndex]);
-                colorGamut.setBleaching(enableBleaching);
-                colorGamut.setIsMultiThreaded(isMultiThreaded);
-                colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
-                colorGamut.setExposure(exposure);
-                colorGamut.setActiveTransferFunction(activeTransferFunction);
-                colorGamut.setBleachingRatioPower(bleachingRatioPower);
-
-                colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
+                // colorGamut.setShowSweep(showSweep, hdrPipeline.HDRIList[hdriIndex]);
+                // colorGamut.setBleaching(enableBleaching);
+                // colorGamut.setIsMultiThreaded(isMultiThreaded);
+                // colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
+                // colorGamut.setExposure(exposure);
+                // colorGamut.setActiveTransferFunction(activeTransferFunction);
+                // colorGamut.setBleachingRatioPower(bleachingRatioPower);
+                //
+                // colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
                 _curveGuiDataState = CurveGuiDataState.Calculated;
             }
         }

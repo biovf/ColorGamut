@@ -168,7 +168,7 @@ public class ColorGamut1
         Vector2[] controlPointsTmp = parametricCurve.createControlPoints(origin, this.greyPoint, slope);
         List<float> xValuesTmp = initialiseXCoordsInRange(curveLutLength, controlPointsTmp[6].x, false);
         // @TODO FIX ME
-        xValuesTmp[xValuesTmp.Count - 1] = 1.0f;
+        // xValuesTmp[xValuesTmp.Count - 1] = 1.0f;
         List<float> tValuesTmp = parametricCurve.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
         List<float> yValuesTmp =
             parametricCurve.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
@@ -771,7 +771,7 @@ public class ColorGamut1
             for (int i = 0; i < dimension; ++i)
             {
                 xCoord = minRadiometricValue + (Mathf.Pow((float)i / (float)dimension, 2.0f) * maxRange);
-                xValues.Add(xCoord);
+                xValues.Add(Mathf.Clamp01(xCoord));
             }
         }
 
