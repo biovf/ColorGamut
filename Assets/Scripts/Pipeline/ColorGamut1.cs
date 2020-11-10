@@ -130,7 +130,7 @@ public class ColorGamut1
         slope = 2.0f;
         slopeMin = 1.02f;
         slopeMax = 4.5f;
-        maxDisplayValue = 2.0f;
+        maxDisplayValue = 1.5f;
         minDisplayValue = 0.00001f;
         greyPoint = new Vector2(0.18f, 0.18f);
         minExposureValue = -6.0f;
@@ -165,18 +165,13 @@ public class ColorGamut1
         if (parametricCurve == null)
             parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
 
-        Vector2[] controlPointsTmp = parametricCurve.createControlPoints(origin, this.greyPoint, slope);
-        List<float> xValuesTmp = initialiseXCoordsInRange(curveLutLength, controlPointsTmp[6].x);
-        List<float> tValuesTmp = parametricCurve.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
-        List<float> yValuesTmp =
-            parametricCurve.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
+        controlPoints = parametricCurve.createControlPoints(origin, this.greyPoint, slope);
+        xValues = initialiseXCoordsInRange(curveLutLength, controlPoints[6].x);
+        tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
+        yValues =
+            parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
         
-        //exportDualColumnDataToCSV(xValuesTmp.ToArray(), yValuesTmp.ToArray(), "PostLog2Linear.csv");
-
-        controlPoints = controlPointsTmp;//parametricCurve.createControlPointsXinLog2(origin, this.greyPoint, slope);
-        xValues = xValuesTmp;//initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
-        tValues = tValuesTmp;// parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
-        yValues = yValuesTmp;// parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
+        exportDualColumnDataToCSV(xValues.ToArray(), yValues.ToArray(), "CurveAxisData.csv");
     }
 
     public void Update()
@@ -275,18 +270,14 @@ public class ColorGamut1
         curveDataState = CurveDataState.MustRecalculate;
         for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
         {
+            ratio = Color.blue;
+
             if (i == quarterSize || i == halfSize || i == threeQuartersSize)
             {
                 Debug.Log("Image Processing at " + (100.0f * (float)i / (float)hdriPixelArrayLen).ToString() +
                           "%");
             }
-
-            // Full dynamic range of image
-            // hdriPixelArray[i].r = Mathf.Max(0.0f, hdriPixelArray[i].r);
-            // hdriPixelArray[i].g = Mathf.Max(0.0f, hdriPixelArray[i].g);
-            // hdriPixelArray[i].b = Mathf.Max(0.0f, hdriPixelArray[i].b);
-
-
+            
             hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);
             // Shape image
             Color log2HdriPixelArray = new Color();
@@ -297,7 +288,6 @@ public class ColorGamut1
             log2HdriPixelArray.b = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].b),
                 greyPoint.x, minExposureValue, maxExposureValue);
 
-            ratio = Color.blue;
             // Calculate Pixel max color and ratio
             logHdriMaxRGBChannel = log2HdriPixelArray.maxColorComponent;
             Color linearHdriPixelColor = new Color(
@@ -308,11 +298,11 @@ public class ColorGamut1
                 Shaper.calculateLog2ToLinear(log2HdriPixelArray.b, greyPoint.x, minExposureValue,
                     maxExposureValue));
 
+            // Retrieve the maximum RGB value but in linear space
             float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, greyPoint.x,
                 minExposureValue, maxExposureValue);
-
+            // Calculate the ratio in linear space
             ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
-
             rawMaxPixelValue = linearHdriMaxRGBChannel;
 
             // Secondary Nuance Grade, guardrails
@@ -382,303 +372,12 @@ public class ColorGamut1
         mainCamera.clearFlags = CameraClearFlags.Nothing;
         Debug.Log("Image Processing has finished");
     }
-
-
-    // public IEnumerator CpuGGMIterative()
-    // {
-    //     int counter = maxIterationsPerFrame;
-    //     int hdriPixelArrayLen = 0;
-    //
-    //     float logHdriMaxRGBChannel = 0.0f;
-    //     float bleachingXCoordLinear = 0.0f;
-    //     float bleachingRange = 0.0f;
-    //
-    //     float bleachingRatio = 0.0f;
-    //     float hdriYMaxValue = 0.0f;
-    //     float inverseSrgbEOTF = (1.0f / 2.2f);
-    //     float rawMaxPixelValue = 0.0f;
-    //
-    //     Color ratio = Color.black;
-    //     Color hdriPixelColor = Color.black;
-    //
-    //     Vector3 hdriPixelColorVec = Vector3.zero;
-    //     Vector3 maxDynamicRangeVec = Vector3.zero;
-    //
-    //     float[] xCoordsArray;
-    //     float[] yCoordsArray;
-    //     float[] tValuesArray;
-    //
-    //     int completionStatus = 0;
-    //
-    //     while (true)
-    //     {
-    //         if (!isSweepActive)
-    //         {
-    //             // if (inputTextureIdx != hdriIndex)
-    //             {
-    //                 inputTextureIdx = hdriIndex;
-    //                 inputTexture = HDRIList[inputTextureIdx];
-    //             }
-    //         }
-    //         else
-    //         {
-    //             inputTexture = sweepTexture;
-    //         }
-    //
-    //         hdriPixelArray = inputTexture.GetPixels();
-    //         hdriPixelArrayLen = hdriPixelArray.Length;
-    //         int quarterSize = hdriPixelArrayLen / 4;
-    //         int halfSize = hdriPixelArrayLen / 2;
-    //         int threeQuartersSize = hdriPixelArrayLen - quarterSize;
-    //
-    //         if (curveDataState != CurveDataState.Calculated)
-    //         {
-    //             if (isMultiThreaded && tValues != null && tValues.Count > 0)
-    //             {
-    //                 GamutMapJob job = new GamutMapJob();
-    //
-    //                 NativeArray<Color> pixels = new NativeArray<Color>(hdriPixelArrayLen, Allocator.TempJob);
-    //                 pixels.CopyFrom(hdriPixelArray);
-    //                 job.hdriPixelArray = pixels;
-    //                 NativeArray<float> xVals = new NativeArray<float>(xValues.Count, Allocator.TempJob);
-    //                 xVals.CopyFrom(xValues.ToArray());
-    //                 job.xValues = xVals;
-    //                 NativeArray<float> yVals = new NativeArray<float>(yValues.Count, Allocator.TempJob);
-    //                 yVals.CopyFrom(yValues.ToArray());
-    //                 job.yValues = yVals;
-    //                 // parametric curve
-    //                 NativeArray<float> tVals = new NativeArray<float>(tValues.Count, Allocator.TempJob);
-    //                 tVals.CopyFrom(tValues.ToArray());
-    //                 job.tValues = tVals;
-    //                 NativeArray<Vector2> controlPts = new NativeArray<Vector2>(controlPoints.Length, Allocator.TempJob);
-    //                 controlPts.CopyFrom(controlPoints);
-    //                 job.controlPoints = controlPts;
-    //
-    //                 job.exposure = exposure;
-    //                 job.isBleachingActive = isBleachingActive;
-    //                 job.showPixelsOutOfGamut = showPixelsOutOfGamut;
-    //                 job.lutLength = curveLutLength;
-    //                 job.yIndexIntersect = yIndexIntersect;
-    //                 job.minRadiometricValue = minRadiometricValue;
-    //                 job.maxRadiometricValue = maxRadiometricValue;
-    //
-    //                 JobHandle handle = job.Schedule(hdriPixelArrayLen, 1);
-    //                 handle.Complete();
-    //
-    //                 // Finished processing image, write values back
-    //                 for (int i = 0; i < hdriPixelArrayLen; i++)
-    //                 {
-    //                     hdriPixelArray[i] = pixels[i];
-    //                 }
-    //
-    //                 hdriTextureTransformed.SetPixels(hdriPixelArray);
-    //                 hdriTextureTransformed.Apply();
-    //                 // Cleanup arrays
-    //                 pixels.Dispose();
-    //                 xVals.Dispose();
-    //                 tVals.Dispose();
-    //                 yVals.Dispose();
-    //                 controlPts.Dispose();
-    //                 Debug.Log("Multi-threaded Image Processing has finished");
-    //
-    //                 // ChangeCurveDataState(CurveDataState.Calculated);
-    //
-    //                 yield return new WaitForEndOfFrame();
-    //             }
-    //             else
-    //             {
-    //                 if (tValues == null)
-    //                     yield return new WaitForEndOfFrame();
-    //
-    //                 xCoordsArray = xValues.ToArray();
-    //                 yCoordsArray = yValues.ToArray();
-    //                 tValuesArray = tValues.ToArray();
-    //
-    //                 counter = maxIterationsPerFrame;
-    //                 for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
-    //                 {
-    //                     if (i == quarterSize || i == halfSize || i == threeQuartersSize)
-    //                     {
-    //                         Debug.Log("Image Processing at " +
-    //                                   (100.0f * (float)i / (float)hdriPixelArrayLen).ToString() + "%");
-    //                     }
-    //
-    //                     if (counter <= 0)
-    //                     {
-    //                         counter = maxIterationsPerFrame;
-    //                         yield return new WaitForEndOfFrame();
-    //                     }
-    //
-    //
-    //                     hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);
-    //                     // Shape image
-    //                     Color log2HdriPixelArray = new Color();
-    //                     log2HdriPixelArray.r = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].r),
-    //                         greyPoint.x, minExposureValue, maxExposureValue);
-    //                     log2HdriPixelArray.g = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].g),
-    //                         greyPoint.x, minExposureValue, maxExposureValue);
-    //                     log2HdriPixelArray.b = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].b),
-    //                         greyPoint.x, minExposureValue, maxExposureValue);
-    //
-    //                     ratio = Color.blue;
-    //                     // Calculate Pixel max color and ratio
-    //                     logHdriMaxRGBChannel = log2HdriPixelArray.maxColorComponent;
-    //                     Color linearHdriPixelColor = new Color(
-    //                         Shaper.calculateLog2ToLinear(log2HdriPixelArray.r, greyPoint.x, minExposureValue,
-    //                             maxExposureValue),
-    //                         Shaper.calculateLog2ToLinear(log2HdriPixelArray.g, greyPoint.x, minExposureValue,
-    //                             maxExposureValue),
-    //                         Shaper.calculateLog2ToLinear(log2HdriPixelArray.b, greyPoint.x, minExposureValue,
-    //                             maxExposureValue));
-    //
-    //                     float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, greyPoint.x,
-    //                         minExposureValue, maxExposureValue);
-    //
-    //                     ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
-    //
-    //                     rawMaxPixelValue = linearHdriMaxRGBChannel;
-    //
-    //                     // Secondary Nuance Grade, guardrails
-    //                     if (linearHdriPixelColor.r > maxRadiometricValue ||
-    //                         linearHdriPixelColor.g > maxRadiometricValue ||
-    //                         linearHdriPixelColor.b > maxRadiometricValue)
-    //                     {
-    //                         linearHdriPixelColor.r = maxRadiometricValue;
-    //                         linearHdriPixelColor.g = maxRadiometricValue;
-    //                         linearHdriPixelColor.b = maxRadiometricValue;
-    //                     }
-    //
-    //                     // Transfer function
-    //                     if (activeTransferFunction == TransferFunction.Max_RGB)
-    //                     {
-    //                         bleachingXCoordLinear = 0.0f; // Intersect of x on Y = 1
-    //
-    //                         if (isBleachingActive)
-    //                         {
-    //                             // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
-    //                             bleachingXCoordLinear = Shaper.calculateLog2ToLinear(
-    //                                     parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray),
-    //                                     greyPoint.x, minExposureValue, maxExposureValue);
-    //
-    //                             if (linearHdriPixelColor.r > bleachingXCoordLinear ||
-    //                                 linearHdriPixelColor.g > bleachingXCoordLinear ||
-    //                                 linearHdriPixelColor.b > bleachingXCoordLinear)
-    //                             {
-    //                                 bleachingRange = maxRadiometricValue - bleachingXCoordLinear;
-    //                                 bleachingRatio = (linearHdriPixelColor.maxColorComponent - bleachingXCoordLinear) /
-    //                                                  bleachingRange;
-    //
-    //                                 hdriPixelColorVec.Set(linearHdriPixelColor.r, linearHdriPixelColor.g,
-    //                                     linearHdriPixelColor.b);
-    //                                 maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
-    //                                     maxRadiometricValue);
-    //                                 hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec, Mathf.SmoothStep(0.0f, 1.0f, bleachingRatio)
-    //                                     /*bleachingRatio / (bleachingRatio + 1.0f));*/ /*Mathf.Pow(bleachingRatio, (float)bleachingRatioPower)*/);
-    //
-    //                                 linearHdriPixelColor.r = hdriPixelColorVec.x;
-    //                                 linearHdriPixelColor.g = hdriPixelColorVec.y;
-    //                                 linearHdriPixelColor.b = hdriPixelColorVec.z;
-    //
-    //                                 ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
-    //                             }
-    //                         }
-    //
-    //                         // Get Y value from curve using the array version 
-    //                         float yValue = parametricCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel,
-    //                             xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-    //                         yValue = Mathf.Pow(yValue, 2.2f);
-    //
-    //                         hdriYMaxValue = Mathf.Min(yValue, 1.0f);
-    //                         ratio.a = 1.0f;
-    //                         hdriPixelColor = hdriYMaxValue * ratio;
-    //
-    //                         if (showPixelsOutOfGamut)
-    //                         {
-    //                             if (rawMaxPixelValue < minRadiometricValue) // Below Gamut
-    //                             {
-    //                                 hdriPixelColor = Color.red;
-    //                             }
-    //                             else if (rawMaxPixelValue > maxRadiometricValue) // Above gamut
-    //                             {
-    //                                 hdriPixelColor = Color.green;
-    //                             }
-    //                             else if (rawMaxPixelValue > bleachingXCoordLinear)
-    //                             {
-    //                                 if (Mathf.Approximately(bleachingXCoordLinear, 0.0f))
-    //                                 {
-    //                                     bleachingXCoordLinear =
-    //                                         parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray,
-    //                                             tValuesArray);
-    //                                     hdriPixelColor = rawMaxPixelValue > bleachingXCoordLinear
-    //                                         ? Color.blue
-    //                                         : hdriPixelColor;
-    //                                 }
-    //                                 else
-    //                                 {
-    //                                     hdriPixelColor = Color.blue;
-    //                                 }
-    //                             }
-    //                         }
-    //
-    //                         activeTransferFunction = TransferFunction.Max_RGB;
-    //                     }
-    //                     else
-    //                     {
-    //                         activeTransferFunction = TransferFunction.Per_Channel;
-    //
-    //                         hdriPixelColor.r = parametricCurve.getYCoordinate(hdriPixelColor.r,
-    //                             xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-    //                         hdriPixelColor.g = parametricCurve.getYCoordinate(hdriPixelColor.g,
-    //                             xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-    //                         hdriPixelColor.b = parametricCurve.getYCoordinate(hdriPixelColor.b,
-    //                             xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-    //
-    //                         if (showPixelsOutOfGamut)
-    //                         {
-    //                             if (hdriPixelColor.r < minRadiometricValue ||
-    //                                 hdriPixelColor.g < minRadiometricValue ||
-    //                                 hdriPixelColor.b < minRadiometricValue)
-    //                             {
-    //                                 hdriPixelColor = Color.red;
-    //                             }
-    //                             else if (hdriPixelColor.r > 1.0f || hdriPixelColor.g > 1.0f || hdriPixelColor.b > 1.0f)
-    //                             {
-    //                                 hdriPixelColor = Color.green;
-    //                             }
-    //                         }
-    //                     }
-    //
-    //                     hdriPixelArray[i].r = hdriPixelColor.r;
-    //                     hdriPixelArray[i].g = hdriPixelColor.g;
-    //                     hdriPixelArray[i].b = hdriPixelColor.b;
-    //                     hdriPixelArray[i].a = 1.0f;
-    //                 }
-    //
-    //                 hdriTextureTransformed.SetPixels(hdriPixelArray);
-    //                 Debug.Log("Image Processing has finished");
-    //             }
-    //
-    //             hdriTextureTransformed.Apply();
-    //             ChangeCurveDataState(CurveDataState.Calculated);
-    //         }
-    //
-    //         else
-    //         {
-    //             yield return new WaitForEndOfFrame();
-    //         }
-    //     }
-    // }
-
     public void exportTransferFunction(string fileName)
     {
         // Set the DOMAIN_MIN and DOMAIN_MAX ranges
         Vector3 minDisplayValueVec = Vector3.zero; //new Vector3(minDisplayValue, minDisplayValue, minDisplayValue);
         Vector3 maxDisplayValueVec = Vector3.one; //new Vector3(maxDisplayValue, maxDisplayValue, maxDisplayValue);
-
-        //CurveTest parametricCurveTmp = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
-        //Vector2[] controlPointsTmp = parametricCurveTmp.createControlPointsLog2Log10(origin, greyPoint, slope);
-        List<float> xValuesTmp = xValues;//initialiseXCoordsInRange(10000, maxRadiometricValue);
-        List<float> tValuesTmp = tValues;//parametricCurveTmp.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
+        
         List<float> yValuesTmp = yValues;//parametricCurveTmp.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
 
         // @TODO - implement the actual sRGB spec calculation
@@ -688,13 +387,8 @@ public class ColorGamut1
         {
             if (yValuesTmp[i] >= 1.0f)
                 break;
-            // Normalise our Y values to go from 0.0 to 1.0 
-            // float tmpVal = (yValues[i] - minDisplayValue) / (maxDisplayValue - minDisplayValue);
-            // Encode the inverse EOTF and store it in the array of Y values
-            //float yValueLinear =
-            //    Shaper.calculateLog10ToLinear(Math.Max(0.0f, yValuesTmp[i]), greyPoint.x, minExposureValue, maxExposureValue);
+         
             //yValuesEOTF[i] = Mathf.Pow(yValueLinear, (1.0f / 2.2f));
-
             // Log2 to Linear encoded + 1/2.2
 
             yValuesEOTF[i] = yValuesTmp[i];

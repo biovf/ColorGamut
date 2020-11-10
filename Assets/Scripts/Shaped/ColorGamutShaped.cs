@@ -135,7 +135,7 @@ public class ColorGamutShaped : MonoBehaviour
         isSweepActive = false;
 
         // Parametric curve
-        slope = 2.0f;
+        slope = 2.5f;
         slopeMin = 1.02f;
         slopeMax = 4.5f;
         maxDisplayValue = 2.0f;
@@ -187,7 +187,7 @@ public class ColorGamutShaped : MonoBehaviour
         //{
         //    xValuesTmp[i] = Shaper.calculateLinearToLog2(xValuesTmp[i], greyPoint.x, minExposureValue, maxExposureValue);
         //}
-        exportDualColumnDataToCSV(xValuesTmp.ToArray(), yValuesTmp.ToArray(), "PostLog2Linear.csv");
+        exportDualColumnDataToCSV(xValuesTmp.ToArray(), yValuesTmp.ToArray(), "PostLog2Linear2.csv");
 
         // controlPoints = parametricCurve.createControlPointsXinLog2(origin, greyPoint, slope);
         controlPoints = controlPointsTmp;//parametricCurve.createControlPointsXinLog2(origin, this.greyPoint, slope);

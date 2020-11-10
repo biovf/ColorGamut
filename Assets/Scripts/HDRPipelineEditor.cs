@@ -193,14 +193,14 @@ public class HDRPipelineEditor : Editor
 
             xTempValues = colorGamut.getXValues();
             yTempValues = colorGamut.getYValues();
-            for (int i = 0; i < xTempValues.Count; i++)
-            {
-                Vector3 logPoint = new Vector3(xTempValues[i], yTempValues[i]);
-                Vector3 linearPoint = new Vector3(Shaper.calculateLog2ToLinear(xTempValues[i], colorGamut.GreyPoint.x, colorGamut.MinRadiometricValue, colorGamut.MaxRadiometricValue),0.0f);
-                Handles.DrawWireCube(logPoint, cubeWidgetSize);
-                // Handles.DrawWireCube( linearPoint, cubeWidgetSize);
-                // Handles.DrawDottedLine(linearPoint, logPoint, 1.0f);
-            }
+            // for (int i = 0; i < xTempValues.Count; i++)
+            // {
+            //     Vector3 logPoint = new Vector3(xTempValues[i], yTempValues[i]);
+            //     // Vector3 linearPoint = new Vector3(Shaper.calculateLog2ToLinear(xTempValues[i], colorGamut.GreyPoint.x, colorGamut.MinRadiometricValue, colorGamut.MaxRadiometricValue),0.0f);
+            //     Handles.DrawWireCube(logPoint, cubeWidgetSize);
+            //     // Handles.DrawWireCube( linearPoint, cubeWidgetSize);
+            //     // Handles.DrawDottedLine(linearPoint, logPoint, 1.0f);
+            // }
 
             if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
                 _curveGuiDataState == CurveGuiDataState.NotCalculated)
@@ -210,9 +210,9 @@ public class HDRPipelineEditor : Editor
             }
 
             Handles.DrawPolyLine(debugPoints.ToArray());
-            // Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
-            // Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
-            // Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
+            Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
+            Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
+            Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
         }
     }
 
