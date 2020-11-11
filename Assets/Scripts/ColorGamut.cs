@@ -309,7 +309,7 @@ public class ColorGamut : MonoBehaviour
                     controlPts.Dispose();
                     Debug.Log("Multi-threaded Image Processing has finished");
 
-                    // ChangeCurveDataState(CurveDataState.Calculated);
+                    // SetCurveDataState(CurveDataState.Calculated);
 
                     yield return new WaitForEndOfFrame();
                 }

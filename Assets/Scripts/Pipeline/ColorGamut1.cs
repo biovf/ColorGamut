@@ -100,8 +100,9 @@ public class ColorGamut1
     public enum CurveDataState
     {
         NotCalculated,
-        Calculated,
-        MustRecalculate
+        Dirty,
+        Calculating,
+        Calculated
     };
 
     private CurveDataState curveDataState = CurveDataState.NotCalculated;
@@ -264,9 +265,14 @@ public class ColorGamut1
 
         counter = maxIterationsPerFrame;
         mainCamera.clearFlags = CameraClearFlags.Skybox;
-        curveDataState = CurveDataState.MustRecalculate;
+        curveDataState = CurveDataState.Calculating;
         for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
         {
+            if (curveDataState == CurveDataState.Dirty)
+            {
+                yield break;
+            }
+            
             ratio = Color.blue;
 
             if (i == quarterSize || i == halfSize || i == threeQuartersSize)
@@ -359,7 +365,13 @@ public class ColorGamut1
             hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, 1.0f/2.2f);  
             hdriPixelArray[i].a = 1.0f;
         }
-
+        
+        // Make sure the result should be written out to the texture
+        if (curveDataState == CurveDataState.Dirty)
+        {
+            yield break;
+        }
+        
         hdriTextureTransformed.SetPixels(hdriPixelArray);
         hdriTextureTransformed.Apply();
 
@@ -396,36 +408,42 @@ public class ColorGamut1
             maxDisplayValueVec, false);
     }
 
-    private void ChangeCurveDataState(CurveDataState newState)
+    public void SetCurveDataState(CurveDataState newState)
     {
-        // if (curveDataState == newState)
-        // {
-        //     Debug.LogWarning("Current state is being change to itself again");
-        //     return;
-        // }
-        //
-        // switch (newState)
-        // {
-        //     case CurveDataState.NotCalculated:
-        //     {
-        //         mainCamera.clearFlags = CameraClearFlags.Skybox;
-        //         curveDataState = CurveDataState.NotCalculated;
-        //         break;
-        //     }
-        //     case CurveDataState.Calculated:
-        //     {
-        //         mainCamera.clearFlags = CameraClearFlags.Nothing;
-        //         curveDataState = CurveDataState.Calculated;
-        //         break;
-        //     }
-        //     case CurveDataState.MustRecalculate:
-        //     {
-        //         Debug.Log("Image Processing has started");
-        //         mainCamera.clearFlags = CameraClearFlags.Skybox;
-        //         curveDataState = CurveDataState.MustRecalculate;
-        //         break;
-        //     }
-        // }
+        if (curveDataState == newState)
+        {
+            Debug.LogWarning("Current state is being change to itself again");
+            return;
+        }
+        
+        switch (newState)
+        {
+            case CurveDataState.NotCalculated:
+            {
+                mainCamera.clearFlags = CameraClearFlags.Skybox;
+                curveDataState = CurveDataState.NotCalculated;
+                break;
+            }
+            case CurveDataState.Dirty:
+            {
+                Debug.Log("Image Processing has started");
+                mainCamera.clearFlags = CameraClearFlags.Skybox;
+                curveDataState = CurveDataState.Dirty;
+                break;
+            }
+            case CurveDataState.Calculated:
+            {
+                mainCamera.clearFlags = CameraClearFlags.Nothing;
+                curveDataState = CurveDataState.Calculated;
+                break;
+            }
+            case CurveDataState.Calculating:
+            {
+                mainCamera.clearFlags = CameraClearFlags.Skybox;
+                curveDataState = CurveDataState.Calculating;
+                break;
+            }
+        }
     }
     // Utility methods
 
@@ -499,7 +517,7 @@ public class ColorGamut1
         this.greyPoint.x = greyPointX;
         this.greyPoint.y = greyPointY;
 
-        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        SetCurveDataState(CurveDataState.Dirty);
         createParametricCurve(greyPoint, origin);
     }
 
@@ -512,7 +530,7 @@ public class ColorGamut1
     {
         isSweepActive = isActive;
         this.inputTexture = inputTexture;
-        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        SetCurveDataState(CurveDataState.Dirty);
     }
 
     public bool getIsMultiThreaded()
@@ -528,7 +546,7 @@ public class ColorGamut1
     public void setShowOutOfGamutPixels(bool isPixelOutOfGamut)
     {
         this.showPixelsOutOfGamut = isPixelOutOfGamut;
-        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        SetCurveDataState(CurveDataState.Dirty);
     }
 
     Texture2D toTexture2D(RenderTexture rTex)
@@ -613,37 +631,37 @@ public class ColorGamut1
     public void setInputTexture(Texture2D inputTexture)
     {
         this.inputTexture = inputTexture;
-        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        SetCurveDataState(CurveDataState.Dirty);
     }
 
     // public void setHDRIIndex(int index)
     // {
     //     hdriIndex = index;
-    //     ChangeCurveDataState(CurveDataState.MustRecalculate);
+    //     SetCurveDataState(CurveDataState.Dirty);
     // }
 
     public void setBleaching(bool inIsBleachingActive)
     {
         isBleachingActive = inIsBleachingActive;
-        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        SetCurveDataState(CurveDataState.Dirty);
     }
 
     public void setExposure(float exposure)
     {
         this.exposure = exposure;
-        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        SetCurveDataState(CurveDataState.Dirty);
     }
 
     public void setActiveTransferFunction(TransferFunction transferFunction)
     {
         this.activeTransferFunction = transferFunction;
-        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        SetCurveDataState(CurveDataState.Dirty);
     }
 
     public void setBleachingRatioPower(int ratioPower)
     {
         this.bleachingRatioPower = ratioPower;
-        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        SetCurveDataState(CurveDataState.Dirty);
     }
 
     static public Texture2D GetRTPixels(RenderTexture rt)

@@ -72,19 +72,7 @@ public class HDRPipelineEditor : Editor
     private bool isColorGradingTabOpen = true;
     private ColorGradingHDR1 colorGradingHDR;
     private bool shapeImage = true;
-
-    // Prototype the state approach to test caching of data
-    private enum CurveGuiDataState
-    {
-        NotCalculated,
-        MustRecalculate,
-        Calculated
-    }
-
-    private CurveGuiDataState _curveGuiDataState = CurveGuiDataState.NotCalculated;
-
-    private List<float> xTempValues;
-    private List<float> yTempValues;
+    private ColorGamut1.CurveDataState _curveGuiDataState = ColorGamut1.CurveDataState.NotCalculated;
     
     public void OnEnable()
     {
@@ -109,7 +97,7 @@ public class HDRPipelineEditor : Editor
         }
 
         // Initialise parameters for the curve with sensible values
-        if (_curveGuiDataState == CurveGuiDataState.NotCalculated)
+        if (_curveGuiDataState ==  ColorGamut1.CurveDataState.NotCalculated)
             colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
                 out greyPointY);
         
@@ -157,7 +145,7 @@ public class HDRPipelineEditor : Editor
         if (Application.isPlaying)
         {
             if (debugPoints == null || debugPoints.Count == 0)
-                _curveGuiDataState = CurveGuiDataState.NotCalculated;
+                _curveGuiDataState =  ColorGamut1.CurveDataState.NotCalculated;
             
             if (colorGamut == null)
             {
@@ -186,16 +174,12 @@ public class HDRPipelineEditor : Editor
             Handles.DrawDottedLine(new Vector3(0.0f, 0.18f), new Vector3(0.18f, 0.18f), 2.0f); // Draw vertical line from 0.18f
             Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
             Handles.DrawDottedLine(new Vector3(0.0f, 0.5f), new Vector3(0.5f, 0.5f), 4.0f); // Draw vertical line from 0.18f
-
-            xTempValues = colorGamut.getXValues();
-            yTempValues = colorGamut.getYValues();
-       
-
-            if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
-                _curveGuiDataState == CurveGuiDataState.NotCalculated)
+            
+            if (_curveGuiDataState ==  ColorGamut1.CurveDataState.Dirty ||
+                _curveGuiDataState ==  ColorGamut1.CurveDataState.NotCalculated)
             {
                 recalculateCurveParameters();
-                _curveGuiDataState = CurveGuiDataState.Calculated;
+                _curveGuiDataState =  ColorGamut1.CurveDataState.Calculated;
             }
 
             Handles.DrawPolyLine(debugPoints.ToArray());
@@ -214,8 +198,7 @@ public class HDRPipelineEditor : Editor
         hdrPipeline = (HDRPipeline) target;
         colorGamut = hdrPipeline.getColorGamut();
         colorGradingHDR = hdrPipeline.getColorGrading();
-     
-
+        
         if (!hdrPipeline.isActiveAndEnabled)
             return;
         
@@ -223,22 +206,23 @@ public class HDRPipelineEditor : Editor
         {
             hdriIndex = EditorGUILayout.Popup("HDRI to use", hdriIndex, hdriNames.ToArray());
         }
-
-        activeTransferFunction =
-            (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
-        EditorGUILayout.Space();
-        exposure = EditorGUILayout.Slider("Exposure", exposure, colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-        bleachingRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", bleachingRatioPower, 1, 7);
         showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
         showPixelsOutOfGamut = EditorGUILayout.Toggle("Show Pixels Out of Gamut", showPixelsOutOfGamut);
-
+        
         EditorGUILayout.Space();
         EditorGUILayout.Space();
 
+        activeTransferFunction =
+            (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
+        EditorGUILayout.Space();
+        // bleachingRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", bleachingRatioPower, 1, 7);
+        
+        EditorGUILayout.Space();
         colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
             out greyPointY);
+        exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
         originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
         originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
@@ -269,14 +253,14 @@ public class HDRPipelineEditor : Editor
 
         if (GUI.changed)
         {
-            _curveGuiDataState = CurveGuiDataState.MustRecalculate;
+            _curveGuiDataState =  ColorGamut1.CurveDataState.Dirty;
         }
 
         // Only write back values once we are in Play mode
         if (Application.isPlaying)
         {
-            if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
-                _curveGuiDataState == CurveGuiDataState.NotCalculated)
+            if (_curveGuiDataState ==  ColorGamut1.CurveDataState.Dirty ||
+                _curveGuiDataState ==  ColorGamut1.CurveDataState.NotCalculated)
             {
                 // colorGamut.setHDRIIndex(hdriIndex);
                 // colorGamut.setShowSweep(showSweep, hdrPipeline.HDRIList[hdriIndex]);
@@ -288,7 +272,7 @@ public class HDRPipelineEditor : Editor
                 // colorGamut.setBleachingRatioPower(bleachingRatioPower);
                 //
                 // colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
-                _curveGuiDataState = CurveGuiDataState.Calculated;
+                _curveGuiDataState =  ColorGamut1.CurveDataState.Calculated;
             }
         }
 
