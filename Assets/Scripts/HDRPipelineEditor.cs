@@ -4,6 +4,27 @@ using UnityEngine;
 using UnityEditor;
 
 
+public struct CurveParams
+{
+    public bool isBleachingActive;
+    public float exposure;
+    public float slope;
+    public float originX;
+    public float originY;
+    public TransferFunction activeTransferFunction;
+
+    public CurveParams(bool inIsBleachingActive, float inExposure, float inSlope, float inOriginX,
+        float inOriginY, TransferFunction inActiveTransferFunction)
+    {
+        isBleachingActive = inIsBleachingActive;
+        exposure = inExposure;
+        slope = inSlope;
+        originX = inOriginX;
+        originY = inOriginY;
+        activeTransferFunction = inActiveTransferFunction;
+    }
+}
+
 [CustomEditor(typeof(HDRPipeline))]
 public class HDRPipelineEditor : Editor
 {
@@ -28,7 +49,7 @@ public class HDRPipelineEditor : Editor
     private int hdriIndex = 0;
 
     private bool showSweep = false;
-    private bool enableBleaching = true;
+    private bool isBleachingActive = true;
     private bool isMultiThreaded = false;
     private bool showPixelsOutOfGamut = false;
 
@@ -72,7 +93,7 @@ public class HDRPipelineEditor : Editor
     private bool isColorGradingTabOpen = true;
     private ColorGradingHDR1 colorGradingHDR;
     private bool shapeImage = true;
-    private ColorGamut1.CurveDataState _curveGuiDataState = ColorGamut1.CurveDataState.NotCalculated;
+    private ColorGamut1.CurveDataState guiWidgetsState = ColorGamut1.CurveDataState.NotCalculated;
     
     public void OnEnable()
     {
@@ -93,11 +114,12 @@ public class HDRPipelineEditor : Editor
                 }
             }
 
+            activeTransferFunction = colorGamut.ActiveTransferFunction;
             // colorGamut.setInputTexture(hdrPipeline.HDRIList[hdriIndex]);
         }
 
         // Initialise parameters for the curve with sensible values
-        if (_curveGuiDataState ==  ColorGamut1.CurveDataState.NotCalculated)
+        if (guiWidgetsState ==  ColorGamut1.CurveDataState.NotCalculated)
             colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
                 out greyPointY);
         
@@ -145,7 +167,7 @@ public class HDRPipelineEditor : Editor
         if (Application.isPlaying)
         {
             if (debugPoints == null || debugPoints.Count == 0)
-                _curveGuiDataState =  ColorGamut1.CurveDataState.NotCalculated;
+                guiWidgetsState =  ColorGamut1.CurveDataState.NotCalculated;
             
             if (colorGamut == null)
             {
@@ -175,11 +197,11 @@ public class HDRPipelineEditor : Editor
             Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
             Handles.DrawDottedLine(new Vector3(0.0f, 0.5f), new Vector3(0.5f, 0.5f), 4.0f); // Draw vertical line from 0.18f
             
-            if (_curveGuiDataState ==  ColorGamut1.CurveDataState.Dirty ||
-                _curveGuiDataState ==  ColorGamut1.CurveDataState.NotCalculated)
+            if (guiWidgetsState ==  ColorGamut1.CurveDataState.Dirty ||
+                guiWidgetsState ==  ColorGamut1.CurveDataState.NotCalculated)
             {
                 recalculateCurveParameters();
-                _curveGuiDataState =  ColorGamut1.CurveDataState.Calculated;
+                guiWidgetsState =  ColorGamut1.CurveDataState.Calculated;
             }
 
             Handles.DrawPolyLine(debugPoints.ToArray());
@@ -207,7 +229,7 @@ public class HDRPipelineEditor : Editor
             hdriIndex = EditorGUILayout.Popup("HDRI to use", hdriIndex, hdriNames.ToArray());
         }
         showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
-        enableBleaching = EditorGUILayout.Toggle("Enable Bleaching", enableBleaching);
+        isBleachingActive = EditorGUILayout.Toggle("Enable Bleaching", isBleachingActive);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
         showPixelsOutOfGamut = EditorGUILayout.Toggle("Show Pixels Out of Gamut", showPixelsOutOfGamut);
         
@@ -219,63 +241,66 @@ public class HDRPipelineEditor : Editor
         EditorGUILayout.Space();
         // bleachingRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", bleachingRatioPower, 1, 7);
         
-        EditorGUILayout.Space();
-        colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
-            out greyPointY);
         exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
         originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
         originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
         greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
         greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
-        
-        if (GUILayout.Button("Export transfer function to Resolve"))
+        EditorGUILayout.Space();
+
+        if (Application.isPlaying)
         {
-            defaultCubeLutFileName = "CubeLut" + lutDimension.ToString();
-            outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName,"cube" );
-
-            if (string.IsNullOrEmpty(outPathCubeLut))
+            if (GUI.changed)
             {
-                Debug.LogError("File path to save cube Lut file is invalid");
-                return;
+                Debug.Log("GUI Changed");
+                guiWidgetsState =  ColorGamut1.CurveDataState.Dirty;
             }
-
-            colorGamut.exportTransferFunction(outPathCubeLut);
+            
+            if (guiWidgetsState == ColorGamut1.CurveDataState.Dirty && 
+                GUILayout.Button("Generate Image"))
+            {
+                Debug.Log("Generating new image with new parameters");
+                
+                // colorGamut.setHDRIIndex(hdriIndex);
+                // colorGamut.setShowSweep(showSweep, hdrPipeline.HDRIList[hdriIndex]);
+                // colorGamut.setBleaching(isBleachingActive);
+                // colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
+                // colorGamut.setExposure(exposure);
+                // colorGamut.setActiveTransferFunction(activeTransferFunction);
+                
+                CurveParams curveParams = new CurveParams(isBleachingActive, exposure, slope, originPointX, 
+                    originPointY, activeTransferFunction);
+                colorGamut.setCurveParams(curveParams);
+                hdrPipeline.ApplyGamutMap();
+                guiWidgetsState = ColorGamut1.CurveDataState.Calculating;
+            }
         }
-        
+
         isColorGradingTabOpen = EditorGUILayout.InspectorTitlebar(isColorGradingTabOpen, hdrPipeline);
         if (isColorGradingTabOpen)
         {
+            EditorGUILayout.LabelField("Transfer Function Export ");
+
+            if (GUILayout.Button("Export transfer function to Resolve"))
+            {
+                defaultCubeLutFileName = "CubeLut" + lutDimension.ToString();
+                outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName,"cube" );
+
+                if (string.IsNullOrEmpty(outPathCubeLut))
+                {
+                    Debug.LogError("File path to save cube Lut file is invalid");
+                    return;
+                }
+
+                colorGamut.exportTransferFunction(outPathCubeLut);
+            }
+            
             DrawSaveGameCaptureWidgets();
             // DrawGradingLUTWidgets();
             // DrawCubeLUTWidgets();
         }
-
-        if (GUI.changed)
-        {
-            _curveGuiDataState =  ColorGamut1.CurveDataState.Dirty;
-        }
-
-        // Only write back values once we are in Play mode
-        if (Application.isPlaying)
-        {
-            if (_curveGuiDataState ==  ColorGamut1.CurveDataState.Dirty ||
-                _curveGuiDataState ==  ColorGamut1.CurveDataState.NotCalculated)
-            {
-                // colorGamut.setHDRIIndex(hdriIndex);
-                // colorGamut.setShowSweep(showSweep, hdrPipeline.HDRIList[hdriIndex]);
-                // colorGamut.setBleaching(enableBleaching);
-                // colorGamut.setIsMultiThreaded(isMultiThreaded);
-                // colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
-                // colorGamut.setExposure(exposure);
-                // colorGamut.setActiveTransferFunction(activeTransferFunction);
-                // colorGamut.setBleachingRatioPower(bleachingRatioPower);
-                //
-                // colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
-                _curveGuiDataState =  ColorGamut1.CurveDataState.Calculated;
-            }
-        }
-
+        
         base.serializedObject.ApplyModifiedProperties();
     }
     

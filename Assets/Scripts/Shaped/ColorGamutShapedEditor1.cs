@@ -265,7 +265,7 @@ public class ColorGamutShapedEditor : Editor
             {
                 // colorGamut.setHDRIIndex(hdriIndex);
                 // colorGamut.setShowSweep(showSweep);
-                // colorGamut.setBleaching(enableBleaching);
+                // colorGamut.setBleaching(isBleachingActive);
                 // colorGamut.setIsMultiThreaded(isMultiThreaded);
                 // colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
                 // colorGamut.setExposure(exposure);

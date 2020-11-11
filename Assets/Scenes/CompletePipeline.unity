@@ -279,7 +279,7 @@ MonoBehaviour:
     type: 2}
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
   HDRIList:
-  - {fileID: 2800000, guid: 6f4fa7cff76a44224bb110d440e13610, type: 3}
+  - {fileID: 2800000, guid: 819994d73a1e5482ca3d6e59240ed007, type: 3}
   colorGrading3DTextureMat: {fileID: 2100000, guid: 83cef61a096da4d9d86919f05dca8030,
     type: 2}
   log2Shaper: {fileID: 2100000, guid: 7f881f138f00c4f999ca0c898c0c69d3, type: 2}

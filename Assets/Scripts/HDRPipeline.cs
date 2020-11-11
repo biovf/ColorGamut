@@ -58,8 +58,9 @@ public class HDRPipeline : MonoBehaviour
              colorGamut.CurveState == ColorGamut1.CurveDataState.Dirty)
          {
              // Attempt to stop CoRoutine if it hasn't stopped already
-             StopCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
-             StartCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
+             // StopCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
+             // StartCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
+             ApplyGamutMap();
          }
 
          if (colorGamut.CurveState == ColorGamut1.CurveDataState.Calculated)
@@ -71,7 +72,14 @@ public class HDRPipeline : MonoBehaviour
             Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
          }
     }
-    
+
+    public void ApplyGamutMap()
+    {
+        // Attempt to stop CoRoutine if it hasn't stopped already
+        StopCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
+        StartCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
+    }
+
     public ColorGamut1 getColorGamut()
     {
         if(colorGamut == null)
