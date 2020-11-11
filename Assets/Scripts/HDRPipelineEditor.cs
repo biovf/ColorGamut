@@ -9,7 +9,7 @@ public class HDRPipelineEditor : Editor
 {
     HDRPipeline hdrPipeline;
     private ColorGamut1 colorGamut;
-    private float exposure = 1;
+    private float exposure = 0.0f;
     private int bleachingRatioPower = 2;
     private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
 
@@ -25,7 +25,6 @@ public class HDRPipelineEditor : Editor
 
     
     private List<string> hdriNames;
-
     private int hdriIndex = 0;
 
     private bool showSweep = false;
@@ -33,11 +32,9 @@ public class HDRPipelineEditor : Editor
     private bool isMultiThreaded = false;
     private bool showPixelsOutOfGamut = false;
 
-    AnimationCurve animationCurve;
     private Vector2[] controlPoints;
     private CurveTest parametricCurve;
 
-    private List<float> tValues;
     private List<float> xValues;
     private List<float> yValues;
     private List<Vector3> debugPoints = new List<Vector3>();
@@ -108,7 +105,7 @@ public class HDRPipelineEditor : Editor
                 }
             }
 
-            colorGamut.setInputTexture(hdrPipeline.HDRIList[hdriIndex]);
+            // colorGamut.setInputTexture(hdrPipeline.HDRIList[hdriIndex]);
         }
 
         // Initialise parameters for the curve with sensible values
@@ -142,7 +139,6 @@ public class HDRPipelineEditor : Editor
     private void recalculateCurveParameters()
     {
         parametricCurve = colorGamut.getParametricCurve();
-        tValues = colorGamut.getTValues();
         xValues = colorGamut.getXValues();
         yValues = colorGamut.getYValues();
 
@@ -193,14 +189,7 @@ public class HDRPipelineEditor : Editor
 
             xTempValues = colorGamut.getXValues();
             yTempValues = colorGamut.getYValues();
-            // for (int i = 0; i < xTempValues.Count; i++)
-            // {
-            //     Vector3 logPoint = new Vector3(xTempValues[i], yTempValues[i]);
-            //     // Vector3 linearPoint = new Vector3(Shaper.calculateLog2ToLinear(xTempValues[i], colorGamut.GreyPoint.x, colorGamut.MinRadiometricValue, colorGamut.MaxRadiometricValue),0.0f);
-            //     Handles.DrawWireCube(logPoint, cubeWidgetSize);
-            //     // Handles.DrawWireCube( linearPoint, cubeWidgetSize);
-            //     // Handles.DrawDottedLine(linearPoint, logPoint, 1.0f);
-            // }
+       
 
             if (_curveGuiDataState == CurveGuiDataState.MustRecalculate ||
                 _curveGuiDataState == CurveGuiDataState.NotCalculated)
@@ -273,9 +262,9 @@ public class HDRPipelineEditor : Editor
         isColorGradingTabOpen = EditorGUILayout.InspectorTitlebar(isColorGradingTabOpen, hdrPipeline);
         if (isColorGradingTabOpen)
         {
-            DrawSaveExrInspectorProps();
-            DrawTexLutInspectorProps();
-            DrawCubeInspectorProps();
+            DrawSaveGameCaptureWidgets();
+            // DrawGradingLUTWidgets();
+            // DrawCubeLUTWidgets();
         }
 
         if (GUI.changed)
@@ -306,7 +295,7 @@ public class HDRPipelineEditor : Editor
         base.serializedObject.ApplyModifiedProperties();
     }
     
-     private void DrawSaveExrInspectorProps()
+     private void DrawSaveGameCaptureWidgets()
     {
         EditorGUILayout.Space(10.0f);
         EditorGUILayout.LabelField("In-Game Capture ");
@@ -333,7 +322,7 @@ public class HDRPipelineEditor : Editor
         outPathGameCapture = EditorGUILayout.TextField("Save to", outPathGameCapture);
     }
 
-    private void DrawTexLutInspectorProps()
+    private void DrawGradingLUTWidgets()
     {
         EditorGUILayout.Space(10.0f);
         EditorGUILayout.LabelField("Color Grading LUT Texture ");
@@ -385,7 +374,7 @@ public class HDRPipelineEditor : Editor
         }
     }
 
-    private void DrawCubeInspectorProps()
+    private void DrawCubeLUTWidgets()
     {
         EditorGUILayout.Space(10.0f);
         EditorGUILayout.LabelField("Color Grading .cube LUT File");

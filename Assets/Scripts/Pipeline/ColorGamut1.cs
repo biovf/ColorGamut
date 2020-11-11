@@ -160,6 +160,21 @@ public class ColorGamut1
         curveDataState = CurveDataState.NotCalculated;
     }
 
+    public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
+    {
+        List<float> xValues = new List<float>(dimension);
+        
+        float xCoord = 0.0f;
+        for (int i = 0; i < dimension; ++i)
+        {
+            xCoord = minRadiometricValue + (Mathf.Pow((float)i / (float)dimension, 2.0f) * maxRange);
+            xValues.Add(Mathf.Clamp01(xCoord));
+        }
+      
+
+        return xValues;
+    }
+    
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
         if (parametricCurve == null)
@@ -203,25 +218,7 @@ public class ColorGamut1
             Debug.Log("--------------------------------------------------------------------------------");
         }
     }
-
-    public Texture2D getHDRITexture()
-    {
-        return hdriTextureTransformed;
-    }
-
-    // public void OnRenderImage(RenderTexture src, RenderTexture dest)
-    // {
-    //     if (hdriTextureTransformed == null || screenGrab == null || fullScreenTextureMat == null)
-    //     {
-    //         Debug.LogError("Invalid data on ColorGamut1.OnRenderImage()");
-    //         return;
-    //     }
-    //
-    //     // Graphics.Blit(hdriTextureTransformed, screenGrab, fullScreenTextureMat);
-    //     colorGamutMat.SetTexture("_MainTex", hdriTextureTransformed);
-    //     Graphics.Blit(hdriTextureTransformed, dest, fullScreenTextureMat);
-    // }
-
+    
     public IEnumerator ApplyTransferFunction(RenderTexture inputRenderTexture)
     {
         int counter = maxIterationsPerFrame;
@@ -431,19 +428,12 @@ public class ColorGamut1
         // }
     }
     // Utility methods
-    public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
-    {
-        List<float> xValues = new List<float>(dimension);
-        
-        float xCoord = 0.0f;
-        for (int i = 0; i < dimension; ++i)
-        {
-            xCoord = minRadiometricValue + (Mathf.Pow((float)i / (float)dimension, 2.0f) * maxRange);
-            xValues.Add(Mathf.Clamp01(xCoord));
-        }
-      
 
-        return xValues;
+    
+    
+    public Texture2D getHDRITexture()
+    {
+        return hdriTextureTransformed;
     }
 
     // Dimension - size of the look up table being created
@@ -671,263 +661,5 @@ public class ColorGamut1
         // Restorie previously active render texture
         RenderTexture.active = currentActiveRT;
         return tex;
-    }
-}
-
-struct GamutMapJob1 : IJobParallelFor
-{
-    public NativeArray<Color> hdriPixelArray;
-    [ReadOnly] public NativeArray<float> tValues;
-    [ReadOnly] public NativeArray<float> xValues;
-    [ReadOnly] public NativeArray<float> yValues;
-    [ReadOnly] public NativeArray<Vector2> controlPoints;
-
-    [ReadOnly] public float exposure;
-
-    // [ReadOnly] public Vector2 finalKeyframe;
-    [ReadOnly] public bool isBleachingActive;
-    [ReadOnly] public bool showPixelsOutOfGamut;
-
-    [ReadOnly] public int lutLength;
-    [ReadOnly] public int yIndexIntersect;
-    [ReadOnly] public float minRadiometricValue;
-    [ReadOnly] public float maxRadiometricValue;
-
-    private float hdriMaxRGBChannel;
-    private float maxDynamicRange;
-    private float bleachStartPoint;
-    private float bleachingRange;
-    private float bleachingRatio;
-    private float hdriYMaxValue;
-    private float inverseSrgbEOTF;
-
-    private Color ratio;
-    private Color hdriPixelColor;
-    private Color tempResult;
-
-    private Vector3 hdriPixelColorVec;
-    private Vector3 maxDynamicRangeVec;
-
-    private enum ColorRange
-    {
-        InGamut,
-        BelowGamut,
-        AboveGamut
-    };
-
-    private ColorRange colorRange;
-
-    public float calcYfromXQuadratic(float xValue, NativeArray<float> tValues, NativeArray<Vector2> controlPoints)
-    {
-        float yValues = 0.0f;
-        Vector2[] controlPointsArray = new Vector2[]
-        {
-            controlPoints[0], controlPoints[1], controlPoints[2],
-            controlPoints[2], controlPoints[3], controlPoints[4],
-            controlPoints[4], controlPoints[5], controlPoints[6]
-        };
-
-        for (int index = 0; index < tValues.Length; index++)
-        {
-            for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
-            {
-                Vector2 p0 = controlPointsArray[0 + i];
-                Vector2 p1 = controlPointsArray[1 + i];
-                Vector2 p2 = controlPointsArray[2 + i];
-
-                if (p0.x <= xValue && xValue <= p2.x)
-                {
-                    float tValue = tValues[index];
-                    yValues = (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-                              (2.0f * (1.0f - tValue) * tValue * p1.y) +
-                              (Mathf.Pow(tValue, 2.0f) * p2.y);
-
-                    return yValues;
-                }
-            }
-        }
-
-        return yValues;
-    }
-
-    public static float ClosestTo(NativeArray<float> list, float target, out int index)
-    {
-        float closest = float.MaxValue;
-        float minDifference = float.MaxValue;
-        float prevDifference = float.MaxValue;
-        int outIndex = 0;
-        int listSize = list.Length;
-        for (int i = 0; i < listSize; i++)
-        {
-            float difference = Mathf.Abs((float)list[i] - target);
-
-            // Early exit
-            if (prevDifference < difference)
-                break;
-
-            if (minDifference > difference)
-            {
-                minDifference = difference;
-                closest = list[i];
-                outIndex = i;
-            }
-
-            prevDifference = difference;
-        }
-
-        index = outIndex;
-        return closest;
-    }
-
-    public float getXCoordinate(float inputYCoord, NativeArray<float> YCoords, NativeArray<float> tValues,
-        NativeArray<Vector2> controlPoints)
-    {
-        if (YCoords.Length <= 0 || tValues.Length <= 0)
-        {
-            Debug.Log("Input array of y values or t values are invalid ");
-            return -1.0f;
-        }
-
-        Vector2[] controlPointsArray = new Vector2[]
-        {
-            controlPoints[0], controlPoints[1], controlPoints[2],
-            controlPoints[2], controlPoints[3], controlPoints[4],
-            controlPoints[4], controlPoints[5], controlPoints[6]
-        };
-
-        for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
-        {
-            Vector2 p0 = controlPointsArray[0 + i];
-            Vector2 p1 = controlPointsArray[1 + i];
-            Vector2 p2 = controlPointsArray[2 + i];
-
-            if (p0.y <= inputYCoord && inputYCoord <= p2.y)
-            {
-                // Search closest x value to xValue and grab its index in the array too
-                // The array index is used to lookup the tValue
-                int idx = 0;
-                ClosestTo(YCoords, inputYCoord, out idx);
-                float tValue = tValues[idx];
-
-                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.x) +
-                       (2.0f * (1.0f - tValue) * tValue * p1.x) +
-                       (Mathf.Pow(tValue, 2.0f) * p2.x);
-            }
-        }
-
-        return -1.0f;
-    }
-
-    public float getYCoordinate(float inputXCoord, NativeArray<float> xCoords,
-        NativeArray<float> tValues, NativeArray<Vector2> controlPoints)
-    {
-        if (xCoords.Length <= 0 || tValues.Length <= 0)
-        {
-            Debug.Log("Input array of x values or t values have mismatched lengths ");
-            return -1.0f;
-        }
-
-        Vector2[] controlPointsArray = new Vector2[]
-        {
-            controlPoints[0], controlPoints[1], controlPoints[2],
-            controlPoints[2], controlPoints[3], controlPoints[4],
-            controlPoints[4], controlPoints[5], controlPoints[6]
-        };
-
-        for (int i = 0; i < controlPointsArray.Length - 1; i += 3)
-        {
-            Vector2 p0 = controlPointsArray[0 + i];
-            Vector2 p1 = controlPointsArray[1 + i];
-            Vector2 p2 = controlPointsArray[2 + i];
-
-            if (p0.x <= inputXCoord && inputXCoord <= p2.x)
-            {
-                // Search closest x value to xValue and grab its index in the array too
-                // The array index is used to lookup the tValue
-                int idx = 0;
-                ClosestTo(xCoords, inputXCoord, out idx);
-                float tValue = tValues[idx];
-
-                return (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-                       (2.0f * (1.0f - tValue) * tValue * p1.y) +
-                       (Mathf.Pow(tValue, 2.0f) * p2.y);
-            }
-        }
-
-        return -1.0f;
-    }
-
-    public void Execute(int index)
-    {
-        hdriPixelColor = hdriPixelArray[index] * exposure;
-        ratio = Color.black;
-        inverseSrgbEOTF = 1.0f / 2.2f;
-        colorRange = ColorRange.InGamut;
-
-        if (hdriPixelColor.r > maxRadiometricValue || hdriPixelColor.g > maxRadiometricValue ||
-            hdriPixelColor.b > maxRadiometricValue)
-        {
-            hdriPixelColor.r = maxRadiometricValue;
-            hdriPixelColor.g = maxRadiometricValue;
-            hdriPixelColor.b = maxRadiometricValue;
-        }
-
-        // Calculate Pixel max color and ratio
-        hdriMaxRGBChannel = hdriPixelColor.maxColorComponent;
-        ratio = hdriPixelColor / hdriMaxRGBChannel;
-
-        bleachStartPoint = 1.0f;
-
-        if (isBleachingActive)
-        {
-            // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
-            // bleachingXCoord = parametricCurve.getXCoordinate(1.0f, yValues, tValues, new List<Vector2>(controlPoints));
-            float bleachingXCoord =
-                getXCoordinate(1.0f, yValues, tValues, controlPoints);
-
-            if (hdriPixelColor.r > bleachingXCoord || hdriPixelColor.g > bleachingXCoord ||
-                hdriPixelColor.b > bleachingXCoord)
-            {
-                bleachingRange = maxRadiometricValue - bleachingXCoord;
-                bleachingRatio = (hdriPixelColor.maxColorComponent - bleachingXCoord) /
-                                 bleachingRange;
-
-                hdriPixelColorVec.Set(hdriPixelColor.r, hdriPixelColor.g, hdriPixelColor.b);
-                maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
-                hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
-                    bleachingRatio);
-
-                hdriPixelColor.r = hdriPixelColorVec.x;
-                hdriPixelColor.g = hdriPixelColorVec.y;
-                hdriPixelColor.b = hdriPixelColorVec.z;
-
-                ratio = hdriPixelColor / hdriMaxRGBChannel;
-            }
-        }
-
-        // Get Y curve value
-        float yValue = getYCoordinate(hdriMaxRGBChannel, xValues, tValues,
-            controlPoints);
-        hdriYMaxValue = Mathf.Min(yValue, 1.0f);
-        hdriPixelColor = hdriYMaxValue * ratio;
-
-        if (showPixelsOutOfGamut)
-        {
-            if (yValue < 0.0f || hdriMaxRGBChannel < minRadiometricValue) // Below Gamut
-            {
-                hdriPixelColor = Color.red;
-            }
-            else if (yValue > 1.0f) // Above gamut
-            {
-                hdriPixelColor = Color.green;
-            }
-        }
-
-        tempResult.r = Mathf.Pow(hdriPixelColor.r, inverseSrgbEOTF);
-        tempResult.g = Mathf.Pow(hdriPixelColor.g, inverseSrgbEOTF);
-        tempResult.b = Mathf.Pow(hdriPixelColor.b, inverseSrgbEOTF);
-        tempResult.a = 1.0f;
-
-        hdriPixelArray[index] = tempResult;
     }
 }

@@ -165,14 +165,6 @@ public class ColorGamutShapedEditor : Editor
             Vector2 p4 = controlPoints[4];
             Vector2 p5 = controlPoints[5];
             Vector2 p6 = controlPoints[6];
-            
-            Vector2 p0Linear = controlPointsLinear[0];
-            Vector2 p1Linear = controlPointsLinear[1];
-            Vector2 p2Linear = controlPointsLinear[2];
-            Vector2 p3Linear = controlPointsLinear[3];
-            Vector2 p4Linear = controlPointsLinear[4];
-            Vector2 p5Linear = controlPointsLinear[5];
-            Vector2 p6Linear = controlPointsLinear[6];
 
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(colorGamut.MaxRadiometricValue, 0.0f)); // Draw X Axis
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f)); // Draw Y axis
