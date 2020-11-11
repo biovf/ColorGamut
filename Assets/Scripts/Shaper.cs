@@ -3,8 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class Shaper 
+public static class Shaper
 {
+    public static float inverseSrgbEOTF(float inputValue) 
+    {
+       return  (inputValue <= 0.0031308) ? inputValue * 12.92f : 1.055f * Mathf.Pow(inputValue, 1.0f / 2.4f) - 0.055f;
+    }
+
+    public static float inverseEOTFsRGBCommodity(float inputValue) 
+    {
+        return Mathf.Pow(inputValue, 1.0f / 2.2f);
+    }
+
 // # Convert scene referred linear value to normalised log value.
     public static float calculateLinearToLog2(float linearRadValue, float midGreyX, float minExposureValue, float maxExposureValue)
     {

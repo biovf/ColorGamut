@@ -51,15 +51,16 @@ public class CurveTest
 
     }
 
+    
+
     public Vector2[] createControlPoints(Vector2 originCoord, Vector2 greyPoint, float slope)
     {
         //minRadiometricValue = Shaper.calculateLinearToLog2(originCoord.x, greyPoint.x, minExposureValue, maxExposureValue);
-        localGreyPoint = new Vector2(Shaper.calculateLinearToLog2(greyPoint.x,greyPoint.x, minExposureValue, maxExposureValue), 
-            Mathf.Pow(greyPoint.y, 1.0f / 2.2f)); 
-        
-        // minDisplayValue = Mathf.Pow(originCoord.y, 1.0f/2.2f);
-        // maxDisplayValue = Mathf.Pow(maxDisplayValue, 1.0f / 2.2f);
-        float toeP2YCoord = Mathf.Pow(0.085f, 1.0f / 2.2f);
+        localGreyPoint = new Vector2(Shaper.calculateLinearToLog2(greyPoint.x, greyPoint.x, minExposureValue, maxExposureValue),
+            Shaper.inverseEOTFsRGBCommodity(greyPoint.y));//Mathf.Pow(greyPoint.y, 1.0f / 2.2f)); 
+        //float toeP2YCoord = Mathf.Pow(0.085f, 1.0f / 2.2f);
+        float toeP2YCoord = Shaper.inverseEOTFsRGBCommodity(0.085f);//Mathf.Pow(0.085f, 1.0f / 2.2f);
+
 
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve

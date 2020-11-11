@@ -378,9 +378,13 @@ public class ColorGamut1
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
             }
 
-            hdriPixelArray[i].r = Mathf.Pow(hdriPixelColor.r, 1.0f / 2.2f);
-            hdriPixelArray[i].g = Mathf.Pow(hdriPixelColor.g, 1.0f / 2.2f);
-            hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, 1.0f / 2.2f);
+            //hdriPixelArray[i].r = Mathf.Pow(hdriPixelColor.r, 1.0f / 2.2f);
+            //hdriPixelArray[i].g = Mathf.Pow(hdriPixelColor.g, 1.0f / 2.2f);
+            //hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, 1.0f / 2.2f);
+
+            hdriPixelArray[i].r = Shaper.inverseEOTFsRGBCommodity(hdriPixelColor.r);
+            hdriPixelArray[i].g = Shaper.inverseEOTFsRGBCommodity(hdriPixelColor.g);
+            hdriPixelArray[i].b = Shaper.inverseEOTFsRGBCommodity(hdriPixelColor.b);
             hdriPixelArray[i].a = 1.0f;
         }
 
