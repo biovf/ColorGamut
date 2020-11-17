@@ -22,10 +22,12 @@ public class ColorGamut1
 
     private float exposure;
 
+    public float Exposure => exposure;
+
     private Texture2D inputTexture;
 
     private bool isSweepActive;
-    private bool isBleachingActive;
+    private bool isGamutCompressionActive;
     private bool isMultiThreaded = false;
     private bool showPixelsOutOfGamut = false;
 
@@ -89,7 +91,7 @@ public class ColorGamut1
     public int CurveLutLength => curveLutLength;
     private int curveLutLength;
 
-    private int bleachingRatioPower;
+    private int gamutCompressionRatioPower;
 
     private enum ColorRange
     {
@@ -124,10 +126,10 @@ public class ColorGamut1
         activeTransferFunction = TransferFunction.Max_RGB;
 
         hdriIndex = 0;
-        bleachingRatioPower = 2;
+        gamutCompressionRatioPower = 2;
         exposure = 0.0f;
 
-        isBleachingActive = true;
+        isGamutCompressionActive = true;
         isSweepActive = false;
 
         // Parametric curve
@@ -231,12 +233,11 @@ public class ColorGamut1
         int hdriPixelArrayLen = 0;
 
         float logHdriMaxRGBChannel = 0.0f;
-        float bleachingXCoordLinear = 0.0f;
-        float bleachingRange = 0.0f;
+        float gamutCompressionXCoordLinear = 0.0f;
+        float gamutCompressionRange = 0.0f;
 
-        float bleachingRatio = 0.0f;
+        float gamutCompressionRatio = 0.0f;
         float hdriYMaxValue = 0.0f;
-        float inverseSrgbEOTF = (1.0f / 2.2f);
         float rawMaxPixelValue = 0.0f;
 
         Color ratio = Color.black;
@@ -326,30 +327,30 @@ public class ColorGamut1
                     linearHdriPixelColor.b = maxRadiometricValue;
                 }
 
-                bleachingXCoordLinear = 0.0f; // Intersect of x on Y = 1
-                if (isBleachingActive)
+                gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
+                if (isGamutCompressionActive)
                 {
-                    // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
-                    bleachingXCoordLinear = Shaper.calculateLog2ToLinear(
+                    // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
+                    gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(
                         parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray),
                         greyPoint.x, minExposureValue, maxExposureValue);
 
-                    if (linearHdriPixelColor.r > bleachingXCoordLinear ||
-                        linearHdriPixelColor.g > bleachingXCoordLinear ||
-                        linearHdriPixelColor.b > bleachingXCoordLinear)
+                    if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
+                        linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
+                        linearHdriPixelColor.b > gamutCompressionXCoordLinear)
                     {
-                        bleachingRange = maxRadiometricValue - bleachingXCoordLinear;
-                        bleachingRatio = (linearHdriPixelColor.maxColorComponent - bleachingXCoordLinear) /
-                                         bleachingRange;
+                        gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
+                        gamutCompressionRatio = (linearHdriPixelColor.maxColorComponent - gamutCompressionXCoordLinear) /
+                                         gamutCompressionRange;
 
                         hdriPixelColorVec.Set(linearHdriPixelColor.r, linearHdriPixelColor.g,
                             linearHdriPixelColor.b);
                         maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
                             maxRadiometricValue);
                         hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
-                            Mathf.SmoothStep(0.0f, 1.0f, bleachingRatio)
+                            Mathf.SmoothStep(0.0f, 1.0f, gamutCompressionRatio)
                             /*bleachingRatio / (bleachingRatio + 1.0f));*/
-                            /*Mathf.Pow(bleachingRatio, (float)bleachingRatioPower)*/);
+                            /*Mathf.Pow(bleachingRatio, (float)gamutCompressionRatioPower)*/);
 
                         linearHdriPixelColor.r = hdriPixelColorVec.x;
                         linearHdriPixelColor.g = hdriPixelColorVec.y;
@@ -362,7 +363,7 @@ public class ColorGamut1
                 // Get Y value from curve using the array version 
                 float yValue = parametricCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel,
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-                yValue = Mathf.Pow(yValue, 2.2f);
+                yValue = Shaper.sRgbEotfSimpleGamma(yValue);
 
                 hdriYMaxValue = Mathf.Min(yValue, 1.0f);
                 ratio.a = 1.0f;
@@ -378,13 +379,9 @@ public class ColorGamut1
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
             }
 
-            //hdriPixelArray[i].r = Mathf.Pow(hdriPixelColor.r, 1.0f / 2.2f);
-            //hdriPixelArray[i].g = Mathf.Pow(hdriPixelColor.g, 1.0f / 2.2f);
-            //hdriPixelArray[i].b = Mathf.Pow(hdriPixelColor.b, 1.0f / 2.2f);
-
-            hdriPixelArray[i].r = Shaper.inverseEOTFsRGBCommodity(hdriPixelColor.r);
-            hdriPixelArray[i].g = Shaper.inverseEOTFsRGBCommodity(hdriPixelColor.g);
-            hdriPixelArray[i].b = Shaper.inverseEOTFsRGBCommodity(hdriPixelColor.b);
+            hdriPixelArray[i].r = Shaper.inverseSrgbEotfSimpleGamma(hdriPixelColor.r);
+            hdriPixelArray[i].g = Shaper.inverseSrgbEotfSimpleGamma(hdriPixelColor.g);
+            hdriPixelArray[i].b = Shaper.inverseSrgbEotfSimpleGamma(hdriPixelColor.b);
             hdriPixelArray[i].a = 1.0f;
         }
 
@@ -410,21 +407,14 @@ public class ColorGamut1
         Vector3 minDisplayValueVec = Vector3.zero; //new Vector3(minDisplayValue, minDisplayValue, minDisplayValue);
         Vector3 maxDisplayValueVec = Vector3.one; //new Vector3(maxDisplayValue, maxDisplayValue, maxDisplayValue);
 
-        List<float>
-            yValuesTmp =
-                yValues; //parametricCurveTmp.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
-
-        // @TODO - implement the actual sRGB spec calculation
+        List<float> yValuesTmp = yValues; 
         float[] yValuesEOTF = new float[yValuesTmp.Count];
         int i = 0;
         for (i = 0; i < yValuesTmp.Count; i++)
         {
             if (yValuesTmp[i] >= 1.0f)
                 break;
-
-            //yValuesEOTF[i] = Mathf.Pow(yValueLinear, (1.0f / 2.2f));
-            // Log2 to Linear encoded + 1/2.2
-
+            
             yValuesEOTF[i] = yValuesTmp[i];
         }
 
@@ -662,9 +652,9 @@ public class ColorGamut1
     //     SetCurveDataState(CurveDataState.Dirty);
     // }
 
-    public void setBleaching(bool inIsBleachingActive)
+    public void setGamutCompression(bool inIsGamutCompressionActive)
     {
-        isBleachingActive = inIsBleachingActive;
+        isGamutCompressionActive = inIsGamutCompressionActive;
         SetCurveDataState(CurveDataState.Dirty);
     }
 
@@ -680,15 +670,15 @@ public class ColorGamut1
         SetCurveDataState(CurveDataState.Dirty);
     }
 
-    public void setBleachingRatioPower(int ratioPower)
+    public void setGamutCompressionRatioPower(int ratioPower)
     {
-        this.bleachingRatioPower = ratioPower;
+        this.gamutCompressionRatioPower = ratioPower;
         SetCurveDataState(CurveDataState.Dirty);
     }
 
     public void setCurveParams(CurveParams curveParams)
     {
-        isBleachingActive = curveParams.isBleachingActive;
+        isGamutCompressionActive = curveParams.isGamutCompressionActive;
         exposure = curveParams.exposure;
         slope = curveParams.slope;
         origin.x = curveParams.originX;

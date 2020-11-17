@@ -6,17 +6,17 @@ using UnityEditor;
 
 public struct CurveParams
 {
-    public bool isBleachingActive;
+    public bool isGamutCompressionActive;
     public float exposure;
     public float slope;
     public float originX;
     public float originY;
     public TransferFunction activeTransferFunction;
 
-    public CurveParams(bool inIsBleachingActive, float inExposure, float inSlope, float inOriginX,
+    public CurveParams(bool inIsGamutCompressionActive, float inExposure, float inSlope, float inOriginX,
         float inOriginY, TransferFunction inActiveTransferFunction)
     {
-        isBleachingActive = inIsBleachingActive;
+        isGamutCompressionActive = inIsGamutCompressionActive;
         exposure = inExposure;
         slope = inSlope;
         originX = inOriginX;
@@ -31,7 +31,7 @@ public class HDRPipelineEditor : Editor
     HDRPipeline hdrPipeline;
     private ColorGamut1 colorGamut;
     private float exposure = 0.0f;
-    private int bleachingRatioPower = 2;
+    private int gamutCompressionRatioPower = 2;
     private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
 
     #region Parametric Curve Parameters
@@ -49,7 +49,7 @@ public class HDRPipelineEditor : Editor
     private int hdriIndex = 0;
 
     private bool showSweep = false;
-    private bool isBleachingActive = true;
+    private bool isGamutCompressionActive = true;
     private bool isMultiThreaded = false;
     private bool showPixelsOutOfGamut = false;
 
@@ -229,7 +229,7 @@ public class HDRPipelineEditor : Editor
             hdriIndex = EditorGUILayout.Popup("HDRI to use", hdriIndex, hdriNames.ToArray());
         }
         showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
-        isBleachingActive = EditorGUILayout.Toggle("Enable Bleaching", isBleachingActive);
+        isGamutCompressionActive = EditorGUILayout.Toggle("Enable Gamut Compression", isGamutCompressionActive);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
         showPixelsOutOfGamut = EditorGUILayout.Toggle("Show Pixels Out of Gamut", showPixelsOutOfGamut);
         
@@ -239,7 +239,7 @@ public class HDRPipelineEditor : Editor
         activeTransferFunction =
             (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
         EditorGUILayout.Space();
-        // bleachingRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", bleachingRatioPower, 1, 7);
+        // gamutCompressionRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", gamutCompressionRatioPower, 1, 7);
         
         exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
@@ -264,12 +264,12 @@ public class HDRPipelineEditor : Editor
                 
                 // colorGamut.setHDRIIndex(hdriIndex);
                 // colorGamut.setShowSweep(showSweep, hdrPipeline.HDRIList[hdriIndex]);
-                // colorGamut.setBleaching(isBleachingActive);
+                // colorGamut.setBleaching(isGamutCompressionActive);
                 // colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
                 // colorGamut.setExposure(exposure);
                 // colorGamut.setActiveTransferFunction(activeTransferFunction);
                 
-                CurveParams curveParams = new CurveParams(isBleachingActive, exposure, slope, originPointX, 
+                CurveParams curveParams = new CurveParams(isGamutCompressionActive, exposure, slope, originPointX, 
                     originPointY, activeTransferFunction);
                 colorGamut.setCurveParams(curveParams);
                 hdrPipeline.ApplyGamutMap();

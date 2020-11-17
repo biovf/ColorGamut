@@ -265,12 +265,12 @@ public class ColorGamutShapedEditor : Editor
             {
                 // colorGamut.setHDRIIndex(hdriIndex);
                 // colorGamut.setShowSweep(showSweep);
-                // colorGamut.setBleaching(isBleachingActive);
+                // colorGamut.setBleaching(isGamutCompressionActive);
                 // colorGamut.setIsMultiThreaded(isMultiThreaded);
                 // colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
                 // colorGamut.setExposure(exposure);
                 // colorGamut.setActiveTransferFunction(activeTransferFunction);
-                // colorGamut.setBleachingRatioPower(bleachingRatioPower);
+                // colorGamut.setGamutCompressionRatioPower(bleachingRatioPower);
 
                 //              colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);
                 _curveGuiDataState = CurveGuiDataState.Calculated;
