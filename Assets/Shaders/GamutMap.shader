@@ -126,6 +126,42 @@
                 return closest;
             }
 
+            float ClosestTo(float inputArray[1024], float target, out int arrayIndex)
+            {
+                float closest = 999999.0f;
+                float minDifference = 999999.0f;
+                float prevDifference = 999999.0f;
+
+                int outIndex = 0;
+                for (int i = 0; i < inputArraySize; i++)
+                {
+                    float currentDifference = abs((float)inputArray[i] - target);
+
+                    // Early exit because the array is always ordered from smallest to largest
+                    if (prevDifference < currentDifference)
+                        break;
+
+                    if (minDifference > currentDifference)
+                    {
+                        minDifference = currentDifference;
+                        closest = inputArray[i];
+                        outIndex = i;
+                    }
+
+                    prevDifference = currentDifference;
+                }
+
+                arrayIndex = outIndex;
+                return closest;
+            }
+
+            float getXCoordinate(float inputYCoord, float xCoords[1024], float YCoords[1024], float tValues[1024])
+            {
+                int idx = 0;
+                ClosestTo(YCoords, inputYCoord, idx);
+                return xCoords[idx];
+            }
+
 
             half getYCoordinateLogXInput(float inputXCoord)
             {
@@ -195,6 +231,32 @@
                     linearHdriPixelColor.g = maxRadiometricValue;
                     linearHdriPixelColor.b = maxRadiometricValue;
                 }
+
+                float gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
+
+                // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
+                gamutCompressionXCoordLinear = calculateLog2ToLinear(
+                    getXCoordinate(1.0f, xCoords, yCoords, tValues), greyPoint.x, minExposure, maxExposure);
+
+                if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
+                    linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
+                    linearHdriPixelColor.b > gamutCompressionXCoordLinear)
+                {
+                    half gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
+                    half gamutCompressionRatio = (max(linearHdriPixelColor.r,
+                                                      max(linearHdriPixelColor.g, linearHdriPixelColor.b)) -
+                            gamutCompressionXCoordLinear) /
+                        gamutCompressionRange;
+
+
+                    half3 maxDynamicRangeVec = half3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
+                    linearHdriPixelColor = lerp(linearHdriPixelColor, maxDynamicRangeVec,
+                                                smoothstep(0.0f, 1.0f, gamutCompressionRatio));
+
+                    ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+                }
+
+
                 half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
                 yValue = sRgbEotfSimpleGamma(yValue);
 

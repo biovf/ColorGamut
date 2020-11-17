@@ -73,7 +73,7 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - inputArraySize: 1024
+    - inputArraySize: 1023
     - maxExposure: 6
     - maxRadiometricValue: 11.52
     - minExposure: -6
