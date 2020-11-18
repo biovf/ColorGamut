@@ -727,7 +727,7 @@ public class ColorGamut : MonoBehaviour
     public void setActiveTransferFunction(TransferFunction transferFunction)
     {
         this.activeTransferFunction = transferFunction;
-        ChangeCurveDataState(CurveDataState.MustRecalculate);
+        // ChangeCurveDataState(CurveDataState.MustRecalculate);
     }
 
     public void setBleachingRatioPower(int ratioPower)

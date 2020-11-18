@@ -675,13 +675,13 @@ public class ColorGamut1
     public void setExposure(float exposure)
     {
         this.exposure = exposure;
-        SetCurveDataState(CurveDataState.Dirty);
+        // SetCurveDataState(CurveDataState.Dirty);
     }
 
     public void setActiveTransferFunction(TransferFunction transferFunction)
     {
         this.activeTransferFunction = transferFunction;
-        SetCurveDataState(CurveDataState.Dirty);
+        // SetCurveDataState(CurveDataState.Dirty);
     }
 
     public void setGamutCompressionRatioPower(int ratioPower)

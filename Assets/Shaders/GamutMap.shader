@@ -3,7 +3,7 @@
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
-        Exposure ("Exposure Value(EV)", Float) = 0.0
+        exposure ("Exposure Value(EV)", Float) = 0.0
         greyPoint ("Middle Grey Value(XY)", Vector) = (0.18, 0.18, 0.0, 0.0)
         minExposure ("Minimum Exposure Value(EV)", Float) = -6.0
         maxExposure ("Maximum Exposure Value(EV)", Float) = 6.0
@@ -228,9 +228,9 @@
             float4 gamutMap(half4 inColor)
             {
                 half4 hdriPixelColor = half4(0.0, 0.0, 0.0, 1.0);
-                half4 colorExposed = inColor * pow(2.0f, exposure);
+                half4 colorExposed = inColor * pow(2.0, exposure);
                 // Shape image
-                half3 log2HdriPixelArray;
+                half3 log2HdriPixelArray = half3(0.0, 0.0, 0.0);
                 log2HdriPixelArray.r = calculateLinearToLog2(max(0.0f, colorExposed.r), greyPoint.x, minExposure,
                                                              maxExposure);
                 log2HdriPixelArray.g = calculateLinearToLog2(max(0.0f, colorExposed.g), greyPoint.x, minExposure,

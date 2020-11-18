@@ -76,7 +76,7 @@ public class HDRPipeline : MonoBehaviour
          {
              activeTransferFunction = (colorGamut.ActiveTransferFunction == TransferFunction.Max_RGB) ? 0 : 1;
              gamutMap.SetTexture("_MainTex", hdriRenderTexture);
-             gamutMap.SetFloat("Exposure", colorGamut.Exposure);
+             gamutMap.SetFloat("exposure", colorGamut.Exposure);
              gamutMap.SetVector("greyPoint", new Vector4(colorGamut.GreyPoint.x,colorGamut.GreyPoint.y, 0.0f));
              gamutMap.SetFloat("minExposure", colorGamut.MINExposureValue);
              gamutMap.SetFloat("maxExposure", colorGamut.MAXExposureValue);

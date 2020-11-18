@@ -124,7 +124,7 @@ public class HDRPipelineEditor : Editor
             activeTransferFunction = colorGamut.ActiveTransferFunction;
             // colorGamut.setInputTexture(hdrPipeline.HDRIList[hdriIndex]);
         }
-
+        
         // Initialise parameters for the curve with sensible values
         if (guiWidgetsState ==  ColorGamut1.CurveDataState.NotCalculated)
             colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
@@ -141,6 +141,7 @@ public class HDRPipelineEditor : Editor
                                  (useDisplayP3 == true ? "DisplayP3" : "sRGB") +
                                  "MaxRange" + maxRadiometricValue.ToString();
         
+        hdrPipeline.CPUMode = enableCPUMode;
     }
 
     public void OnDisable()
@@ -264,15 +265,11 @@ public class HDRPipelineEditor : Editor
                 GUILayout.Button("Generate Image"))
             {
                 Debug.Log("Generating new image with new parameters");
-                
-                // colorGamut.setHDRIIndex(hdriIndex);
-                // colorGamut.setShowSweep(showSweep, hdrPipeline.HDRIList[hdriIndex]);
-                // colorGamut.setBleaching(isGamutCompressionActive);
-                // colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
-                // colorGamut.setExposure(exposure);
-                // colorGamut.setActiveTransferFunction(activeTransferFunction);
-
                 RecalculateImageInCpuMode();
+            } else if (enableCPUMode == false)
+            {
+                colorGamut.setActiveTransferFunction(activeTransferFunction);
+                colorGamut.setExposure(exposure);
             }
         }
 
