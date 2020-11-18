@@ -193,7 +193,7 @@ public class ColorGamut1
         yValues =
             parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
 
-        exportDualColumnDataToCSV(xValues.ToArray(), yValues.ToArray(), "CurveAxisData.csv");
+        // exportDualColumnDataToCSV(xValues.ToArray(), yValues.ToArray(), "CurveAxisData.csv");
     }
 
     public void Update()
@@ -255,7 +255,7 @@ public class ColorGamut1
         Texture2D textureToProcess = toTexture2D(inputRenderTexture);
 
         hdriPixelArray = textureToProcess.GetPixels();
-        File.WriteAllBytes("PreTransferFunctionImage.exr", textureToProcess.EncodeToEXR());
+        // File.WriteAllBytes("PreTransferFunctionImage.exr", textureToProcess.EncodeToEXR());
 
         hdriPixelArrayLen = hdriPixelArray.Length;
         int quarterSize = hdriPixelArrayLen / 4;
@@ -327,37 +327,9 @@ public class ColorGamut1
                     linearHdriPixelColor.b = maxRadiometricValue;
                 }
 
-                gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
                 if (isGamutCompressionActive)
                 {
-                    // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-                    gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(
-                        parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray),
-                        greyPoint.x, minExposureValue, maxExposureValue);
-
-                    if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
-                        linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
-                        linearHdriPixelColor.b > gamutCompressionXCoordLinear)
-                    {
-                        gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
-                        gamutCompressionRatio = (linearHdriPixelColor.maxColorComponent - gamutCompressionXCoordLinear) /
-                                         gamutCompressionRange;
-
-                        hdriPixelColorVec.Set(linearHdriPixelColor.r, linearHdriPixelColor.g,
-                            linearHdriPixelColor.b);
-                        maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
-                            maxRadiometricValue);
-                        hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
-                            Mathf.SmoothStep(0.0f, 1.0f, gamutCompressionRatio)
-                            /*bleachingRatio / (bleachingRatio + 1.0f));*/
-                            /*Mathf.Pow(bleachingRatio, (float)gamutCompressionRatioPower)*/);
-
-                        linearHdriPixelColor.r = hdriPixelColorVec.x;
-                        linearHdriPixelColor.g = hdriPixelColorVec.y;
-                        linearHdriPixelColor.b = hdriPixelColorVec.z;
-
-                        ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
-                    }
+                    ratio = calculateGamutCompression(xCoordsArray, yCoordsArray, tValuesArray, linearHdriPixelColor, ref hdriPixelColorVec, maxDynamicRangeVec, linearHdriMaxRGBChannel, ratio);
                 }
 
                 // Get Y value from curve using the array version 
@@ -395,10 +367,52 @@ public class ColorGamut1
         hdriTextureTransformed.Apply();
 
         // Write texture to disk
-        File.WriteAllBytes("PostTransferFunctionImage.exr", hdriTextureTransformed.EncodeToEXR());
+        // File.WriteAllBytes("PostTransferFunctionImage.exr", hdriTextureTransformed.EncodeToEXR());
         curveDataState = CurveDataState.Calculated;
         mainCamera.clearFlags = CameraClearFlags.Nothing;
         Debug.Log("Image Processing has finished");
+    }
+
+    private Color calculateGamutCompression(float[] xCoordsArray, float[] yCoordsArray, float[] tValuesArray,
+        Color linearHdriPixelColor, ref Vector3 hdriPixelColorVec, Vector3 maxDynamicRangeVec,
+        float linearHdriMaxRGBChannel, Color inRatio)
+    {
+        float gamutCompressionXCoordLinear;
+        float gamutCompressionRange;
+        float gamutCompressionRatio;
+        Color ratio = inRatio;
+        gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
+
+        // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
+        gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(
+            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray),
+            greyPoint.x, minExposureValue, maxExposureValue);
+
+        if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
+            linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
+            linearHdriPixelColor.b > gamutCompressionXCoordLinear)
+        {
+            gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
+            gamutCompressionRatio = (linearHdriPixelColor.maxColorComponent - gamutCompressionXCoordLinear) /
+                                    gamutCompressionRange;
+
+            hdriPixelColorVec.Set(linearHdriPixelColor.r, linearHdriPixelColor.g,
+                linearHdriPixelColor.b);
+            maxDynamicRangeVec.Set(maxRadiometricValue, maxRadiometricValue,
+                maxRadiometricValue);
+            hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
+                Mathf.SmoothStep(0.0f, 1.0f, gamutCompressionRatio)
+                /*bleachingRatio / (bleachingRatio + 1.0f));*/
+                /*Mathf.Pow(bleachingRatio, (float)gamutCompressionRatioPower)*/);
+
+            linearHdriPixelColor.r = hdriPixelColorVec.x;
+            linearHdriPixelColor.g = hdriPixelColorVec.y;
+            linearHdriPixelColor.b = hdriPixelColorVec.z;
+
+            ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+        }
+
+        return ratio;
     }
 
     public void exportTransferFunction(string fileName)

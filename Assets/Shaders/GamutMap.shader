@@ -9,6 +9,7 @@
         maxExposure ("Maximum Exposure Value(EV)", Float) = 6.0
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
         inputArraySize ("Number of curve array elements", Int) = 1024
+        usePerChannel ("Use per channel gamut mapping", Int) = 0
     }
     SubShader
     {
@@ -44,6 +45,7 @@
             half maxExposure;
             half maxRadiometricValue;
             int inputArraySize;
+            int usePerChannel;
             float xCoords[1024];
             float yCoords[1024];
             float tValues[1024];
@@ -162,6 +164,34 @@
                 return xCoords[idx];
             }
 
+            half3 calculateGamutCompression(half3 linearHdriPixelColor, half3 ratio, half linearHdriMaxRGBChannel)
+            {
+                half3 newRatio = ratio;
+                  float gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
+
+                    // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
+                    gamutCompressionXCoordLinear = calculateLog2ToLinear(
+                        getXCoordinate(1.0f, xCoords, yCoords, tValues), greyPoint.x, minExposure, maxExposure);
+
+                    if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
+                        linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
+                        linearHdriPixelColor.b > gamutCompressionXCoordLinear)
+                    {
+                        half gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
+                        half gamutCompressionRatio = (max(linearHdriPixelColor.r,
+                                                          max(linearHdriPixelColor.g, linearHdriPixelColor.b)) -
+                                gamutCompressionXCoordLinear) /
+                            gamutCompressionRange;
+
+
+                        half3 maxDynamicRangeVec = half3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
+                        linearHdriPixelColor = lerp(linearHdriPixelColor, maxDynamicRangeVec,
+                                                    smoothstep(0.0f, 1.0f, gamutCompressionRatio));
+
+                        newRatio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+                    }
+                return newRatio;
+            }
 
             half getYCoordinateLogXInput(float inputXCoord)
             {
@@ -215,54 +245,40 @@
                     calculateLog2ToLinear(log2HdriPixelArray.g, greyPoint.x, minExposure, maxExposure),
                     calculateLog2ToLinear(log2HdriPixelArray.b, greyPoint.x, minExposure, maxExposure));
 
-                // Retrieve the maximum RGB value but in linear space
-                half linearHdriMaxRGBChannel = calculateLog2ToLinear(logHdriMaxRGBChannel, greyPoint.x,
-                                                                     minExposure, maxExposure);
-                // Calculate the ratio in linear space
-                half3 ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
-                half rawMaxPixelValue = linearHdriMaxRGBChannel;
-
-                // Secondary Nuance Grade, guardrails
-                if (linearHdriPixelColor.r > maxRadiometricValue ||
-                    linearHdriPixelColor.g > maxRadiometricValue ||
-                    linearHdriPixelColor.b > maxRadiometricValue)
+                if(usePerChannel == 0)
                 {
-                    linearHdriPixelColor.r = maxRadiometricValue;
-                    linearHdriPixelColor.g = maxRadiometricValue;
-                    linearHdriPixelColor.b = maxRadiometricValue;
+                    // Retrieve the maximum RGB value but in linear space
+                    half linearHdriMaxRGBChannel = calculateLog2ToLinear(logHdriMaxRGBChannel, greyPoint.x,
+                                                                         minExposure, maxExposure);
+                    // Calculate the ratio in linear space
+                    half3 ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+                    half rawMaxPixelValue = linearHdriMaxRGBChannel;
+
+                    // Secondary Nuance Grade, guardrails
+                    if (linearHdriPixelColor.r > maxRadiometricValue ||
+                        linearHdriPixelColor.g > maxRadiometricValue ||
+                        linearHdriPixelColor.b > maxRadiometricValue)
+                    {
+                        linearHdriPixelColor.r = maxRadiometricValue;
+                        linearHdriPixelColor.g = maxRadiometricValue;
+                        linearHdriPixelColor.b = maxRadiometricValue;
+                    }
+
+                    ratio = calculateGamutCompression(linearHdriPixelColor, ratio, linearHdriMaxRGBChannel);
+                    
+                    half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
+                    yValue = sRgbEotfSimpleGamma(yValue);
+
+                    half hdriYMaxValue = min(yValue, 1.0f);
+                    hdriPixelColor.rgb = hdriYMaxValue * ratio;
                 }
-
-                float gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
-
-                // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-                gamutCompressionXCoordLinear = calculateLog2ToLinear(
-                    getXCoordinate(1.0f, xCoords, yCoords, tValues), greyPoint.x, minExposure, maxExposure);
-
-                if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
-                    linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
-                    linearHdriPixelColor.b > gamutCompressionXCoordLinear)
+                else
                 {
-                    half gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
-                    half gamutCompressionRatio = (max(linearHdriPixelColor.r,
-                                                      max(linearHdriPixelColor.g, linearHdriPixelColor.b)) -
-                            gamutCompressionXCoordLinear) /
-                        gamutCompressionRange;
-
-
-                    half3 maxDynamicRangeVec = half3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
-                    linearHdriPixelColor = lerp(linearHdriPixelColor, maxDynamicRangeVec,
-                                                smoothstep(0.0f, 1.0f, gamutCompressionRatio));
-
-                    ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
-                }
-
-
-                half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
-                yValue = sRgbEotfSimpleGamma(yValue);
-
-                half hdriYMaxValue = min(yValue, 1.0f);
-                hdriPixelColor.rgb = hdriYMaxValue * ratio;
-
+                    hdriPixelColor.r = getYCoordinateLogXInput(log2HdriPixelArray.r);
+                    hdriPixelColor.g = getYCoordinateLogXInput(log2HdriPixelArray.g);
+                    hdriPixelColor.b = getYCoordinateLogXInput(log2HdriPixelArray.b);
+                } 
+                
                 hdriPixelColor.r = inverseSrgbEotfSimpleGamma(hdriPixelColor.r);
                 hdriPixelColor.g = inverseSrgbEotfSimpleGamma(hdriPixelColor.g);
                 hdriPixelColor.b = inverseSrgbEotfSimpleGamma(hdriPixelColor.b);

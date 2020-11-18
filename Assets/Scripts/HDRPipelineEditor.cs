@@ -13,15 +13,16 @@ public struct CurveParams
     public float originY;
     public TransferFunction activeTransferFunction;
 
-    public CurveParams(bool inIsGamutCompressionActive, float inExposure, float inSlope, float inOriginX,
-        float inOriginY, TransferFunction inActiveTransferFunction)
+    public CurveParams(float inExposure, float inSlope, float inOriginX,
+        float inOriginY, TransferFunction inActiveTransferFunction, bool inIsGamutCompressionActive)
     {
-        isGamutCompressionActive = inIsGamutCompressionActive;
         exposure = inExposure;
         slope = inSlope;
         originX = inOriginX;
         originY = inOriginY;
         activeTransferFunction = inActiveTransferFunction;
+        isGamutCompressionActive = inIsGamutCompressionActive;
+
     }
 }
 
@@ -94,6 +95,12 @@ public class HDRPipelineEditor : Editor
     private ColorGradingHDR1 colorGradingHDR;
     private bool shapeImage = true;
     private ColorGamut1.CurveDataState guiWidgetsState = ColorGamut1.CurveDataState.NotCalculated;
+    
+    #region DebugOptions
+    private bool enableCPUMode = true;
+    private bool saveGamutMapDebugImages = false;
+    #endregion
+    
     
     public void OnEnable()
     {
@@ -228,11 +235,7 @@ public class HDRPipelineEditor : Editor
         {
             hdriIndex = EditorGUILayout.Popup("HDRI to use", hdriIndex, hdriNames.ToArray());
         }
-        showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
-        isGamutCompressionActive = EditorGUILayout.Toggle("Enable Gamut Compression", isGamutCompressionActive);
-        isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
-        showPixelsOutOfGamut = EditorGUILayout.Toggle("Show Pixels Out of Gamut", showPixelsOutOfGamut);
-        
+
         EditorGUILayout.Space();
         EditorGUILayout.Space();
 
@@ -268,46 +271,81 @@ public class HDRPipelineEditor : Editor
                 // colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
                 // colorGamut.setExposure(exposure);
                 // colorGamut.setActiveTransferFunction(activeTransferFunction);
-                
-                CurveParams curveParams = new CurveParams(isGamutCompressionActive, exposure, slope, originPointX, 
-                    originPointY, activeTransferFunction);
-                colorGamut.setCurveParams(curveParams);
-                hdrPipeline.ApplyGamutMap();
-                guiWidgetsState = ColorGamut1.CurveDataState.Calculating;
+
+                RecalculateImageInCpuMode();
             }
         }
 
-        isColorGradingTabOpen = EditorGUILayout.InspectorTitlebar(isColorGradingTabOpen, hdrPipeline);
-        if (isColorGradingTabOpen)
+        
+        EditorGUILayout.LabelField("Transfer Function Export ");
+        if (GUILayout.Button("Export transfer function to Resolve"))
         {
-            EditorGUILayout.LabelField("Transfer Function Export ");
+            defaultCubeLutFileName = "CubeLut" + lutDimension.ToString();
+            outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName,"cube" );
 
-            if (GUILayout.Button("Export transfer function to Resolve"))
+            if (string.IsNullOrEmpty(outPathCubeLut))
             {
-                defaultCubeLutFileName = "CubeLut" + lutDimension.ToString();
-                outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName,"cube" );
-
-                if (string.IsNullOrEmpty(outPathCubeLut))
-                {
-                    Debug.LogError("File path to save cube Lut file is invalid");
-                    return;
-                }
-
-                colorGamut.exportTransferFunction(outPathCubeLut);
+                Debug.LogError("File path to save cube Lut file is invalid");
+                return;
             }
-            
-            DrawSaveGameCaptureWidgets();
-            // DrawGradingLUTWidgets();
-            // DrawCubeLUTWidgets();
+
+            colorGamut.exportTransferFunction(outPathCubeLut);
         }
         
+        DrawSaveGameCaptureWidgets();
+        // DrawGradingLUTWidgets();
+        // DrawCubeLUTWidgets();
+        
+        EditorGUILayout.Separator();
+        EditorGUILayout.LabelField("Debug Options");
+        EditorGUILayout.Space();
+
+        DrawDebugOptionsWidgets();
+
         base.serializedObject.ApplyModifiedProperties();
     }
-    
-     private void DrawSaveGameCaptureWidgets()
+
+    private void RecalculateImageinGPUMode()
+    {
+    }
+
+    private void RecalculateImageInCpuMode()
+    {
+        CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
+            originPointY, activeTransferFunction, isGamutCompressionActive);
+        colorGamut.setCurveParams(curveParams);
+        hdrPipeline.ApplyGamutMap();
+        guiWidgetsState = ColorGamut1.CurveDataState.Calculating;
+    }
+
+    private void DrawDebugOptionsWidgets()
+    {
+        showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
+        isGamutCompressionActive = EditorGUILayout.Toggle("Enable Gamut Compression", isGamutCompressionActive);
+        isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
+        showPixelsOutOfGamut = EditorGUILayout.Toggle("Show Pixels Out of Gamut", showPixelsOutOfGamut);
+        // @TODO Needs to be properly rewritten
+        // if (EditorGUILayout.Toggle("Enable CPU mode", enableCPUMode))
+        // {
+        //     enableCPUMode = true;
+        //     if (enableCPUMode != hdrPipeline.CPUMode)
+        //     {
+        //         RecalculateImageInCpuMode();
+        //     }
+        //     hdrPipeline.CPUMode = enableCPUMode;
+        // }
+        // else
+        // {
+        //     enableCPUMode = false;
+        // }
+
+        // saveGamutMapDebugImages = EditorGUILayout.Toggle("Save gamut mapping debug images to disk", saveGamutMapDebugImages);
+    }
+
+    private void DrawSaveGameCaptureWidgets()
     {
         EditorGUILayout.Space(10.0f);
-        EditorGUILayout.LabelField("In-Game Capture ");
+        EditorGUILayout.LabelField("Export of In-Game Capture ");
         
         shapeImage = EditorGUILayout.Toggle("Apply Shaper to exported capture", shapeImage);
 
