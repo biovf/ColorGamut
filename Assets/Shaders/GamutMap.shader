@@ -48,7 +48,6 @@
             int usePerChannel;
             float xCoords[1024];
             float yCoords[1024];
-            float tValues[1024];
 
             v2f vert(appdata v)
             {
@@ -157,7 +156,7 @@
                 return closest;
             }
 
-            float getXCoordinate(float inputYCoord, float xCoords[1024], float YCoords[1024], float tValues[1024])
+            float getXCoordinate(float inputYCoord, float xCoords[1024], float YCoords[1024])
             {
                 int idx = 0;
                 ClosestTo(YCoords, inputYCoord, idx);
@@ -171,7 +170,7 @@
 
                     // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
                     gamutCompressionXCoordLinear = calculateLog2ToLinear(
-                        getXCoordinate(1.0f, xCoords, yCoords, tValues), greyPoint.x, minExposure, maxExposure);
+                        getXCoordinate(1.0f, xCoords, yCoords), greyPoint.x, minExposure, maxExposure);
 
                     if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
                         linearHdriPixelColor.g > gamutCompressionXCoordLinear ||

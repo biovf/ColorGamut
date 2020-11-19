@@ -83,9 +83,9 @@ public class HDRPipeline : MonoBehaviour
     public void drawGamutCurveWidget()
     {
         var oldRt = RenderTexture.active;
-        curveMaterial.SetFloat("scaleFactor", scaleFactor);
-        curveMaterial.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
-        curveMaterial.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
+        //curveMaterial.SetFloat("scaleFactor", scaleFactor);
+        //curveMaterial.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
+        //curveMaterial.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
         Vector2[] controlPoints = colorGamut.getControlPoints();
         Vector4[] controlPointsVec4 = new Vector4[7];
         for (int i = 0; i < controlPoints.Length; i++)
@@ -122,7 +122,6 @@ public class HDRPipeline : MonoBehaviour
              gamutMap.SetInt("usePerChannel", activeTransferFunction);
              gamutMap.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
              gamutMap.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
-             gamutMap.SetFloatArray("tValues", colorGamut.getTValues().ToArray());
              
              Graphics.Blit(hdriRenderTexture, gamutMapRT, gamutMap);
                  

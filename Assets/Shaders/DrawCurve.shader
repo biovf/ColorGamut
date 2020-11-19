@@ -2,7 +2,7 @@
 {
     Properties
     {
-        scaleFactor("Curve Scale", Float) = 1.0
+        //scaleFactor("Curve Scale", Float) = 1.0
     }
     SubShader
     {
@@ -37,10 +37,10 @@
                 return o;
             }
 
-            float xCoords[1024];
-            float yCoords[1024];
+ /*           float xCoords[1024];
+            float yCoords[1024];*/
             float4 controlPoints[7];
-            float scaleFactor;
+            //float scaleFactor;
 
             float det(half2 a, half2 b)
             {
