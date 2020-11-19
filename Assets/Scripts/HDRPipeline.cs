@@ -32,6 +32,18 @@ public class HDRPipeline : MonoBehaviour
         get => useCpuMode;
         set => useCpuMode = value;
     }
+    
+    // Curve widget member variables
+    private Material curveMaterial;
+    private RenderTexture curveRT;
+    public RenderTexture CurveRT => curveRT;
+    private float scaleFactor = 1.0f;
+
+    public float ScaleFactor
+    {
+        get => scaleFactor;
+        set => scaleFactor = value;
+    }
 
     void Start()
     {
@@ -43,6 +55,11 @@ public class HDRPipeline : MonoBehaviour
             RenderTextureReadWrite.Linear);
         initialiseColorGamut();
         initialiseColorGrading();
+        
+        curveRT = new RenderTexture(512, 512, 0, RenderTextureFormat.ARGB32);
+        curveMaterial = new Material(Shader.Find("Custom/DrawCurve"));
+
+        
     }
 
     private void initialiseColorGamut()
@@ -63,8 +80,28 @@ public class HDRPipeline : MonoBehaviour
         colorGamut.Update();
     }
 
+    public void drawGamutCurveWidget()
+    {
+        var oldRt = RenderTexture.active;
+        curveMaterial.SetFloat("scaleFactor", scaleFactor);
+        curveMaterial.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
+        curveMaterial.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
+        Vector2[] controlPoints = colorGamut.getControlPoints();
+        Vector4[] controlPointsVec4 = new Vector4[7];
+        for (int i = 0; i < controlPoints.Length; i++)
+        {
+            controlPointsVec4[i] = new Vector4(controlPoints[i].x, controlPoints[i].y);
+        }
+        curveMaterial.SetVectorArray("controlPoints", controlPointsVec4);
+        Graphics.Blit(null, curveRT, curveMaterial);
+        RenderTexture.active = oldRt;
+    }
+
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
+
+        drawGamutCurveWidget();
+        
          Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
         
          if (useCpuMode && (colorGamut.CurveState == ColorGamut1.CurveDataState.NotCalculated ||

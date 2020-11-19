@@ -97,11 +97,15 @@ public class HDRPipelineEditor : Editor
     private ColorGamut1.CurveDataState guiWidgetsState = ColorGamut1.CurveDataState.NotCalculated;
     
     #region DebugOptions
-    private bool enableCPUMode = true;
+    private bool enableCPUMode = false;
     private bool saveGamutMapDebugImages = false;
     #endregion
-    
-    
+
+    private Material curveMaterial;
+    private RenderTexture curveRT;
+    private Rect curveRect;
+    private float scaleFactor = 1.0f; 
+
     public void OnEnable()
     {
         hdrPipeline = (HDRPipeline) target;
@@ -142,11 +146,17 @@ public class HDRPipelineEditor : Editor
                                  "MaxRange" + maxRadiometricValue.ToString();
         
         hdrPipeline.CPUMode = enableCPUMode;
+        curveMaterial = new Material(Shader.Find("Custom/DrawCurve"));
+
     }
 
     public void OnDisable()
     {
-        // Debug.Log("OnDisable being invoked");
+        DestroyImmediate(curveMaterial);
+        curveMaterial = null;
+
+        DestroyImmediate(curveRT);
+        curveRT = null;    
     }
 
     private void OnValidate()
@@ -292,6 +302,8 @@ public class HDRPipelineEditor : Editor
         DrawSaveGameCaptureWidgets();
         // DrawGradingLUTWidgets();
         // DrawCubeLUTWidgets();
+
+        DrawGamutMapCurveWidget();
         
         EditorGUILayout.Separator();
         EditorGUILayout.LabelField("Debug Options");
@@ -302,9 +314,20 @@ public class HDRPipelineEditor : Editor
         base.serializedObject.ApplyModifiedProperties();
     }
 
-    private void RecalculateImageinGPUMode()
+    private void DrawGamutMapCurveWidget()
     {
+        hdrPipeline.ScaleFactor = EditorGUILayout.Slider("Curve Scale Factor", hdrPipeline.ScaleFactor, 0.0f, 10.0f);
+        curveRect = GUILayoutUtility.GetRect(128, 256);
+
+        if (hdrPipeline.CurveRT != null && hdrPipeline.CurveRT.IsCreated() && 
+            colorGamut != null && colorGamut.getXValues() != null && colorGamut.getYValues() != null)
+        {
+            GUI.DrawTexture(curveRect, hdrPipeline.CurveRT);
+        }
+        
+        Handles.DrawSolidRectangleWithOutline(curveRect, Color.clear, Color.white * 0.4f);
     }
+    
 
     private void RecalculateImageInCpuMode()
     {
