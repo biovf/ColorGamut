@@ -11,16 +11,16 @@ public struct CurveParams
     public float slope;
     public float originX;
     public float originY;
-    public TransferFunction activeTransferFunction;
+    public GamutMappingMode ActiveGamutMappingMode;
 
     public CurveParams(float inExposure, float inSlope, float inOriginX,
-        float inOriginY, TransferFunction inActiveTransferFunction, bool inIsGamutCompressionActive)
+        float inOriginY, GamutMappingMode inActiveGamutMappingMode, bool inIsGamutCompressionActive)
     {
         exposure = inExposure;
         slope = inSlope;
         originX = inOriginX;
         originY = inOriginY;
-        activeTransferFunction = inActiveTransferFunction;
+        ActiveGamutMappingMode = inActiveGamutMappingMode;
         isGamutCompressionActive = inIsGamutCompressionActive;
 
     }
@@ -33,7 +33,7 @@ public class HDRPipelineEditor : Editor
     private ColorGamut1 colorGamut;
     private float exposure = 0.0f;
     private int gamutCompressionRatioPower = 2;
-    private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
+    private GamutMappingMode _activeGamutMappingMode = GamutMappingMode.Max_RGB;
 
     #region Parametric Curve Parameters
 
@@ -121,7 +121,7 @@ public class HDRPipelineEditor : Editor
                 }
             }
 
-            activeTransferFunction = colorGamut.ActiveTransferFunction;
+            _activeGamutMappingMode = colorGamut.ActiveGamutMappingMode;
             // colorGamut.setInputTexture(hdrPipeline.HDRIList[hdriIndex]);
         }
         
@@ -240,8 +240,8 @@ public class HDRPipelineEditor : Editor
         EditorGUILayout.Space();
         EditorGUILayout.Space();
 
-        activeTransferFunction =
-            (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
+        _activeGamutMappingMode =
+            (GamutMappingMode) EditorGUILayout.EnumPopup("Active Transfer Function", _activeGamutMappingMode);
         EditorGUILayout.Space();
         // gamutCompressionRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", gamutCompressionRatioPower, 1, 7);
         
@@ -268,7 +268,7 @@ public class HDRPipelineEditor : Editor
                 RecalculateImageInCpuMode();
             } else if (enableCPUMode == false)
             {
-                colorGamut.setActiveTransferFunction(activeTransferFunction);
+                colorGamut.setActiveTransferFunction(_activeGamutMappingMode);
                 colorGamut.setExposure(exposure);
             }
         }
@@ -309,7 +309,7 @@ public class HDRPipelineEditor : Editor
     private void RecalculateImageInCpuMode()
     {
         CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
-            originPointY, activeTransferFunction, isGamutCompressionActive);
+            originPointY, _activeGamutMappingMode, isGamutCompressionActive);
         colorGamut.setCurveParams(curveParams);
         hdrPipeline.ApplyGamutMap();
         guiWidgetsState = ColorGamut1.CurveDataState.Calculating;

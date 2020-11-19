@@ -13,7 +13,7 @@ public class ColorGamutEditor : Editor
 
     private float exposure = 1;
     private int bleachingRatioPower = 2;
-    private TransferFunction activeTransferFunction = TransferFunction.Max_RGB;
+    private GamutMappingMode _activeGamutMappingMode = GamutMappingMode.Max_RGB;
 
     #region Parametric Curve Parameters
 
@@ -219,8 +219,8 @@ public class ColorGamutEditor : Editor
             hdriIndex = EditorGUILayout.Popup("HDRI to use", hdriIndex, hdriNames.ToArray());
         }
 
-        activeTransferFunction =
-            (TransferFunction) EditorGUILayout.EnumPopup("Active Transfer Function", activeTransferFunction);
+        _activeGamutMappingMode =
+            (GamutMappingMode) EditorGUILayout.EnumPopup("Active Transfer Function", _activeGamutMappingMode);
         EditorGUILayout.Space();
         exposure = EditorGUILayout.Slider("Exposure", exposure, -6.0f, 6.0f);
         bleachingRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", bleachingRatioPower, 1, 7);
@@ -265,7 +265,7 @@ public class ColorGamutEditor : Editor
                 colorGamut.setIsMultiThreaded(isMultiThreaded);
                 colorGamut.setShowOutOfGamutPixels(showPixelsOutOfGamut);
                 colorGamut.setExposure(exposure);
-                colorGamut.setActiveTransferFunction(activeTransferFunction);
+                colorGamut.setActiveTransferFunction(_activeGamutMappingMode);
                 colorGamut.setBleachingRatioPower(bleachingRatioPower);
 
                 colorGamut.setParametricCurveValues(slope, originPointX, originPointY, greyPointX, greyPointY);

@@ -12,11 +12,7 @@ using Unity.Jobs;
 using UnityEngine.Assertions.Comparers;
 using Debug = UnityEngine.Debug;
 
-public enum TransferFunction
-{
-    Per_Channel,
-    Max_RGB
-}
+
 
 [ExecuteInEditMode]
 public class ColorGamut : MonoBehaviour
@@ -27,7 +23,7 @@ public class ColorGamut : MonoBehaviour
     public Texture2D sweepTexture;
     public List<Texture2D> HDRIList;
     
-    private TransferFunction activeTransferFunction;
+    private GamutMappingMode _activeGamutMappingMode;
     private float exposure;
 
     private Texture2D inputTexture;
@@ -114,7 +110,7 @@ public class ColorGamut : MonoBehaviour
 
     private void Awake()
     {
-        activeTransferFunction = TransferFunction.Max_RGB;
+        _activeGamutMappingMode = GamutMappingMode.Max_RGB;
     }
 
     void Start()
@@ -364,7 +360,7 @@ public class ColorGamut : MonoBehaviour
                         ratio = hdriPixelColor / hdriMaxRGBChannel;
 
                         // Transfer function
-                        if (activeTransferFunction == TransferFunction.Max_RGB)
+                        if (_activeGamutMappingMode == GamutMappingMode.Max_RGB)
                         {
                             bleachingXCoord = 0.0f; // Intersect of x on Y = 1
 
@@ -429,11 +425,11 @@ public class ColorGamut : MonoBehaviour
                                 }
                             }
 
-                            activeTransferFunction = TransferFunction.Max_RGB;
+                            _activeGamutMappingMode = GamutMappingMode.Max_RGB;
                         }
                         else
                         {
-                            activeTransferFunction = TransferFunction.Per_Channel;
+                            _activeGamutMappingMode = GamutMappingMode.Per_Channel;
 
                             hdriPixelColor.r = parametricCurve.getYCoordinate(hdriPixelColor.r, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
                             hdriPixelColor.g = parametricCurve.getYCoordinate(hdriPixelColor.g, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
@@ -724,9 +720,9 @@ public class ColorGamut : MonoBehaviour
         ChangeCurveDataState(CurveDataState.MustRecalculate);
     }
 
-    public void setActiveTransferFunction(TransferFunction transferFunction)
+    public void setActiveTransferFunction(GamutMappingMode gamutMappingMode)
     {
-        this.activeTransferFunction = transferFunction;
+        this._activeGamutMappingMode = gamutMappingMode;
         // ChangeCurveDataState(CurveDataState.MustRecalculate);
     }
 

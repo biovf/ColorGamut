@@ -8,6 +8,12 @@ using Unity.Collections;
 using Unity.Jobs;
 using Debug = UnityEngine.Debug;
 
+public enum GamutMappingMode
+{
+    Per_Channel,
+    Max_RGB
+}
+
 public class ColorGamut1
 {
     public Material colorGamutMat;
@@ -16,9 +22,9 @@ public class ColorGamut1
     public Texture2D sweepTexture;
     public List<Texture2D> HDRIList;
 
-    private TransferFunction activeTransferFunction;
+    private GamutMappingMode _activeGamutMappingMode;
 
-    public TransferFunction ActiveTransferFunction => activeTransferFunction;
+    public GamutMappingMode ActiveGamutMappingMode => _activeGamutMappingMode;
 
     private float exposure;
 
@@ -109,6 +115,8 @@ public class ColorGamut1
         Calculating,
         Calculated
     };
+    
+ 
 
     private CurveDataState curveDataState = CurveDataState.NotCalculated;
     public CurveDataState CurveState => curveDataState;
@@ -123,7 +131,7 @@ public class ColorGamut1
 
     public void Start(HDRPipeline pipeline)
     {
-        activeTransferFunction = TransferFunction.Max_RGB;
+        _activeGamutMappingMode = GamutMappingMode.Max_RGB;
 
         hdriIndex = 0;
         gamutCompressionRatioPower = 2;
@@ -308,7 +316,7 @@ public class ColorGamut1
                     maxExposureValue));
 
 
-            if (activeTransferFunction == TransferFunction.Max_RGB)
+            if (_activeGamutMappingMode == GamutMappingMode.Max_RGB)
             {
                 // Retrieve the maximum RGB value but in linear space
                 float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, greyPoint.x,
@@ -335,7 +343,7 @@ public class ColorGamut1
                 // Get Y value from curve using the array version 
                 float yValue = parametricCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel,
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-                yValue = Shaper.sRgbEotfSimpleGamma(yValue);
+                yValue = TransferFunction.ApplyTransferFunction(yValue, TransferFunction.TransferFunctionType.sRGB);
 
                 hdriYMaxValue = Mathf.Min(yValue, 1.0f);
                 ratio.a = 1.0f;
@@ -351,9 +359,9 @@ public class ColorGamut1
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
             }
 
-            hdriPixelArray[i].r = Shaper.inverseSrgbEotfSimpleGamma(hdriPixelColor.r);
-            hdriPixelArray[i].g = Shaper.inverseSrgbEotfSimpleGamma(hdriPixelColor.g);
-            hdriPixelArray[i].b = Shaper.inverseSrgbEotfSimpleGamma(hdriPixelColor.b);
+            hdriPixelArray[i].r = TransferFunction.ApplyInverseTransferFunction(hdriPixelColor.r, TransferFunction.TransferFunctionType.sRGB);
+            hdriPixelArray[i].g = TransferFunction.ApplyInverseTransferFunction(hdriPixelColor.g, TransferFunction.TransferFunctionType.sRGB);
+            hdriPixelArray[i].b = TransferFunction.ApplyInverseTransferFunction(hdriPixelColor.b, TransferFunction.TransferFunctionType.sRGB);
             hdriPixelArray[i].a = 1.0f;
         }
 
@@ -678,9 +686,9 @@ public class ColorGamut1
         // SetCurveDataState(CurveDataState.Dirty);
     }
 
-    public void setActiveTransferFunction(TransferFunction transferFunction)
+    public void setActiveTransferFunction(GamutMappingMode gamutMappingMode)
     {
-        this.activeTransferFunction = transferFunction;
+        this._activeGamutMappingMode = gamutMappingMode;
         // SetCurveDataState(CurveDataState.Dirty);
     }
 
@@ -697,7 +705,7 @@ public class ColorGamut1
         slope = curveParams.slope;
         origin.x = curveParams.originX;
         origin.y = curveParams.originY;
-        activeTransferFunction = curveParams.activeTransferFunction;
+        _activeGamutMappingMode = curveParams.ActiveGamutMappingMode;
         createParametricCurve(greyPoint, origin);
     }
 

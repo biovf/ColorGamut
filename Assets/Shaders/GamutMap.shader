@@ -78,12 +78,12 @@
                 return pow(2.0f, logNormalisedValue) * midGreyX;
             }
 
-            float inverseSrgbEotfSimpleGamma(float inputValue)
+            float inverseSrgbEOTF(float inputValue)
             {
                 return pow(inputValue, 1.0f / 2.2f);
             }
 
-            float sRgbEotfSimpleGamma(float inputValue)
+            float srgbEOTF(float inputValue)
             {
                 return pow(inputValue, 2.2f);
             }
@@ -267,7 +267,7 @@
                     ratio = calculateGamutCompression(linearHdriPixelColor, ratio, linearHdriMaxRGBChannel);
                     
                     half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
-                    yValue = sRgbEotfSimpleGamma(yValue);
+                    yValue = srgbEOTF(yValue);
 
                     half hdriYMaxValue = min(yValue, 1.0f);
                     hdriPixelColor.rgb = hdriYMaxValue * ratio;
@@ -279,9 +279,9 @@
                     hdriPixelColor.b = getYCoordinateLogXInput(log2HdriPixelArray.b);
                 } 
                 
-                hdriPixelColor.r = inverseSrgbEotfSimpleGamma(hdriPixelColor.r);
-                hdriPixelColor.g = inverseSrgbEotfSimpleGamma(hdriPixelColor.g);
-                hdriPixelColor.b = inverseSrgbEotfSimpleGamma(hdriPixelColor.b);
+                hdriPixelColor.r = inverseSrgbEOTF(hdriPixelColor.r);
+                hdriPixelColor.g = inverseSrgbEOTF(hdriPixelColor.g);
+                hdriPixelColor.b = inverseSrgbEOTF(hdriPixelColor.b);
                 hdriPixelColor.a = 1.0f;
 
                 return hdriPixelColor;

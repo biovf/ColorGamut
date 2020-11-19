@@ -24,7 +24,7 @@ public class HDRPipeline : MonoBehaviour
     private RenderTexture hdriRenderTexture;
     private RenderTexture gamutMapRT;
     
-    private bool useCpuMode = false;
+    private bool useCpuMode = true;
     private int activeTransferFunction = 0;
 
     public bool CPUMode
@@ -74,7 +74,7 @@ public class HDRPipeline : MonoBehaviour
          }
          else if(!useCpuMode)
          {
-             activeTransferFunction = (colorGamut.ActiveTransferFunction == TransferFunction.Max_RGB) ? 0 : 1;
+             activeTransferFunction = (colorGamut.ActiveGamutMappingMode == GamutMappingMode.Max_RGB) ? 0 : 1;
              gamutMap.SetTexture("_MainTex", hdriRenderTexture);
              gamutMap.SetFloat("exposure", colorGamut.Exposure);
              gamutMap.SetVector("greyPoint", new Vector4(colorGamut.GreyPoint.x,colorGamut.GreyPoint.y, 0.0f));

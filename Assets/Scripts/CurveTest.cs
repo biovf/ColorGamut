@@ -54,8 +54,9 @@ public class CurveTest
     {
         //minRadiometricValue = Shaper.calculateLinearToLog2(originCoord.x, greyPoint.x, minExposureValue, maxExposureValue);
         middleGrey = new Vector2(Shaper.calculateLinearToLog2(greyPoint.x, greyPoint.x, minExposureValue, maxExposureValue),
-            Shaper.inverseSrgbEotfSimpleGamma(greyPoint.y));
-        float toeP2YCoord = Shaper.inverseSrgbEotfSimpleGamma(0.085f);
+            // Shaper.inverseSrgbEotfSimpleGamma(greyPoint.y));
+            TransferFunction.ApplyInverseTransferFunction(greyPoint.y, TransferFunction.TransferFunctionType.sRGB));
+        float toeP2YCoord = TransferFunction.ApplyInverseTransferFunction(0.085f, TransferFunction.TransferFunctionType.sRGB);
 
 
         Vector2[] controlPoints = new Vector2[7];
