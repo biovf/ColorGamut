@@ -175,16 +175,23 @@ public class ColorGamut1
         curveDataState = CurveDataState.NotCalculated;
     }
 
-    public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
+    public List<float> initialiseXCoordsInRange(int dimension, float maxRadiometricValue)
     {
         List<float> xValues = new List<float>(dimension);
 
         float xCoord = 0.0f;
         for (int i = 0; i < dimension; ++i)
         {
-            xCoord = minRadiometricValue + (Mathf.Pow((float) i / (float) dimension, 2.0f) * maxRange);
+            xCoord = minRadiometricValue + (Mathf.Pow((float) i / (float) dimension, 2.0f) * maxRadiometricValue);
+            // float floatIndex = (Mathf.Sqrt((xCoord - minRadiometricValue)/maxRadiometricValue) * (float)dimension);
+            // int testIndex = (floatIndex);
+            // int roundIndex = Mathf.RoundToInt(floatIndex);
+            // int floorIndex = Mathf.FloorToInt(floatIndex);
+
             xValues.Add(Mathf.Clamp01(xCoord));
         }
+
+        int index = Mathf.RoundToInt(Mathf.Sqrt((1.0f - minRadiometricValue)/maxRadiometricValue) * (float)dimension);
 
 
         return xValues;
@@ -393,7 +400,7 @@ public class ColorGamut1
 
         // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
         gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(
-            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray),
+            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints),
             greyPoint.x, minExposureValue, maxExposureValue);
 
         if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
@@ -489,8 +496,8 @@ public class ColorGamut1
     }
 
     // Dimension - size of the look up table being created
-    // maxRange - maximum radiometric value we are using
-    // public List<float> initialiseXCoordsInRange(int dimension, float maxRange)
+    // maxRadiometricValue - maximum radiometric value we are using
+    // public List<float> initialiseXCoordsInRange(int dimension, float maxRadiometricValue)
     // {
     //     List<float> xValues = new List<float>(dimension);
     //
@@ -498,8 +505,8 @@ public class ColorGamut1
     //     int halfDimensionInt = dimension / 2;
     //     // calculate the step used from our minimum radiometric until our mid grey point
     //     float stepPreMidGrey = (greyPoint.x - minRadiometricValue) / halfDimensionFlt;
-    //     // calculate the step necessary for the second half of the values, from mid grey point until maxRange
-    //     float stepPostMidGrey = (maxRange - greyPoint.x) / (halfDimensionFlt - 1.0f);
+    //     // calculate the step necessary for the second half of the values, from mid grey point until maxRadiometricValue
+    //     float stepPostMidGrey = (maxRadiometricValue - greyPoint.x) / (halfDimensionFlt - 1.0f);
     //     float xCoord = 0.0f;
     //     
     //     for (int i = 0; i <= halfDimensionInt; ++i)
@@ -509,7 +516,7 @@ public class ColorGamut1
     //         if (xCoord < MinRadiometricValue)
     //             continue;
     //
-    //         if (Mathf.Approximately(xCoord, maxRange))
+    //         if (Mathf.Approximately(xCoord, maxRadiometricValue))
     //             break;
     //
     //         xValues.Add(Shaper.calculateLinearToLog2(xCoord));

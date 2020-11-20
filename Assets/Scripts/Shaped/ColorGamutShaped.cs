@@ -414,7 +414,7 @@ public class ColorGamutShaped : MonoBehaviour
                             {
                                 // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
                                 bleachingXCoordLinear = Shaper.calculateLog2ToLinear(
-                                        parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray),
+                                        parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints),
                                         greyPoint.x, minExposureValue, maxExposureValue);
 
                                 if (linearHdriPixelColor.r > bleachingXCoordLinear ||
@@ -464,8 +464,7 @@ public class ColorGamutShaped : MonoBehaviour
                                     if (Mathf.Approximately(bleachingXCoordLinear, 0.0f))
                                     {
                                         bleachingXCoordLinear =
-                                            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray,
-                                                tValuesArray);
+                                            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
                                         hdriPixelColor = rawMaxPixelValue > bleachingXCoordLinear
                                             ? Color.blue
                                             : hdriPixelColor;

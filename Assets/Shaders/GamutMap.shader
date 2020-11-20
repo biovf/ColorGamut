@@ -194,7 +194,6 @@
 
             half getYCoordinateLogXInput(float inputXCoord)
             {
-                // Shape the input x coord in radiometric
                 float logInputXCoord = inputXCoord;
 
                 int idx = 0;

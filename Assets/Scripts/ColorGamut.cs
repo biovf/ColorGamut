@@ -368,7 +368,7 @@ public class ColorGamut : MonoBehaviour
                             {
                                 // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
                                 bleachingXCoord =
-                                    parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray);
+                                    parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
 
                                 if (hdriPixelColor.r > bleachingXCoord || hdriPixelColor.g > bleachingXCoord ||
                                     hdriPixelColor.b > bleachingXCoord)
@@ -413,7 +413,7 @@ public class ColorGamut : MonoBehaviour
                                     if (Mathf.Approximately(bleachingXCoord, 0.0f))
                                     {
                                         bleachingXCoord =
-                                            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray);
+                                            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
                                         hdriPixelColor = rawMaxPixelValue > bleachingXCoord
                                             ? Color.blue
                                             : hdriPixelColor;

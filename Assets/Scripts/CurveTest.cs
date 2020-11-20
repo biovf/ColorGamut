@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using MathNet.Numerics;
 using UnityEngine;
@@ -40,35 +41,39 @@ public class CurveTest
     private float minDisplayValue;
 
     private Vector2 middleGrey;
-    
+
     public CurveTest(float minExposureValue, float maxExposureValue, float maxRadiometricValue, float maxDisplayValue)
     {
         this.minExposureValue = minExposureValue;
         this.maxExposureValue = maxExposureValue;
         this.maxRadiometricValue = maxRadiometricValue;
         this.maxDisplayValue = maxDisplayValue;
-
     }
-    
+
     public Vector2[] createControlPoints(Vector2 originCoord, Vector2 greyPoint, float slope)
     {
+        minRadiometricValue = originCoord.x;
+        minDisplayValue = originCoord.y;
         //minRadiometricValue = Shaper.calculateLinearToLog2(originCoord.x, greyPoint.x, minExposureValue, maxExposureValue);
-        middleGrey = new Vector2(Shaper.calculateLinearToLog2(greyPoint.x, greyPoint.x, minExposureValue, maxExposureValue),
+        middleGrey = new Vector2(
+            Shaper.calculateLinearToLog2(greyPoint.x, greyPoint.x, minExposureValue, maxExposureValue),
             // Shaper.inverseSrgbEotfSimpleGamma(greyPoint.y));
             TransferFunction.ApplyInverseTransferFunction(greyPoint.y, TransferFunction.TransferFunctionType.sRGB));
-        float toeP2YCoord = TransferFunction.ApplyInverseTransferFunction(0.085f, TransferFunction.TransferFunctionType.sRGB);
+        float toeP2YCoord =
+            TransferFunction.ApplyInverseTransferFunction(0.085f, TransferFunction.TransferFunctionType.sRGB);
 
 
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
         // We will design our curve from 3 separate Bezier curves: toe, middle linear section, shoulder
-        Vector2 toeP0Coords = new Vector2(minRadiometricValue, minDisplayValue);//originCoord; // originCoord of plot
+        Vector2 toeP0Coords = originCoord; /*new Vector2(originCoord.x, originCoord);*/ // // originCoord of plot
         Vector2 toeP1Coords = new Vector2(0.0f, 0.0f); // We don't know where it will be yet
         Vector2 toeP2Coords = new Vector2(0.0f, toeP2YCoord);
         Vector2 midP1Coords = new Vector2(0.0f, 0.0f); // Unknown at this point
         Vector2 shP0Coords = this.middleGrey;
         Vector2 shP1Coords = new Vector2(0.0f, maxDisplayValue); // Unknown at this point
-        Vector2 shP2Coords = new Vector2(Shaper.calculateLinearToLog2(maxRadiometricValue, greyPoint.x, minExposureValue, maxExposureValue), 
+        Vector2 shP2Coords = new Vector2(
+            Shaper.calculateLinearToLog2(maxRadiometricValue, greyPoint.x, minExposureValue, maxExposureValue),
             maxDisplayValue);
 
         // calculate y intersection when y = 0
@@ -102,7 +107,7 @@ public class CurveTest
 
         return controlPoints;
     }
-    
+
     public List<float> calcYfromXQuadratic(List<float> inXCoords, List<float> tValues, List<Vector2> controlPoints)
     {
         if (inXCoords.Count <= 0 || tValues.Count <= 0)
@@ -118,7 +123,7 @@ public class CurveTest
             controlPoints[2], controlPoints[3], controlPoints[4],
             controlPoints[4], controlPoints[5], controlPoints[6]
         };
-        
+
 
         for (int index = 0; index < inXCoords.Count; index++)
         {
@@ -127,7 +132,7 @@ public class CurveTest
                 Vector2 p0 = controlPointsArray[0 + i];
                 Vector2 p1 = controlPointsArray[1 + i];
                 Vector2 p2 = controlPointsArray[2 + i];
-                
+
                 float xValue = inXCoords[index];
 
                 if (p0.x <= xValue && xValue <= p2.x)
@@ -147,47 +152,57 @@ public class CurveTest
     }
 
     // Assumption: the input float[] is always sorted from smallest to largest values
-    public static float BilinearClosestTo(float[] inputArray, float target, out int arrayIndex, out int arrayIndex2)
+    public static void BilinearClosestTo(float[] inputArray, float target, Vector2[] controlPoints, out int arrayIndex, out int arrayIndex2)
     {
-        float closest = float.MaxValue;
-        float minDifference = float.MaxValue;
-        float prevDifference = float.MaxValue;
+        // float closest = float.MaxValue;
+        // float minDifference = float.MaxValue;
+        // float prevDifference = float.MaxValue;
 
         int outIndex = 0;
         int outIndex2 = 0;
-        int listSize = inputArray.Length;
-        for (int i = 0; i < listSize; i++)
-        {
-            float currentDifference = Mathf.Abs((float) inputArray[i] - target);
-
-            // Early exit because the array is always ordered from smallest to largest
-            if (prevDifference < currentDifference)
-                break;
-
-            if (minDifference > currentDifference)
-            {
-                // Check which of the values, before or after this one, are closer to the target value
-                int indexBefore = Mathf.Clamp((i - 1), 0, listSize - 1);
-                int indexAfter = Mathf.Clamp((i + 1), 0, listSize - 1);
-                float currentDiffBefore = Mathf.Abs((float) inputArray[indexBefore] - target);
-                float currentDiffAfter = Mathf.Abs((float) inputArray[indexAfter] - target);
-
-                minDifference = currentDifference;
-                closest = inputArray[i];
-                outIndex = i;
-                outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
-            }
-
-            prevDifference = currentDifference;
-        }
-
+        int maxVal = inputArray.Length - 1;
+        // for (int i = 0; i < listSize; i++)
+        // {
+        //     float currentDifference = Mathf.Abs((float) inputArray[i] - target);
+        //
+        //     // Early exit because the array is always ordered from smallest to largest
+        //     if (prevDifference < currentDifference)
+        //         break;
+        //
+        //     if (minDifference > currentDifference)
+        //     {
+        //         // Check which of the values, before or after this one, are closer to the target value
+        //         int indexBefore = Mathf.Clamp((i - 1), 0, listSize - 1);
+        //         int indexAfter = Mathf.Clamp((i + 1), 0, listSize - 1);
+        //         float currentDiffBefore = Mathf.Abs((float) inputArray[indexBefore] - target);
+        //         float currentDiffAfter = Mathf.Abs((float) inputArray[indexAfter] - target);
+        //
+        //         minDifference = currentDifference;
+        //         closest = inputArray[i];
+        //         outIndex = i;
+        //         outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
+        //     }
+        //
+        //     prevDifference = currentDifference;
+        // }
+        
+        
+        float minRadiometricValue = controlPoints[0].x;
+        float maxRadiometricValue = controlPoints[controlPoints.Length - 1].x;
+        outIndex = Mathf.Clamp(Mathf.RoundToInt (Mathf.Sqrt((target - minRadiometricValue)/maxRadiometricValue) * inputArray.Length), 0, inputArray.Length - 1);
+        
+        int indexBefore = Mathf.Clamp((outIndex - 1), 0, maxVal);
+        int indexAfter = Mathf.Clamp((outIndex + 1), 0, maxVal);
+        float currentDiffBefore = Mathf.Abs((float) inputArray[indexBefore] - target);
+        float currentDiffAfter = Mathf.Abs((float) inputArray[indexAfter] - target);
+        outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
+        
         arrayIndex = outIndex;
         arrayIndex2 = outIndex2;
-        return closest;
     }
-    
+
     // Assumption: the input float[] is always sorted from smallest to largest values
-    public static float ClosestTo(float[] inputArray, float target, out int arrayIndex)
+    public float ClosestTo(float[] inputArray, float target, Vector2[] controlPoints, out int arrayIndex)
     {
         float closest = float.MaxValue;
         float minDifference = float.MaxValue;
@@ -226,14 +241,13 @@ public class CurveTest
             Debug.Log("Input array of x/y coords or t values have mismatched lengths ");
             return -1.0f;
         }
-        
+
         // Shape the input x coord in radiometric
         float logInputXCoord = inputXCoord;
-        if (true)
-        {
+
             int idx = 0;
             int idx2 = 0;
-            BilinearClosestTo(xCoords, logInputXCoord, out idx, out idx2);
+            BilinearClosestTo(xCoords, logInputXCoord, controlPoints, out idx, out idx2);
             if (idx >= tValues.Length || idx2 >= tValues.Length)
             {
                 Debug.LogError("Index " + idx.ToString() + "or Index " + idx2.ToString() + " is invalid");
@@ -241,14 +255,16 @@ public class CurveTest
 
             float linearInputXCoord =
                 Shaper.calculateLog2ToLinear(logInputXCoord, middleGrey.x, minExposureValue, maxExposureValue);
-            float linearXCoordIdx = Shaper.calculateLog2ToLinear(xCoords[idx], middleGrey.x, minExposureValue, maxExposureValue);
-            float linearXCoordIdx2 = Shaper.calculateLog2ToLinear(xCoords[idx2], middleGrey.x, minExposureValue, maxExposureValue);
+            float linearXCoordIdx =
+                Shaper.calculateLog2ToLinear(xCoords[idx], middleGrey.x, minExposureValue, maxExposureValue);
+            float linearXCoordIdx2 =
+                Shaper.calculateLog2ToLinear(xCoords[idx2], middleGrey.x, minExposureValue, maxExposureValue);
 
             // Calculate interpolation factor
             if (idx == idx2)
             {
                 return yCoords[idx];
-            } 
+            }
             else if (idx < idx2)
             {
                 // float lerpValue = (logInputXCoord - xCoords[idx]) / (xCoords[idx2] - xCoords[idx]);
@@ -261,23 +277,11 @@ public class CurveTest
                 float lerpValue = (linearInputXCoord - linearXCoordIdx2) / (linearXCoordIdx - linearXCoordIdx2);
                 return Mathf.Lerp(yCoords[idx2], yCoords[idx], lerpValue);
             }
-        }
-        else
-        {
-            int idx = 0;
-            ClosestTo(xCoords, logInputXCoord, out idx);
-            if (idx >= tValues.Length || idx >= yCoords.Length)
-            {
-                Debug.LogError("Index " + idx.ToString() + " is invalid");
-            }
 
-            return yCoords[idx];
-        }
-        
-        return -1.0f;
+            return -1.0f;
     }
-    
-    
+
+
     // Array based implementation
     public float getYCoordinate(float inputXCoord, float[] xCoords, float[] yCoords, float[] tValues,
         Vector2[] controlPoints)
@@ -287,54 +291,41 @@ public class CurveTest
             Debug.Log("Input array of x/y coords or t values have mismatched lengths ");
             return -1.0f;
         }
-        
-        // Shape the input x coord in radiometric
-        float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, middleGrey.x, minExposureValue, maxExposureValue);
-        // float logInputXCoord = inputXCoord;
-        if (true)
-        {
-            int idx = 0;
-            int idx2 = 0;
-            BilinearClosestTo(xCoords, logInputXCoord, out idx, out idx2);
-            if (idx >= tValues.Length || idx2 >= tValues.Length)
-            {
-                Debug.LogError("Index " + idx.ToString() + "or Index " + idx2.ToString() + " is invalid");
-            }
 
-            // Calculate interpolation factor
-            if (idx == idx2)
-            {
-                return yCoords[idx];
-            } 
-            else if (idx < idx2)
-            {
-                float lerpValue = (logInputXCoord - xCoords[idx]) / (xCoords[idx2] - xCoords[idx]);
-                return Mathf.Lerp(yCoords[idx], yCoords[idx2], lerpValue);
-            }
-            else
-            {
-                float lerpValue = (logInputXCoord - xCoords[idx2]) / (xCoords[idx] - xCoords[idx2]);
-                return Mathf.Lerp(yCoords[idx2], yCoords[idx], lerpValue);
-            }
+        // Shape the input x coord in radiometric
+        float logInputXCoord =
+            Shaper.calculateLinearToLog2(inputXCoord, middleGrey.x, minExposureValue, maxExposureValue);
+
+        int idx = 0;
+        int idx2 = 0;
+        BilinearClosestTo(xCoords, logInputXCoord, controlPoints, out idx, out idx2);
+        if (idx >= tValues.Length || idx2 >= tValues.Length)
+        {
+            Debug.LogError("Index " + idx.ToString() + "or Index " + idx2.ToString() + " is invalid");
+        }
+
+        // Calculate interpolation factor
+        if (idx == idx2)
+        {
+            return yCoords[idx];
+        }
+        else if (idx < idx2)
+        {
+            float lerpValue = (logInputXCoord - xCoords[idx]) / (xCoords[idx2] - xCoords[idx]);
+            return Mathf.Lerp(yCoords[idx], yCoords[idx2], lerpValue);
         }
         else
         {
-            int idx = 0;
-            ClosestTo(xCoords, logInputXCoord, out idx);
-            if (idx >= tValues.Length || idx >= yCoords.Length)
-            {
-                Debug.LogError("Index " + idx.ToString() + " is invalid");
-            }
-
-            return yCoords[idx];
+            float lerpValue = (logInputXCoord - xCoords[idx2]) / (xCoords[idx] - xCoords[idx2]);
+            return Mathf.Lerp(yCoords[idx2], yCoords[idx], lerpValue);
         }
-        
+
         return -1.0f;
     }
 
 
     // Array based
-    public float getXCoordinate(float inputYCoord, float[] xCoords, float[] YCoords, float[] tValues)
+    public float getXCoordinate(float inputYCoord, float[] xCoords, float[] YCoords, float[] tValues, Vector2[] controlPoints)
     {
         if (YCoords.Length <= 0 || tValues.Length <= 0)
         {
@@ -343,7 +334,7 @@ public class CurveTest
         }
 
         int idx = 0;
-        ClosestTo(YCoords, inputYCoord, out idx);
+        ClosestTo(YCoords, inputYCoord, controlPoints, out idx);
         if (idx >= xCoords.Length)
         {
             Debug.LogError("Index " + idx.ToString() + " is invalid");
@@ -450,7 +441,8 @@ public class CurveTest
                     for (int idx = 0; idx < roots.Length; idx++)
                     {
                         float rootAtIndex = (float) roots[idx].Real;
-                        if (tmpRoot < 0.0f || (rootAtIndex >= 0.0f && rootAtIndex <= 1.0f) || Mathf.Approximately(rootAtIndex, 1.0f))
+                        if (tmpRoot < 0.0f || (rootAtIndex >= 0.0f && rootAtIndex <= 1.0f) ||
+                            Mathf.Approximately(rootAtIndex, 1.0f))
                         {
                             tmpRoot = rootAtIndex;
                         }
