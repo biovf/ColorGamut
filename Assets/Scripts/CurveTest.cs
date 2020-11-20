@@ -160,7 +160,7 @@ public class CurveTest
 
         int outIndex = 0;
         int outIndex2 = 0;
-        int maxVal = inputArray.Length - 1;
+        
         // for (int i = 0; i < listSize; i++)
         // {
         //     float currentDifference = Mathf.Abs((float) inputArray[i] - target);
@@ -186,13 +186,14 @@ public class CurveTest
         //     prevDifference = currentDifference;
         // }
         
-        
+    
+        int maxArrayIndex = inputArray.Length - 1;
         float minRadiometricValue = controlPoints[0].x;
         float maxRadiometricValue = controlPoints[controlPoints.Length - 1].x;
         outIndex = Mathf.Clamp(Mathf.RoundToInt (Mathf.Sqrt((target - minRadiometricValue)/maxRadiometricValue) * inputArray.Length), 0, inputArray.Length - 1);
         
-        int indexBefore = Mathf.Clamp((outIndex - 1), 0, maxVal);
-        int indexAfter = Mathf.Clamp((outIndex + 1), 0, maxVal);
+        int indexBefore = Mathf.Clamp((outIndex - 1), 0, maxArrayIndex);
+        int indexAfter = Mathf.Clamp((outIndex + 1), 0, maxArrayIndex);
         float currentDiffBefore = Mathf.Abs((float) inputArray[indexBefore] - target);
         float currentDiffAfter = Mathf.Abs((float) inputArray[indexAfter] - target);
         outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;

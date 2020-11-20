@@ -183,16 +183,8 @@ public class ColorGamut1
         for (int i = 0; i < dimension; ++i)
         {
             xCoord = minRadiometricValue + (Mathf.Pow((float) i / (float) dimension, 2.0f) * maxRadiometricValue);
-            // float floatIndex = (Mathf.Sqrt((xCoord - minRadiometricValue)/maxRadiometricValue) * (float)dimension);
-            // int testIndex = (floatIndex);
-            // int roundIndex = Mathf.RoundToInt(floatIndex);
-            // int floorIndex = Mathf.FloorToInt(floatIndex);
-
             xValues.Add(Mathf.Clamp01(xCoord));
         }
-
-        int index = Mathf.RoundToInt(Mathf.Sqrt((1.0f - minRadiometricValue)/maxRadiometricValue) * (float)dimension);
-
 
         return xValues;
     }
