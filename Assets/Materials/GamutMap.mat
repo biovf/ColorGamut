@@ -78,6 +78,7 @@ Material:
     - maxExposure: 6
     - maxRadiometricValue: 11.52
     - minExposure: -6
+    - minRadiometricValue: 0.0028125
     - usePerChannel: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

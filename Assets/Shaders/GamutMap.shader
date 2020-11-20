@@ -7,6 +7,7 @@
         greyPoint ("Middle Grey Value(XY)", Vector) = (0.18, 0.18, 0.0, 0.0)
         minExposure ("Minimum Exposure Value(EV)", Float) = -6.0
         maxExposure ("Maximum Exposure Value(EV)", Float) = 6.0
+        minRadiometricValue ("Minimum Radiometric Value", Float) = 0.0028
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
         inputArraySize ("Number of curve array elements", Int) = 1024
         usePerChannel ("Use per channel gamut mapping", Int) = 0
@@ -43,6 +44,7 @@
             half4 greyPoint;
             half minExposure;
             half maxExposure;
+            half minRadiometricValue;
             half maxRadiometricValue;
             int inputArraySize;
             int usePerChannel;
@@ -87,7 +89,7 @@
                 return pow(inputValue, 2.2f);
             }
 
-            float BilinearClosestTo(float inputArray[1024], float target, out int arrayIndex, out int arrayIndex2)
+            void BilinearClosestTo(float inputArray[1024], float target, out int arrayIndex, out int arrayIndex2)
             {
                 // Terrible horrible hack since there is not MaxValue for a float variable
                 float closest = 9999999.0;
@@ -97,34 +99,49 @@
                 int outIndex = 0;
                 int outIndex2 = 0;
 
-                for (int i = 0; i < inputArraySize; i++)
-                {
-                    float currentDifference = abs((float)inputArray[i] - target);
-
-                    // Early exit because the array is always ordered from smallest to largest
-                    if (prevDifference < currentDifference)
-                        break;
-
-                    if (minDifference > currentDifference)
-                    {
-                        // Check which of the values, before or after this one, are closer to the target value
-                        int indexBefore = clamp((i - 1), 0, inputArraySize - 1);
-                        int indexAfter = clamp((i + 1), 0, inputArraySize - 1);
-                        float currentDiffBefore = abs((float)inputArray[indexBefore] - target);
-                        float currentDiffAfter = abs((float)inputArray[indexAfter] - target);
-
-                        minDifference = currentDifference;
-                        closest = inputArray[i];
-                        outIndex = i;
-                        outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
-                    }
-
-                    prevDifference = currentDifference;
-                }
-
-                arrayIndex = outIndex;
-                arrayIndex2 = outIndex2;
-                return closest;
+                 for (int i = 0; i < inputArraySize; i++)
+                 {
+                     float currentDifference = abs((float)inputArray[i] - target);
+                 
+                     // Early exit because the array is always ordered from smallest to largest
+                     if (prevDifference < currentDifference)
+                         break;
+                 
+                     if (minDifference > currentDifference)
+                     {
+                         // Check which of the values, before or after this one, are closer to the target value
+                         int indexBefore = clamp((i - 1), 0, inputArraySize - 1);
+                         int indexAfter = clamp((i + 1), 0, inputArraySize - 1);
+                         float currentDiffBefore = abs((float)inputArray[indexBefore] - target);
+                         float currentDiffAfter = abs((float)inputArray[indexAfter] - target);
+                 
+                         minDifference = currentDifference;
+                         closest = inputArray[i];
+                         outIndex = i;
+                         outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
+                     }
+                 
+                     prevDifference = currentDifference;
+                 }
+                 
+                 arrayIndex = outIndex;
+                 arrayIndex2 = outIndex2;
+                //
+                // int maxArrayIndex = inputArraySize - 1;
+                // // float minRadiometricValue = controlPoints[0].x;
+                // // float maxRadiometricValue = controlPoints[controlPoints.Length - 1].x;
+                // outIndex = clamp(round(sqrt((target - minRadiometricValue)/maxRadiometricValue) * (float)inputArraySize), 0, maxArrayIndex);
+                //
+                // int indexBefore = clamp((outIndex - 1), 0, maxArrayIndex);
+                // int indexAfter = clamp((outIndex + 1), 0,  maxArrayIndex);
+                // float currentDiffBefore = abs((float) inputArray[indexBefore] - target);
+                // float currentDiffAfter = abs((float) inputArray[indexAfter] - target);
+                // outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
+                //
+                // arrayIndex = outIndex;
+                // arrayIndex2 = outIndex2;
+                
+                // return closest;
             }
 
             float ClosestTo(float inputArray[1024], float target, out int arrayIndex)
