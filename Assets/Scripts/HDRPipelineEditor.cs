@@ -101,8 +101,6 @@ public class HDRPipelineEditor : Editor
     private bool saveGamutMapDebugImages = false;
     #endregion
 
-    private Material curveMaterial;
-    private RenderTexture curveRT;
     private Rect curveRect;
     private float scaleFactor = 1.0f; 
 
@@ -146,17 +144,12 @@ public class HDRPipelineEditor : Editor
                                  "MaxRange" + maxRadiometricValue.ToString();
         
         hdrPipeline.CPUMode = enableCPUMode;
-        curveMaterial = new Material(Shader.Find("Custom/DrawCurve"));
 
     }
 
     public void OnDisable()
     {
-        DestroyImmediate(curveMaterial);
-        curveMaterial = null;
-
-        DestroyImmediate(curveRT);
-        curveRT = null;    
+        
     }
 
     private void OnValidate()
