@@ -9,7 +9,7 @@
         maxExposure ("Maximum Exposure Value(EV)", Float) = 6.0
         minRadiometricValue ("Minimum Radiometric Value", Float) = 0.0028
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
-        inputArraySize ("Number of curve array elements", Int) = 1024
+        inputArraySize ("Number of curve array elements", Int) = 1023
         usePerChannel ("Use per channel gamut mapping", Int) = 0
     }
     SubShader
@@ -99,49 +99,54 @@
                 int outIndex = 0;
                 int outIndex2 = 0;
 
-                 for (int i = 0; i < inputArraySize; i++)
-                 {
-                     float currentDifference = abs((float)inputArray[i] - target);
-                 
-                     // Early exit because the array is always ordered from smallest to largest
-                     if (prevDifference < currentDifference)
-                         break;
-                 
-                     if (minDifference > currentDifference)
-                     {
-                         // Check which of the values, before or after this one, are closer to the target value
-                         int indexBefore = clamp((i - 1), 0, inputArraySize - 1);
-                         int indexAfter = clamp((i + 1), 0, inputArraySize - 1);
-                         float currentDiffBefore = abs((float)inputArray[indexBefore] - target);
-                         float currentDiffAfter = abs((float)inputArray[indexAfter] - target);
-                 
-                         minDifference = currentDifference;
-                         closest = inputArray[i];
-                         outIndex = i;
-                         outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
-                     }
-                 
-                     prevDifference = currentDifference;
-                 }
-                 
-                 arrayIndex = outIndex;
-                 arrayIndex2 = outIndex2;
-                //
-                // int maxArrayIndex = inputArraySize - 1;
-                // // float minRadiometricValue = controlPoints[0].x;
-                // // float maxRadiometricValue = controlPoints[controlPoints.Length - 1].x;
-                // outIndex = clamp(round(sqrt((target - minRadiometricValue)/maxRadiometricValue) * (float)inputArraySize), 0, maxArrayIndex);
-                //
-                // int indexBefore = clamp((outIndex - 1), 0, maxArrayIndex);
-                // int indexAfter = clamp((outIndex + 1), 0,  maxArrayIndex);
-                // float currentDiffBefore = abs((float) inputArray[indexBefore] - target);
-                // float currentDiffAfter = abs((float) inputArray[indexAfter] - target);
-                // outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
-                //
-                // arrayIndex = outIndex;
-                // arrayIndex2 = outIndex2;
-                
-                // return closest;
+                if (false)
+                {
+                    for (int i = 0; i < inputArraySize; i++)
+                    {
+                        float currentDifference = abs((float)inputArray[i] - target);
+
+                        // Early exit because the array is always ordered from smallest to largest
+                        if (prevDifference < currentDifference)
+                            break;
+
+                        if (minDifference > currentDifference)
+                        {
+                            // Check which of the values, before or after this one, are closer to the target value
+                            int indexBefore = clamp((i - 1), 0, inputArraySize - 1);
+                            int indexAfter = clamp((i + 1), 0, inputArraySize - 1);
+                            float currentDiffBefore = abs((float)inputArray[indexBefore] - target);
+                            float currentDiffAfter = abs((float)inputArray[indexAfter] - target);
+
+                            minDifference = currentDifference;
+                            closest = inputArray[i];
+                            outIndex = i;
+                            outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
+                        }
+
+                        prevDifference = currentDifference;
+                    }
+
+                    arrayIndex = outIndex;
+                    arrayIndex2 = outIndex2;
+                }
+                else
+                {
+                    int maxArrayIndex = inputArraySize - 1;
+                    // float minRadiometricValue = controlPoints[0].x;
+                    // float maxRadiometricValue = controlPoints[controlPoints.Length - 1].x;
+                    outIndex = (int)clamp(
+                        round(sqrt((target - minRadiometricValue) / maxRadiometricValue) * (float)inputArraySize),
+                        0.0, (float)maxArrayIndex);
+
+                    int indexBefore = clamp((outIndex - 1), 0, maxArrayIndex);
+                    int indexAfter = clamp((outIndex + 1), 0, maxArrayIndex);
+                    float currentDiffBefore = abs((float)inputArray[indexBefore] - target);
+                    float currentDiffAfter = abs((float)inputArray[indexAfter] - target);
+                    outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
+
+                    arrayIndex = outIndex;
+                    arrayIndex2 = outIndex2;
+                }
             }
 
             float ClosestTo(float inputArray[1024], float target, out int arrayIndex)
@@ -183,29 +188,29 @@
             half3 calculateGamutCompression(half3 linearHdriPixelColor, half3 ratio, half linearHdriMaxRGBChannel)
             {
                 half3 newRatio = ratio;
-                  float gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
+                float gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
 
-                    // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-                    gamutCompressionXCoordLinear = calculateLog2ToLinear(
-                        getXCoordinate(1.0f, xCoords, yCoords), greyPoint.x, minExposure, maxExposure);
+                // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
+                gamutCompressionXCoordLinear = calculateLog2ToLinear(
+                    getXCoordinate(1.0f, xCoords, yCoords), greyPoint.x, minExposure, maxExposure);
 
-                    if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
-                        linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
-                        linearHdriPixelColor.b > gamutCompressionXCoordLinear)
-                    {
-                        half gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
-                        half gamutCompressionRatio = (max(linearHdriPixelColor.r,
-                                                          max(linearHdriPixelColor.g, linearHdriPixelColor.b)) -
-                                gamutCompressionXCoordLinear) /
-                            gamutCompressionRange;
+                if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
+                    linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
+                    linearHdriPixelColor.b > gamutCompressionXCoordLinear)
+                {
+                    half gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
+                    half gamutCompressionRatio = (max(linearHdriPixelColor.r,
+                                                      max(linearHdriPixelColor.g, linearHdriPixelColor.b)) -
+                            gamutCompressionXCoordLinear) /
+                        gamutCompressionRange;
 
 
-                        half3 maxDynamicRangeVec = half3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
-                        linearHdriPixelColor = lerp(linearHdriPixelColor, maxDynamicRangeVec,
-                                                    smoothstep(0.0f, 1.0f, gamutCompressionRatio));
+                    half3 maxDynamicRangeVec = half3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
+                    linearHdriPixelColor = lerp(linearHdriPixelColor, maxDynamicRangeVec,
+                                                smoothstep(0.0f, 1.0f, gamutCompressionRatio));
 
-                        newRatio = linearHdriPixelColor / linearHdriMaxRGBChannel;
-                    }
+                    newRatio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+                }
                 return newRatio;
             }
 
@@ -260,7 +265,7 @@
                     calculateLog2ToLinear(log2HdriPixelArray.g, greyPoint.x, minExposure, maxExposure),
                     calculateLog2ToLinear(log2HdriPixelArray.b, greyPoint.x, minExposure, maxExposure));
 
-                if(usePerChannel == 0)
+                if (usePerChannel == 0)
                 {
                     // Retrieve the maximum RGB value but in linear space
                     half linearHdriMaxRGBChannel = calculateLog2ToLinear(logHdriMaxRGBChannel, greyPoint.x,
@@ -280,7 +285,7 @@
                     }
 
                     ratio = calculateGamutCompression(linearHdriPixelColor, ratio, linearHdriMaxRGBChannel);
-                    
+
                     half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
                     yValue = srgbEOTF(yValue);
 
@@ -292,8 +297,8 @@
                     hdriPixelColor.r = getYCoordinateLogXInput(log2HdriPixelArray.r);
                     hdriPixelColor.g = getYCoordinateLogXInput(log2HdriPixelArray.g);
                     hdriPixelColor.b = getYCoordinateLogXInput(log2HdriPixelArray.b);
-                } 
-                
+                }
+
                 hdriPixelColor.r = inverseSrgbEOTF(hdriPixelColor.r);
                 hdriPixelColor.g = inverseSrgbEOTF(hdriPixelColor.g);
                 hdriPixelColor.b = inverseSrgbEOTF(hdriPixelColor.b);

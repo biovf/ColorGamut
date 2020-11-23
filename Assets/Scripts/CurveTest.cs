@@ -190,7 +190,8 @@ public class CurveTest
         int maxArrayIndex = inputArray.Length - 1;
         float minRadiometricValue = controlPoints[0].x;
         float maxRadiometricValue = controlPoints[controlPoints.Length - 1].x;
-        outIndex = Mathf.Clamp(Mathf.RoundToInt (Mathf.Sqrt((target - minRadiometricValue)/maxRadiometricValue) * inputArray.Length), 0, inputArray.Length - 1);
+        outIndex = Mathf.Clamp(Mathf.RoundToInt (Mathf.Sqrt((target - minRadiometricValue)/maxRadiometricValue) * inputArray.Length), 
+            0, maxArrayIndex);
         
         int indexBefore = Mathf.Clamp((outIndex - 1), 0, maxArrayIndex);
         int indexAfter = Mathf.Clamp((outIndex + 1), 0, maxArrayIndex);
