@@ -262,16 +262,20 @@ public class HDRPipelineEditor : Editor
                 Debug.Log("GUI Changed");
                 guiWidgetsState =  GamutMapping.CurveDataState.Dirty;
             }
-            
-            if (guiWidgetsState == GamutMapping.CurveDataState.Dirty && 
+
+            if (enableCPUMode == true && guiWidgetsState == GamutMapping.CurveDataState.Dirty && 
                 GUILayout.Button("Generate Image"))
             {
                 Debug.Log("Generating new image with new parameters");
                 RecalculateImageInCpuMode();
-            } else if (enableCPUMode == false)
+            } else if (enableCPUMode == false && guiWidgetsState == GamutMapping.CurveDataState.Dirty 
+                && GUILayout.Button("Recalculate Curve Parameters"))
             {
+                RecalculateCurveParameters();
                 colorGamut.setActiveTransferFunction(_activeGamutMappingMode);
                 colorGamut.setExposure(exposure);
+                guiWidgetsState = GamutMapping.CurveDataState.Calculated;
+
             }
         }
 
@@ -319,7 +323,13 @@ public class HDRPipelineEditor : Editor
         
         Handles.DrawSolidRectangleWithOutline(curveRect, Color.clear, Color.white * 0.4f);
     }
-    
+
+    private void RecalculateCurveParameters() 
+    {
+        CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
+         originPointY, _activeGamutMappingMode, isGamutCompressionActive);
+        colorGamut.setCurveParams(curveParams);
+    }
 
     private void RecalculateImageInCpuMode()
     {
