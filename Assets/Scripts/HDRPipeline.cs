@@ -34,7 +34,7 @@ public class HDRPipeline : MonoBehaviour
     }
     
     // Curve widget member variables
-    private Material curveMaterial;
+    private Material curveDrawMaterial;
     private RenderTexture curveRT;
     public RenderTexture CurveRT => curveRT;
     private float scaleFactor = 1.0f;
@@ -59,7 +59,7 @@ public class HDRPipeline : MonoBehaviour
         initialiseColorGrading();
         
         curveRT = new RenderTexture(512, 512, 0, RenderTextureFormat.ARGB32);
-        curveMaterial = new Material(Shader.Find("Custom/DrawCurve"));
+        curveDrawMaterial = new Material(Shader.Find("Custom/DrawCurve"));
         controlPointsUniform = new Vector4[7];
 
         
@@ -86,23 +86,22 @@ public class HDRPipeline : MonoBehaviour
     public void drawGamutCurveWidget()
     {
         var oldRt = RenderTexture.active;
-        //curveMaterial.SetFloat("scaleFactor", scaleFactor);
-        //curveMaterial.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
-        //curveMaterial.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
-        Vector2[] controlPoints = colorGamut.getControlPoints();
-        Vector4[] controlPointsVec4 = new Vector4[7];
-        for (int i = 0; i < controlPoints.Length; i++)
-        {
-            controlPointsVec4[i] = new Vector4(controlPoints[i].x, controlPoints[i].y);
-        }
-        curveMaterial.SetVectorArray("controlPoints", controlPointsVec4);
-        Graphics.Blit(null, curveRT, curveMaterial);
+        //curveDrawMaterial.SetFloat("scaleFactor", scaleFactor);
+        //curveDrawMaterial.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
+        //curveDrawMaterial.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
+        curveDrawMaterial.SetVectorArray("controlPoints", controlPointsUniform);
+        Graphics.Blit(null, curveRT, curveDrawMaterial);
         RenderTexture.active = oldRt;
     }
 
     void OnRenderImage(RenderTexture src, RenderTexture dest)
     {
 
+        Vector2[] controlPoints = colorGamut.getControlPoints();
+        for (int i = 0; i < 7; i++)
+        {
+            controlPointsUniform[i] = new Vector4(controlPoints[i].x, controlPoints[i].y);
+        }
         drawGamutCurveWidget();
         
          Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
@@ -127,11 +126,7 @@ public class HDRPipeline : MonoBehaviour
              gamutMap.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
              gamutMap.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
 
-             Vector2[] controlPoints = colorGamut.getControlPoints();
-             for (int i = 0; i < 7; i++)
-             {
-                    controlPointsUniform[i] = new Vector4(controlPoints[i].x, controlPoints[i].y);
-             }
+           
              gamutMap.SetVectorArray("controlPoints", controlPointsUniform);
              
              Graphics.Blit(hdriRenderTexture, gamutMapRT, gamutMap);
