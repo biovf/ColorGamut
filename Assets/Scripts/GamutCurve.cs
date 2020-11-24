@@ -6,7 +6,7 @@ using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 
 
-public class CurveTest
+public class GamutCurve
 {
     public float MaxDisplayValue
     {
@@ -42,7 +42,7 @@ public class CurveTest
 
     private Vector2 middleGrey;
 
-    public CurveTest(float minExposureValue, float maxExposureValue, float maxRadiometricValue, float maxDisplayValue)
+    public GamutCurve(float minExposureValue, float maxExposureValue, float maxRadiometricValue, float maxDisplayValue)
     {
         this.minExposureValue = minExposureValue;
         this.maxExposureValue = maxExposureValue;

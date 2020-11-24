@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-public class ColorGradingHDR1
+public class ColorGrading
 {
     public bool EnableColorGrading
     {
@@ -12,7 +12,7 @@ public class ColorGradingHDR1
 
     private bool enableColorGrading = true;
 
-    private ColorGamut1 colorGamut;
+    private GamutMapping colorGamut;
     
     private Material colorGrading3DTextureMat;
     private Material fullscreenMat;
@@ -28,7 +28,7 @@ public class ColorGradingHDR1
     private RenderTexture interceptDebugRT;
 
     private HDRPipeline pipeline;
-    public ColorGradingHDR1(Texture2D testTexture, Material colorGrading3DTextureMat, 
+    public ColorGrading(Texture2D testTexture, Material colorGrading3DTextureMat, 
         Material fullscreenMat, Material log2Shaper)
     {
         this.testTexture = testTexture;
@@ -64,28 +64,6 @@ public class ColorGradingHDR1
         Graphics.Blit(src, dest, colorGrading3DTextureMat);
 
     }
-    
-    // public void OnRenderImage(RenderTexture src, RenderTexture dest)
-    // {
-    //     // if (enableColorGrading)
-    //     // {
-    //         Graphics.Blit(src, interceptDebugRT, fullscreenMat);
-    //         // Apply shader to src data
-    //         log2Shaper.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
-    //         log2Shaper.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
-    //         log2Shaper.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
-    //         Graphics.Blit(src, dest, log2Shaper);
-    //
-    //
-    //         Graphics.Blit(dest, src, fullscreenMat);
-    //         
-    //         colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
-    //         colorGrading3DTextureMat.SetFloat("_MinExposureValue", colorGamut.MINExposureValue);
-    //         colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MAXExposureValue);
-    //         colorGrading3DTextureMat.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
-    //         Graphics.Blit(src, dest, colorGrading3DTextureMat);
-    //
-    // }
 
     public void Update()
     {

@@ -39,8 +39,8 @@ public class ColorGamutShapedEditor : Editor
     private Vector2[] controlPoints;
     private Vector2[] controlPointsLinear; 
 
-    private CurveTest parametricCurve;
-    private CurveTest parametricCurveLinear;
+    private GamutCurve _parametricGamutCurve;
+    private GamutCurve _parametricGamutCurveLinear;
 
     private List<float> tValues;
     private List<float> xValues;
@@ -99,7 +99,7 @@ public class ColorGamutShapedEditor : Editor
 
     private void recalculateCurveParameters()
     {
-        parametricCurve = colorGamut.getParametricCurve();
+        _parametricGamutCurve = colorGamut.getParametricCurve();
         tValues = colorGamut.getTValues();
         xValues = colorGamut.getXValues();
         yValues = colorGamut.getYValues();
@@ -111,14 +111,14 @@ public class ColorGamutShapedEditor : Editor
         }
         
         // Linear curve
-        parametricCurveLinear = new CurveTest(colorGamut.MINExposureValue, colorGamut.MAXExposureValue, 
+        _parametricGamutCurveLinear = new GamutCurve(colorGamut.MINExposureValue, colorGamut.MAXExposureValue, 
             colorGamut.MaxRadiometricValue, colorGamut.MAXDisplayValue );
-        controlPointsLinear = parametricCurveLinear.createControlPoints(
+        controlPointsLinear = _parametricGamutCurveLinear.createControlPoints(
             new Vector2(colorGamut.MinRadiometricValue, 0.00001f), new Vector2(0.18f, 0.18f), 2.0f);
         xValuesLinear = initialiseXCoordsInRange(1024, colorGamut.MaxRadiometricValue);
-        tValuesLinear = parametricCurveLinear.calcTfromXquadratic(xValuesLinear.ToArray(), controlPointsLinear);
+        tValuesLinear = _parametricGamutCurveLinear.calcTfromXquadratic(xValuesLinear.ToArray(), controlPointsLinear);
         yValuesLinear =
-            parametricCurveLinear.calcYfromXQuadratic(xValuesLinear, tValuesLinear, new List<Vector2>(controlPointsLinear));
+            _parametricGamutCurveLinear.calcYfromXQuadratic(xValuesLinear, tValuesLinear, new List<Vector2>(controlPointsLinear));
         
         debugPointsLinear.Clear();
         for (int i = 0; i < xValuesLinear.Count; i++)

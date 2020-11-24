@@ -63,7 +63,7 @@ public class ColorGamutShaped : MonoBehaviour
     public float Slope => slope;
 
     private Vector2 origin;
-    private CurveTest parametricCurve = null;
+    private GamutCurve _parametricGamutCurve = null;
     private Vector2[] controlPoints;
     private List<float> tValues;
 
@@ -172,16 +172,16 @@ public class ColorGamutShaped : MonoBehaviour
 
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
-        if (parametricCurve == null)
-            parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
+        if (_parametricGamutCurve == null)
+            _parametricGamutCurve = new GamutCurve(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
 
-        Vector2[] controlPointsTmp = parametricCurve.createControlPoints(origin, this.greyPoint, slope);
+        Vector2[] controlPointsTmp = _parametricGamutCurve.createControlPoints(origin, this.greyPoint, slope);
         List<float> xValuesTmp = initialiseXCoordsInRange(curveLutLength, controlPointsTmp[6].x, false);
         // @TODO FIX ME
         xValuesTmp[xValuesTmp.Count - 1] = 1.0f;
-        List<float> tValuesTmp = parametricCurve.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
+        List<float> tValuesTmp = _parametricGamutCurve.calcTfromXquadratic(xValuesTmp.ToArray(), controlPointsTmp);
         List<float> yValuesTmp =
-            parametricCurve.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
+            _parametricGamutCurve.calcYfromXQuadratic(xValuesTmp, tValuesTmp, new List<Vector2>(controlPointsTmp));
 
         //for (int i = 0; i < xValuesTmp.Count; i++)
         //{
@@ -189,17 +189,17 @@ public class ColorGamutShaped : MonoBehaviour
         //}
         exportDualColumnDataToCSV(xValuesTmp.ToArray(), yValuesTmp.ToArray(), "PostLog2Linear2.csv");
 
-        // controlPoints = parametricCurve.createControlPointsXinLog2(origin, greyPoint, slope);
-        controlPoints = controlPointsTmp;//parametricCurve.createControlPointsXinLog2(origin, this.greyPoint, slope);
+        // controlPoints = _parametricGamutCurve.createControlPointsXinLog2(origin, greyPoint, slope);
+        controlPoints = controlPointsTmp;//_parametricGamutCurve.createControlPointsXinLog2(origin, this.greyPoint, slope);
         xValues = xValuesTmp;//initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
-        tValues = tValuesTmp;// parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
-        yValues = yValuesTmp;// parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
+        tValues = tValuesTmp;// _parametricGamutCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
+        yValues = yValuesTmp;// _parametricGamutCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
 
 
-        //controlPoints = parametricCurve.createControlPointsXinLog2(origin, this.greyPoint, slope);
+        //controlPoints = _parametricGamutCurve.createControlPointsXinLog2(origin, this.greyPoint, slope);
         //xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
-        //tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
-        //yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
+        //tValues = _parametricGamutCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
+        //yValues = _parametricGamutCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
         //exportDualColumnDataToCSV(xValues.ToArray(), yValues.ToArray(), "Log2Linear.csv");
     }
 
@@ -221,7 +221,7 @@ public class ColorGamutShaped : MonoBehaviour
             Color finalHDRIColor = hdriTextureTransformed.GetPixel(xCoord, yCoord);
 
             Vector2 shapedHDRIColor = new Vector2(initialHDRIColor.maxColorComponent, 0.0f);
-            shapedHDRIColor.y = parametricCurve.getYCoordinate(shapedHDRIColor.x, xValues.ToArray(), yValues.ToArray(),
+            shapedHDRIColor.y = _parametricGamutCurve.getYCoordinate(shapedHDRIColor.x, xValues.ToArray(), yValues.ToArray(),
                 tValues.ToArray(),
                 controlPoints);
 
@@ -414,7 +414,7 @@ public class ColorGamutShaped : MonoBehaviour
                             {
                                 // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
                                 bleachingXCoordLinear = Shaper.calculateLog2ToLinear(
-                                        parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints),
+                                        _parametricGamutCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints),
                                         greyPoint.x, minExposureValue, maxExposureValue);
 
                                 if (linearHdriPixelColor.r > bleachingXCoordLinear ||
@@ -441,7 +441,7 @@ public class ColorGamutShaped : MonoBehaviour
                             }
 
                             // Get Y value from curve using the array version 
-                            float yValue = parametricCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel,
+                            float yValue = _parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel,
                                 xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
                             yValue = Mathf.Pow(yValue, 2.2f);
 
@@ -464,7 +464,7 @@ public class ColorGamutShaped : MonoBehaviour
                                     if (Mathf.Approximately(bleachingXCoordLinear, 0.0f))
                                     {
                                         bleachingXCoordLinear =
-                                            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
+                                            _parametricGamutCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
                                         hdriPixelColor = rawMaxPixelValue > bleachingXCoordLinear
                                             ? Color.blue
                                             : hdriPixelColor;
@@ -482,11 +482,11 @@ public class ColorGamutShaped : MonoBehaviour
                         {
                             _activeGamutMappingMode = GamutMappingMode.Per_Channel;
 
-                            hdriPixelColor.r = parametricCurve.getYCoordinate(hdriPixelColor.r,
+                            hdriPixelColor.r = _parametricGamutCurve.getYCoordinate(hdriPixelColor.r,
                                 xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-                            hdriPixelColor.g = parametricCurve.getYCoordinate(hdriPixelColor.g,
+                            hdriPixelColor.g = _parametricGamutCurve.getYCoordinate(hdriPixelColor.g,
                                 xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-                            hdriPixelColor.b = parametricCurve.getYCoordinate(hdriPixelColor.b,
+                            hdriPixelColor.b = _parametricGamutCurve.getYCoordinate(hdriPixelColor.b,
                                 xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
 
                             if (showPixelsOutOfGamut)
@@ -750,12 +750,12 @@ public class ColorGamutShaped : MonoBehaviour
         return yValues;
     }
 
-    public CurveTest getParametricCurve()
+    public GamutCurve getParametricCurve()
     {
-        if (parametricCurve == null)
+        if (_parametricGamutCurve == null)
             createParametricCurve(greyPoint, origin);
 
-        return parametricCurve;
+        return _parametricGamutCurve;
     }
 
     public void setHDRIIndex(int index)

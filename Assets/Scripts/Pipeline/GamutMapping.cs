@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
-using Unity.Collections;
-using Unity.Jobs;
 using Debug = UnityEngine.Debug;
 
 public enum GamutMappingMode
@@ -14,7 +12,7 @@ public enum GamutMappingMode
     Max_RGB
 }
 
-public class ColorGamut1
+public class GamutMapping
 {
     public Material colorGamutMat;
     public Material fullScreenTextureMat;
@@ -22,9 +20,9 @@ public class ColorGamut1
     public Texture2D sweepTexture;
     public List<Texture2D> HDRIList;
 
-    private GamutMappingMode _activeGamutMappingMode;
+    private GamutMappingMode activeGamutMappingMode;
 
-    public GamutMappingMode ActiveGamutMappingMode => _activeGamutMappingMode;
+    public GamutMappingMode ActiveGamutMappingMode => activeGamutMappingMode;
 
     private float exposure;
 
@@ -61,7 +59,7 @@ public class ColorGamut1
     public float Slope => slope;
 
     private Vector2 origin;
-    private CurveTest parametricCurve = null;
+    private GamutCurve _parametricGamutCurve = null;
     private Vector2[] controlPoints;
     private List<float> tValues;
 
@@ -122,7 +120,7 @@ public class ColorGamut1
     public CurveDataState CurveState => curveDataState;
     private Camera mainCamera;
 
-    public ColorGamut1(Material colorGamutMat, Material fullscreenTexMat, List<Texture2D> hdriList)
+    public GamutMapping(Material colorGamutMat, Material fullscreenTexMat, List<Texture2D> hdriList)
     {
         this.HDRIList = hdriList;
         this.colorGamutMat = colorGamutMat;
@@ -131,7 +129,7 @@ public class ColorGamut1
 
     public void Start(HDRPipeline pipeline)
     {
-        _activeGamutMappingMode = GamutMappingMode.Max_RGB;
+        activeGamutMappingMode = GamutMappingMode.Max_RGB;
 
         hdriIndex = 0;
         gamutCompressionRatioPower = 2;
@@ -191,14 +189,14 @@ public class ColorGamut1
 
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
-        if (parametricCurve == null)
-            parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
+        if (_parametricGamutCurve == null)
+            _parametricGamutCurve = new GamutCurve(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
 
-        controlPoints = parametricCurve.createControlPoints(origin, this.greyPoint, slope);
+        controlPoints = _parametricGamutCurve.createControlPoints(origin, this.greyPoint, slope);
         xValues = initialiseXCoordsInRange(curveLutLength, controlPoints[6].x);
-        tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
+        tValues = _parametricGamutCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
         yValues =
-            parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
+            _parametricGamutCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
 
         // exportDualColumnDataToCSV(xValues.ToArray(), yValues.ToArray(), "CurveAxisData.csv");
     }
@@ -221,7 +219,7 @@ public class ColorGamut1
             Color finalHDRIColor = hdriTextureTransformed.GetPixel(xCoord, yCoord);
 
             Vector2 shapedHDRIColor = new Vector2(initialHDRIColor.maxColorComponent, 0.0f);
-            shapedHDRIColor.y = parametricCurve.getYCoordinateLogXInput(shapedHDRIColor.x, xValues.ToArray(),
+            shapedHDRIColor.y = _parametricGamutCurve.getYCoordinateLogXInput(shapedHDRIColor.x, xValues.ToArray(),
                 yValues.ToArray(),
                 tValues.ToArray(), controlPoints);
 
@@ -315,7 +313,7 @@ public class ColorGamut1
                     maxExposureValue));
 
 
-            if (_activeGamutMappingMode == GamutMappingMode.Max_RGB)
+            if (activeGamutMappingMode == GamutMappingMode.Max_RGB)
             {
                 // Retrieve the maximum RGB value but in linear space
                 float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, greyPoint.x,
@@ -340,7 +338,7 @@ public class ColorGamut1
                 }
 
                 // Get Y value from curve using the array version 
-                float yValue = parametricCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel,
+                float yValue = _parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel,
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
                 yValue = TransferFunction.ApplyTransferFunction(yValue, TransferFunction.TransferFunctionType.sRGB);
 
@@ -350,11 +348,11 @@ public class ColorGamut1
             }
             else
             {
-                hdriPixelColor.r = parametricCurve.getYCoordinateLogXInput(log2HdriPixelArray.r,
+                hdriPixelColor.r = _parametricGamutCurve.getYCoordinateLogXInput(log2HdriPixelArray.r,
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-                hdriPixelColor.g = parametricCurve.getYCoordinateLogXInput(log2HdriPixelArray.g,
+                hdriPixelColor.g = _parametricGamutCurve.getYCoordinateLogXInput(log2HdriPixelArray.g,
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-                hdriPixelColor.b = parametricCurve.getYCoordinateLogXInput(log2HdriPixelArray.b,
+                hdriPixelColor.b = _parametricGamutCurve.getYCoordinateLogXInput(log2HdriPixelArray.b,
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
             }
 
@@ -392,7 +390,7 @@ public class ColorGamut1
 
         // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
         gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(
-            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints),
+            _parametricGamutCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints),
             greyPoint.x, minExposureValue, maxExposureValue);
 
         if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
@@ -653,12 +651,12 @@ public class ColorGamut1
         return yValues;
     }
 
-    public CurveTest getParametricCurve()
+    public GamutCurve getParametricCurve()
     {
-        if (parametricCurve == null)
+        if (_parametricGamutCurve == null)
             createParametricCurve(greyPoint, origin);
 
-        return parametricCurve;
+        return _parametricGamutCurve;
     }
 
     public void setInputTexture(Texture2D inputTexture)
@@ -687,7 +685,7 @@ public class ColorGamut1
 
     public void setActiveTransferFunction(GamutMappingMode gamutMappingMode)
     {
-        this._activeGamutMappingMode = gamutMappingMode;
+        this.activeGamutMappingMode = gamutMappingMode;
         // SetCurveDataState(CurveDataState.Dirty);
     }
 
@@ -704,7 +702,7 @@ public class ColorGamut1
         slope = curveParams.slope;
         origin.x = curveParams.originX;
         origin.y = curveParams.originY;
-        _activeGamutMappingMode = curveParams.ActiveGamutMappingMode;
+        activeGamutMappingMode = curveParams.ActiveGamutMappingMode;
         createParametricCurve(greyPoint, origin);
     }
 

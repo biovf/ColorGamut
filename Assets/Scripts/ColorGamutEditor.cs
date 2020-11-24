@@ -37,7 +37,7 @@ public class ColorGamutEditor : Editor
 
     AnimationCurve animationCurve;
     private Vector2[] controlPoints;
-    private CurveTest parametricCurve;
+    private GamutCurve _parametricGamutCurve;
 
     private List<float> tValues;
     private List<float> xValues;
@@ -90,7 +90,7 @@ public class ColorGamutEditor : Editor
 
     private void recalculateCurveParameters()
     {
-        parametricCurve = colorGamut.getParametricCurve();
+        _parametricGamutCurve = colorGamut.getParametricCurve();
         tValues = colorGamut.getTValues();
         xValues = colorGamut.getXValues();
         yValues = colorGamut.getYValues();

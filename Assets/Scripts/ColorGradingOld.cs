@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
-public class ColorGrading : MonoBehaviour
+public class ColorGradingOld : MonoBehaviour
 {
 
     public Material colorGradingMat;

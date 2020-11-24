@@ -54,7 +54,7 @@ public class ColorGamut : MonoBehaviour
     // Parametric curve variables
     private float slope;
     private Vector2 origin;
-    private CurveTest parametricCurve = null;
+    private GamutCurve _parametricGamutCurve = null;
     private Vector2[] controlPoints;
     private List<float> tValues;
 
@@ -160,13 +160,13 @@ public class ColorGamut : MonoBehaviour
 
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
-        if (parametricCurve == null)
-            parametricCurve = new CurveTest(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
+        if (_parametricGamutCurve == null)
+            _parametricGamutCurve = new GamutCurve(minExposureValue, maxExposureValue, maxRadiometricValue, maxDisplayValue);
         
-        controlPoints = parametricCurve.createControlPoints(origin, greyPoint, slope);
+        controlPoints = _parametricGamutCurve.createControlPoints(origin, greyPoint, slope);
         xValues = initialiseXCoordsInRange(curveLutLength, maxRadiometricValue);
-        tValues = parametricCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
-        yValues = parametricCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
+        tValues = _parametricGamutCurve.calcTfromXquadratic(xValues.ToArray(), controlPoints);
+        yValues = _parametricGamutCurve.calcYfromXQuadratic(xValues, tValues, new List<Vector2>(controlPoints));
         
     }
 
@@ -188,7 +188,7 @@ public class ColorGamut : MonoBehaviour
             Color finalHDRIColor = hdriTextureTransformed.GetPixel(xCoord, yCoord);
 
             Vector2 shapedHDRIColor = new Vector2(initialHDRIColor.maxColorComponent, 0.0f);
-            shapedHDRIColor.y = parametricCurve.getYCoordinate(shapedHDRIColor.x, xValues.ToArray(), yValues.ToArray(), tValues.ToArray(),
+            shapedHDRIColor.y = _parametricGamutCurve.getYCoordinate(shapedHDRIColor.x, xValues.ToArray(), yValues.ToArray(), tValues.ToArray(),
                 controlPoints);
 
             Debug.Log("Coordinates \t \t " + "x: " + xCoord + " y: " + yCoord);
@@ -368,7 +368,7 @@ public class ColorGamut : MonoBehaviour
                             {
                                 // Calculate bleaching  values by iterating through the Y values array and returning the closest x coord
                                 bleachingXCoord =
-                                    parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
+                                    _parametricGamutCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
 
                                 if (hdriPixelColor.r > bleachingXCoord || hdriPixelColor.g > bleachingXCoord ||
                                     hdriPixelColor.b > bleachingXCoord)
@@ -392,7 +392,7 @@ public class ColorGamut : MonoBehaviour
                             }
                            
                             // Get Y value from curve using the array version 
-                            float yValue = parametricCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray,
+                            float yValue = _parametricGamutCurve.getYCoordinate(hdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray,
                                 controlPoints);
 
                             hdriYMaxValue = Mathf.Min(yValue, 1.0f);
@@ -413,7 +413,7 @@ public class ColorGamut : MonoBehaviour
                                     if (Mathf.Approximately(bleachingXCoord, 0.0f))
                                     {
                                         bleachingXCoord =
-                                            parametricCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
+                                            _parametricGamutCurve.getXCoordinate(1.0f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
                                         hdriPixelColor = rawMaxPixelValue > bleachingXCoord
                                             ? Color.blue
                                             : hdriPixelColor;
@@ -431,9 +431,9 @@ public class ColorGamut : MonoBehaviour
                         {
                             _activeGamutMappingMode = GamutMappingMode.Per_Channel;
 
-                            hdriPixelColor.r = parametricCurve.getYCoordinate(hdriPixelColor.r, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-                            hdriPixelColor.g = parametricCurve.getYCoordinate(hdriPixelColor.g, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-                            hdriPixelColor.b = parametricCurve.getYCoordinate(hdriPixelColor.b, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
+                            hdriPixelColor.r = _parametricGamutCurve.getYCoordinate(hdriPixelColor.r, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
+                            hdriPixelColor.g = _parametricGamutCurve.getYCoordinate(hdriPixelColor.g, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
+                            hdriPixelColor.b = _parametricGamutCurve.getYCoordinate(hdriPixelColor.b, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
 
                             if (showPixelsOutOfGamut)
                             {
@@ -694,12 +694,12 @@ public class ColorGamut : MonoBehaviour
         return yValues;
     }
 
-    public CurveTest getParametricCurve()
+    public GamutCurve getParametricCurve()
     {
-        if (parametricCurve == null)
+        if (_parametricGamutCurve == null)
             createParametricCurve(greyPoint, origin);
 
-        return parametricCurve;
+        return _parametricGamutCurve;
     }
 
     public void setHDRIIndex(int index)

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class HDRPipeline : MonoBehaviour
@@ -17,8 +15,8 @@ public class HDRPipeline : MonoBehaviour
     public Material log2Shaper;
     public Texture3D hdr3DLutToDecode;
     
-    private ColorGamut1 colorGamut;
-    private ColorGradingHDR1 colorGrading;
+    private GamutMapping colorGamut;
+    private ColorGrading colorGrading;
 
     private RenderTexture renderBuffer;
     private RenderTexture hdriRenderTexture;
@@ -67,12 +65,12 @@ public class HDRPipeline : MonoBehaviour
 
     private void initialiseColorGamut()
     {
-        colorGamut = new ColorGamut1(colorGamutMat, fullScreenTextureMat, HDRIList);
+        colorGamut = new GamutMapping(colorGamutMat, fullScreenTextureMat, HDRIList);
         colorGamut.Start(this);
     }
     private void initialiseColorGrading()
     {
-        colorGrading = new ColorGradingHDR1(colorGamut.getHDRITexture(), colorGrading3DTextureMat, 
+        colorGrading = new ColorGrading(colorGamut.getHDRITexture(), colorGrading3DTextureMat, 
             fullScreenTextureMat, log2Shaper);
         colorGrading.Start(this, hdr3DLutToDecode);
     }
@@ -86,9 +84,6 @@ public class HDRPipeline : MonoBehaviour
     public void drawGamutCurveWidget()
     {
         var oldRt = RenderTexture.active;
-        //curveDrawMaterial.SetFloat("scaleFactor", scaleFactor);
-        //curveDrawMaterial.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
-        //curveDrawMaterial.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
         curveDrawMaterial.SetVectorArray("controlPoints", controlPointsUniform);
         Graphics.Blit(null, curveRT, curveDrawMaterial);
         RenderTexture.active = oldRt;
@@ -106,8 +101,8 @@ public class HDRPipeline : MonoBehaviour
         
          Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
         
-         if (useCpuMode && (colorGamut.CurveState == ColorGamut1.CurveDataState.NotCalculated ||
-             colorGamut.CurveState == ColorGamut1.CurveDataState.Dirty))
+         if (useCpuMode && (colorGamut.CurveState == GamutMapping.CurveDataState.NotCalculated ||
+             colorGamut.CurveState == GamutMapping.CurveDataState.Dirty))
          {
              ApplyGamutMap();
          }
@@ -132,10 +127,10 @@ public class HDRPipeline : MonoBehaviour
              Graphics.Blit(hdriRenderTexture, gamutMapRT, gamutMap);
                  
              Graphics.Blit(gamutMapRT, hdriRenderTexture, fullScreenTextureMat);
-             colorGamut.SetCurveDataState(ColorGamut1.CurveDataState.Calculated);
+             colorGamut.SetCurveDataState(GamutMapping.CurveDataState.Calculated);
          }
          
-         if (colorGamut.CurveState == ColorGamut1.CurveDataState.Calculated)
+         if (colorGamut.CurveState == GamutMapping.CurveDataState.Calculated)
          {
             if (useCpuMode)
             {
@@ -158,7 +153,7 @@ public class HDRPipeline : MonoBehaviour
         StartCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
     }
 
-    public ColorGamut1 getColorGamut()
+    public GamutMapping getColorGamut()
     {
         if(colorGamut == null)
             initialiseColorGamut();
@@ -166,7 +161,7 @@ public class HDRPipeline : MonoBehaviour
         return colorGamut;
     }
     
-    public ColorGradingHDR1 getColorGrading()
+    public ColorGrading getColorGrading()
     {
         if(colorGrading == null)
             initialiseColorGrading();

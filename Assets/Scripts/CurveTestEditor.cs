@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-[CustomEditor(typeof(CurveTest))]
+[CustomEditor(typeof(GamutCurve))]
 
 
 public class CurveTestEditor : Editor

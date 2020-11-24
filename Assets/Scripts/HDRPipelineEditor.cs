@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
@@ -30,7 +29,7 @@ public struct CurveParams
 public class HDRPipelineEditor : Editor
 {
     HDRPipeline hdrPipeline;
-    private ColorGamut1 colorGamut;
+    private GamutMapping colorGamut;
     private float exposure = 0.0f;
     private int gamutCompressionRatioPower = 2;
     private GamutMappingMode _activeGamutMappingMode = GamutMappingMode.Max_RGB;
@@ -55,7 +54,7 @@ public class HDRPipelineEditor : Editor
     private bool showPixelsOutOfGamut = false;
 
     private Vector2[] controlPoints;
-    private CurveTest parametricCurve;
+    private GamutCurve _parametricGamutCurve;
 
     private List<float> xValues;
     private List<float> yValues;
@@ -92,9 +91,9 @@ public class HDRPipelineEditor : Editor
     #endregion
 
     private bool isColorGradingTabOpen = true;
-    private ColorGradingHDR1 colorGradingHDR;
+    private ColorGrading colorGradingHDR;
     private bool shapeImage = true;
-    private ColorGamut1.CurveDataState guiWidgetsState = ColorGamut1.CurveDataState.NotCalculated;
+    private GamutMapping.CurveDataState guiWidgetsState = GamutMapping.CurveDataState.NotCalculated;
     
     #region DebugOptions
     private bool enableCPUMode = false;
@@ -128,7 +127,7 @@ public class HDRPipelineEditor : Editor
         }
         
         // Initialise parameters for the curve with sensible values
-        if (guiWidgetsState ==  ColorGamut1.CurveDataState.NotCalculated)
+        if (guiWidgetsState ==  GamutMapping.CurveDataState.NotCalculated)
             colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
                 out greyPointY);
         
@@ -159,7 +158,7 @@ public class HDRPipelineEditor : Editor
 
     private void recalculateCurveParameters()
     {
-        parametricCurve = colorGamut.getParametricCurve();
+        _parametricGamutCurve = colorGamut.getParametricCurve();
         xValues = colorGamut.getXValues();
         yValues = colorGamut.getYValues();
 
@@ -178,7 +177,7 @@ public class HDRPipelineEditor : Editor
         if (Application.isPlaying)
         {
             if (debugPoints == null || debugPoints.Count == 0)
-                guiWidgetsState =  ColorGamut1.CurveDataState.NotCalculated;
+                guiWidgetsState =  GamutMapping.CurveDataState.NotCalculated;
             
             if (colorGamut == null)
             {
@@ -208,11 +207,11 @@ public class HDRPipelineEditor : Editor
             Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
             Handles.DrawDottedLine(new Vector3(0.0f, 0.5f), new Vector3(0.5f, 0.5f), 4.0f); // Draw vertical line from 0.18f
             
-            if (guiWidgetsState ==  ColorGamut1.CurveDataState.Dirty ||
-                guiWidgetsState ==  ColorGamut1.CurveDataState.NotCalculated)
+            if (guiWidgetsState ==  GamutMapping.CurveDataState.Dirty ||
+                guiWidgetsState ==  GamutMapping.CurveDataState.NotCalculated)
             {
                 recalculateCurveParameters();
-                guiWidgetsState =  ColorGamut1.CurveDataState.Calculated;
+                guiWidgetsState =  GamutMapping.CurveDataState.Calculated;
             }
 
             Handles.DrawPolyLine(debugPoints.ToArray());
@@ -261,10 +260,10 @@ public class HDRPipelineEditor : Editor
             if (GUI.changed)
             {
                 Debug.Log("GUI Changed");
-                guiWidgetsState =  ColorGamut1.CurveDataState.Dirty;
+                guiWidgetsState =  GamutMapping.CurveDataState.Dirty;
             }
             
-            if (guiWidgetsState == ColorGamut1.CurveDataState.Dirty && 
+            if (guiWidgetsState == GamutMapping.CurveDataState.Dirty && 
                 GUILayout.Button("Generate Image"))
             {
                 Debug.Log("Generating new image with new parameters");
@@ -328,7 +327,7 @@ public class HDRPipelineEditor : Editor
             originPointY, _activeGamutMappingMode, isGamutCompressionActive);
         colorGamut.setCurveParams(curveParams);
         hdrPipeline.ApplyGamutMap();
-        guiWidgetsState = ColorGamut1.CurveDataState.Calculating;
+        guiWidgetsState = GamutMapping.CurveDataState.Calculating;
     }
 
     private void DrawDebugOptionsWidgets()

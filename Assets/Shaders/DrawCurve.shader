@@ -47,6 +47,12 @@
                 return a.x * b.y - b.x * a.y;
             }
 
+            half2 closestPointInSegment( half2 a, half2 b )
+            {
+              half2 ba = b - a;
+              return a + ba*clamp( -dot(a,ba)/dot(ba,ba), 0.0, 1.0 );
+            }
+            
             half2 get_distance_vector(half2 b0, half2 b1, half2 b2)
             {
                 float a = det(b0, b2), b = 2.0 * det(b1, b0), d = 2.0 * det(b2, b1);
@@ -130,6 +136,8 @@
                 if (dist < EDGE + SMOOTH)
                 {
                     dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
+                    if(dist < 1.0)
+                        dist = 1.0;
                     color *= half3(dist, dist, dist);
                 }
                 dist = approx_distance(i.uv, p4, p5, p6);
