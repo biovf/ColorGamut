@@ -50,6 +50,7 @@
             int usePerChannel;
             float xCoords[1024];
             float yCoords[1024];
+            half4 controlPoints[7];
 
             v2f vert(appdata v)
             {
@@ -132,10 +133,10 @@
                 else
                 {
                     int maxArrayIndex = inputArraySize - 1;
-                    // float minRadiometricValue = controlPoints[0].x;
-                    // float maxRadiometricValue = controlPoints[controlPoints.Length - 1].x;
+                    float minXValue = controlPoints[0].x;
+                    float maxXValue = controlPoints[6].x;
                     outIndex = (int)clamp(
-                        round(sqrt((target - minRadiometricValue) / maxRadiometricValue) * (float)inputArraySize),
+                        round(sqrt((target - minXValue) / maxXValue) * (float)inputArraySize),
                         0.0, (float)maxArrayIndex);
 
                     int indexBefore = clamp((outIndex - 1), 0, maxArrayIndex);

@@ -45,6 +45,8 @@ public class HDRPipeline : MonoBehaviour
         set => scaleFactor = value;
     }
 
+    private Vector4[] controlPointsUniform;
+    
     void Start()
     {
         renderBuffer = new RenderTexture(HDRIList[0].width, HDRIList[0].height, 0, RenderTextureFormat.ARGBHalf,
@@ -58,6 +60,7 @@ public class HDRPipeline : MonoBehaviour
         
         curveRT = new RenderTexture(512, 512, 0, RenderTextureFormat.ARGB32);
         curveMaterial = new Material(Shader.Find("Custom/DrawCurve"));
+        controlPointsUniform = new Vector4[7];
 
         
     }
@@ -117,12 +120,19 @@ public class HDRPipeline : MonoBehaviour
              gamutMap.SetVector("greyPoint", new Vector4(colorGamut.GreyPoint.x,colorGamut.GreyPoint.y, 0.0f));
              gamutMap.SetFloat("minExposure", colorGamut.MINExposureValue);
              gamutMap.SetFloat("maxExposure", colorGamut.MAXExposureValue);
-             gamutMap.SetFloat("minRadiometricValue", colorGamut.getControlPoints()[0].x);
-             gamutMap.SetFloat("maxRadiometricValue", colorGamut.getControlPoints()[colorGamut.getControlPoints().Length - 1].x);
+             gamutMap.SetFloat("minRadiometricValue", colorGamut.MinRadiometricValue);
+             gamutMap.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricValue);
              gamutMap.SetInt("inputArraySize", colorGamut.getXValues().Count - 1);
              gamutMap.SetInt("usePerChannel", activeTransferFunction);
              gamutMap.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
              gamutMap.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
+
+             Vector2[] controlPoints = colorGamut.getControlPoints();
+             for (int i = 0; i < 7; i++)
+             {
+                    controlPointsUniform[i] = new Vector4(controlPoints[i].x, controlPoints[i].y);
+             }
+             gamutMap.SetVectorArray("controlPoints", controlPointsUniform);
              
              Graphics.Blit(hdriRenderTexture, gamutMapRT, gamutMap);
                  
