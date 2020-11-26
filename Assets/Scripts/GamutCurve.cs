@@ -378,7 +378,7 @@ public class GamutCurve
                 coefficients[1] = (2.0f * p1.x) - (2.0f * p0.x);
                 coefficients[2] = p0.x - (2.0f * p1.x) + p2.x;
 
-                Complex[] roots = FindRoots.Polynomial(coefficients);
+                Complex[] roots = SolveQuadraticEquation(coefficients[2], coefficients[1], coefficients[0]);
                 // check if it is complex
                 for (int idx = 0; idx < roots.Length; idx++)
                 {
@@ -402,6 +402,16 @@ public class GamutCurve
             Debug.LogError("Invalid root value being returned for " + xValue + " in calcTfromXquadratic()");
 
         return rootValue;
+    }
+
+
+    private Complex[] SolveQuadraticEquation(double a, double b, double c)
+    {
+        Complex[] roots = new Complex[2];
+        var q = -(b + Math.Sign(b) * Complex.Sqrt(b * b - 4 * a * c)) / 2;
+        roots[0] = q / a;
+        roots[1] = c / q;
+        return roots;
     }
 
     // Array based
