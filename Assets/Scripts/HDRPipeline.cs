@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class HDRPipeline : MonoBehaviour
 {
@@ -44,6 +45,9 @@ public class HDRPipeline : MonoBehaviour
     }
 
     private Vector4[] controlPointsUniform;
+    private ComputeBuffer xCurveCoordsCBuffer;
+    private ComputeBuffer yCurveCoordsCBuffer;
+
     
     void Start()
     {
@@ -59,6 +63,9 @@ public class HDRPipeline : MonoBehaviour
         curveRT = new RenderTexture(512, 512, 0, RenderTextureFormat.ARGB32);
         curveDrawMaterial = new Material(Shader.Find("Custom/DrawCurve"));
         controlPointsUniform = new Vector4[7];
+        
+        xCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
+        yCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
 
         
     }
@@ -118,8 +125,12 @@ public class HDRPipeline : MonoBehaviour
              gamutMap.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricValue);
              gamutMap.SetInt("inputArraySize", colorGamut.getXValues().Count - 1);
              gamutMap.SetInt("usePerChannel", activeTransferFunction);
-             gamutMap.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
-             gamutMap.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
+             // gamutMap.SetFloatArray("xCoords", colorGamut.getXValues().ToArray());
+             // gamutMap.SetFloatArray("yCoords", colorGamut.getYValues().ToArray());
+             xCurveCoordsCBuffer.SetData(colorGamut.getXValues().ToArray());
+             yCurveCoordsCBuffer.SetData(colorGamut.getYValues().ToArray());
+             gamutMap.SetBuffer(Shader.PropertyToID("xCurveCoordsCBuffer"), xCurveCoordsCBuffer);
+             gamutMap.SetBuffer(Shader.PropertyToID("yCurveCoordsCBuffer"), yCurveCoordsCBuffer);
 
            
              gamutMap.SetVectorArray("controlPoints", controlPointsUniform);

@@ -9,7 +9,7 @@
         maxExposure ("Maximum Exposure Value(EV)", Float) = 6.0
         minRadiometricValue ("Minimum Radiometric Value", Float) = 0.0028
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
-        inputArraySize ("Number of curve array elements", Int) = 1023
+        inputArraySize ("Number of curve array elements", Int) = 1024
         usePerChannel ("Use per channel gamut mapping", Int) = 0
     }
     SubShader
@@ -48,8 +48,16 @@
             half maxRadiometricValue;
             int inputArraySize;
             int usePerChannel;
-            float xCoords[1024];
-            float yCoords[1024];
+            // float xCoords[1024];
+            // float yCoords[1024];
+
+            struct GamutCurveCoords
+            {
+                float curveCoord;
+            };
+            StructuredBuffer<GamutCurveCoords> xCurveCoordsCBuffer;
+            StructuredBuffer<GamutCurveCoords> yCurveCoordsCBuffer;
+
             half4 controlPoints[7];
 
             v2f vert(appdata v)
@@ -90,7 +98,7 @@
                 return pow(inputValue, 2.2f);
             }
 
-            void BilinearClosestTo(float inputArray[1024], float target, out int arrayIndex, out int arrayIndex2)
+            void BilinearClosestTo(/*float inputArray[1024],*/ float target, out int arrayIndex, out int arrayIndex2)
             {
                 // Terrible horrible hack since there is not MaxValue for a float variable
                 float closest = 9999999.0;
@@ -99,58 +107,26 @@
 
                 int outIndex = 0;
                 int outIndex2 = 0;
+            
+                int maxArrayIndex = inputArraySize - 1;
+                float minXValue = controlPoints[0].x;
+                float maxXValue = controlPoints[6].x;
+                outIndex = (int)clamp(
+                    round(sqrt((target - minXValue) / maxXValue) * (float)inputArraySize),
+                    0.0, (float)maxArrayIndex);
 
-                if (false)
-                {
-                    for (int i = 0; i < inputArraySize; i++)
-                    {
-                        float currentDifference = abs((float)inputArray[i] - target);
+                int indexBefore = clamp((outIndex - 1), 0, maxArrayIndex);
+                int indexAfter = clamp((outIndex + 1), 0, maxArrayIndex);
+                float currentDiffBefore = abs((float)xCurveCoordsCBuffer[indexBefore].curveCoord - target);
+                float currentDiffAfter = abs((float)xCurveCoordsCBuffer[indexAfter].curveCoord - target);
+                outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
 
-                        // Early exit because the array is always ordered from smallest to largest
-                        if (prevDifference < currentDifference)
-                            break;
-
-                        if (minDifference > currentDifference)
-                        {
-                            // Check which of the values, before or after this one, are closer to the target value
-                            int indexBefore = clamp((i - 1), 0, inputArraySize - 1);
-                            int indexAfter = clamp((i + 1), 0, inputArraySize - 1);
-                            float currentDiffBefore = abs((float)inputArray[indexBefore] - target);
-                            float currentDiffAfter = abs((float)inputArray[indexAfter] - target);
-
-                            minDifference = currentDifference;
-                            closest = inputArray[i];
-                            outIndex = i;
-                            outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
-                        }
-
-                        prevDifference = currentDifference;
-                    }
-
-                    arrayIndex = outIndex;
-                    arrayIndex2 = outIndex2;
-                }
-                else
-                {
-                    int maxArrayIndex = inputArraySize - 1;
-                    float minXValue = controlPoints[0].x;
-                    float maxXValue = controlPoints[6].x;
-                    outIndex = (int)clamp(
-                        round(sqrt((target - minXValue) / maxXValue) * (float)inputArraySize),
-                        0.0, (float)maxArrayIndex);
-
-                    int indexBefore = clamp((outIndex - 1), 0, maxArrayIndex);
-                    int indexAfter = clamp((outIndex + 1), 0, maxArrayIndex);
-                    float currentDiffBefore = abs((float)inputArray[indexBefore] - target);
-                    float currentDiffAfter = abs((float)inputArray[indexAfter] - target);
-                    outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
-
-                    arrayIndex = outIndex;
-                    arrayIndex2 = outIndex2;
-                }
+                arrayIndex = outIndex;
+                arrayIndex2 = outIndex2;
+                
             }
 
-            float ClosestTo(float inputArray[1024], float target, out int arrayIndex)
+            float ClosestTo(/*float inputArray[1024,*/ float target, out int arrayIndex)
             {
                 float closest = 999999.0f;
                 float minDifference = 999999.0f;
@@ -159,7 +135,7 @@
                 int outIndex = 0;
                 for (int i = 0; i < inputArraySize; i++)
                 {
-                    float currentDifference = abs((float)inputArray[i] - target);
+                    float currentDifference = abs((float)yCurveCoordsCBuffer[i].curveCoord - target);
 
                     // Early exit because the array is always ordered from smallest to largest
                     if (prevDifference < currentDifference)
@@ -168,7 +144,7 @@
                     if (minDifference > currentDifference)
                     {
                         minDifference = currentDifference;
-                        closest = inputArray[i];
+                        closest = yCurveCoordsCBuffer[i].curveCoord;
                         outIndex = i;
                     }
 
@@ -179,11 +155,11 @@
                 return closest;
             }
 
-            float getXCoordinate(float inputYCoord, float xCoords[1024], float YCoords[1024])
+            float getXCoordinate(float inputYCoord/*, float xCoords[1024], float YCoords[1024]*/)
             {
                 int idx = 0;
-                ClosestTo(YCoords, inputYCoord, idx);
-                return xCoords[idx];
+                ClosestTo(/*YCoords,*/ inputYCoord, idx);
+                return xCurveCoordsCBuffer[idx].curveCoord;
             }
 
             half3 calculateGamutCompression(half3 linearHdriPixelColor, half3 ratio, half linearHdriMaxRGBChannel)
@@ -193,7 +169,7 @@
 
                 // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
                 gamutCompressionXCoordLinear = calculateLog2ToLinear(
-                    getXCoordinate(1.0f, xCoords, yCoords), greyPoint.x, minExposure, maxExposure);
+                    getXCoordinate(1.0f/*, xCoords, yCoords*/), greyPoint.x, minExposure, maxExposure);
 
                 if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
                     linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
@@ -221,28 +197,28 @@
 
                 int idx = 0;
                 int idx2 = 0;
-                BilinearClosestTo(xCoords, logInputXCoord, idx, idx2);
+                BilinearClosestTo(/*xCoords,*/ logInputXCoord, idx, idx2);
                 float linearInputXCoord =
                     calculateLog2ToLinear(logInputXCoord, greyPoint.x, minExposure, maxExposure);
                 float linearXCoordIdx = calculateLog2ToLinear(
-                    xCoords[idx], greyPoint.x, minExposure, maxExposure);
+                    xCurveCoordsCBuffer[idx].curveCoord, greyPoint.x, minExposure, maxExposure);
                 float linearXCoordIdx2 = calculateLog2ToLinear(
-                    xCoords[idx2], greyPoint.x, minExposure, maxExposure);
+                    xCurveCoordsCBuffer[idx2].curveCoord, greyPoint.x, minExposure, maxExposure);
 
                 // Calculate interpolation factor
                 if (idx == idx2)
                 {
-                    return yCoords[idx];
+                    return yCurveCoordsCBuffer[idx].curveCoord;
                 }
                 else if (idx < idx2)
                 {
                     float lerpValue = (linearInputXCoord - linearXCoordIdx) / (linearXCoordIdx2 - linearXCoordIdx);
-                    return lerp(yCoords[idx], yCoords[idx2], lerpValue);
+                    return lerp(yCurveCoordsCBuffer[idx].curveCoord, yCurveCoordsCBuffer[idx2].curveCoord, lerpValue);
                 }
                 else
                 {
                     float lerpValue = (linearInputXCoord - linearXCoordIdx2) / (linearXCoordIdx - linearXCoordIdx2);
-                    return lerp(yCoords[idx2], yCoords[idx], lerpValue);
+                    return lerp(yCurveCoordsCBuffer[idx2].curveCoord, yCurveCoordsCBuffer[idx].curveCoord, lerpValue);
                 }
             }
 

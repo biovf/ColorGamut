@@ -154,7 +154,7 @@ public class GamutMapping
         Debug.Log("Minimum Radiometric Value: \t " + minRadiometricValue.ToString("F6"));
         Debug.Log("Maximum Radiometric Value: \t " + maxRadiometricValue.ToString("F6"));
         origin = new Vector2(minRadiometricValue, minDisplayValue);
-        curveLutLength = 1023;
+        curveLutLength = 1024;
         createParametricCurve(greyPoint, origin);
 
         if (HDRIList == null)
