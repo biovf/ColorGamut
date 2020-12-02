@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -9,7 +7,7 @@ using UnityEngine;
 
 
 [ScriptedImporter(0, "cube")]
-class CubeLutImporter : ScriptedImporter
+public class CubeLutImporter : ScriptedImporter
 {
     public override void OnImportAsset(AssetImportContext ctx)
     {

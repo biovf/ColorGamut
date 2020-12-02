@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-public class ColorGrading
+public class ColorGrade
 {
     public bool EnableColorGrading
     {
@@ -12,7 +12,7 @@ public class ColorGrading
 
     private bool enableColorGrading = true;
 
-    private GamutMapping colorGamut;
+    private GamutMap colorGamut;
     
     private Material colorGrading3DTextureMat;
     private Material fullscreenMat;
@@ -28,7 +28,7 @@ public class ColorGrading
     private RenderTexture interceptDebugRT;
 
     private HDRPipeline pipeline;
-    public ColorGrading(Texture2D testTexture, Material colorGrading3DTextureMat, 
+    public ColorGrade(Texture2D testTexture, Material colorGrading3DTextureMat, 
         Material fullscreenMat, Material log2Shaper)
     {
         this.testTexture = testTexture;

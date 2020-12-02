@@ -70,23 +70,11 @@
             half4 frag(v2f i) : SV_Target
             {
                 half3 col = (tex2D(_MainTex, i.uv).rgb);
-                // col.r = calculateLinearToLog(col.r, _MidGreyX, _MinExposureValue, _MaxExposureValue);
-                // col.g = calculateLinearToLog(col.g, _MidGreyX, _MinExposureValue, _MaxExposureValue);
-                // col.b = calculateLinearToLog(col.b, _MidGreyX, _MinExposureValue, _MaxExposureValue);
-                // col.rgb = pow(col.rgb, (1.0/2.2));
-                // col.rgb = clamp(col.rgb, 0.0, 1.0) * (_MaxExposureValue - _MinExposureValue) + _MinExposureValue;
-                // col.rgb = pow(2.0f, col.rgb) * _MidGreyX;
-                 //col = pow(col, 2.2);
                 half3 scale = (33.0 - 1.0) / 33.0;
                 half3 offset = 1.0 / (2.0 * 33.0);
                 half3 gradedCol = tex3D(_LUT, scale * col + offset).rgb;
 
                 return half4(sRgbEOTF(gradedCol.r), sRgbEOTF(gradedCol.g), sRgbEOTF(gradedCol.b), 1.0);
-                //return half4(gradedCol, 1.0);
-                //return half4(pow(col, 2.2), 1.0);
-                  //return half4(pow(gradedCol, 2.2), 1.0);
-                // return half4(pow(col, 2.2), 1.0);
-                // return half4(col, 1.0);
             }
             ENDCG
         }

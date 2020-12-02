@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using MathNet.Numerics;
 using UnityEngine;
 using Vector2 = UnityEngine.Vector2;
 
@@ -448,7 +447,7 @@ public class GamutCurve
                     coefficients[1] = (2.0f * p1.x) - (2.0f * p0.x);
                     coefficients[2] = p0.x - (2.0f * p1.x) + p2.x;
 
-                    Complex[] roots = FindRoots.Polynomial(coefficients);
+                    Complex[] roots = SolveQuadraticEquation(coefficients[2], coefficients[1], coefficients[0]);
                     // check if it is complex
                     for (int idx = 0; idx < roots.Length; idx++)
                     {

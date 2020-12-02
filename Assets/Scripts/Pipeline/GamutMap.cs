@@ -12,7 +12,7 @@ public enum GamutMappingMode
     Max_RGB
 }
 
-public class GamutMapping
+public class GamutMap
 {
     public Material colorGamutMat;
     public Material fullScreenTextureMat;
@@ -120,7 +120,7 @@ public class GamutMapping
     public CurveDataState CurveState => curveDataState;
     private Camera mainCamera;
 
-    public GamutMapping(Material colorGamutMat, Material fullscreenTexMat, List<Texture2D> hdriList)
+    public GamutMap(Material colorGamutMat, Material fullscreenTexMat, List<Texture2D> hdriList)
     {
         this.HDRIList = hdriList;
         this.colorGamutMat = colorGamutMat;

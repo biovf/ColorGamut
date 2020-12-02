@@ -3,33 +3,13 @@ using UnityEngine;
 using UnityEditor;
 
 
-public struct CurveParams
-{
-    public bool isGamutCompressionActive;
-    public float exposure;
-    public float slope;
-    public float originX;
-    public float originY;
-    public GamutMappingMode ActiveGamutMappingMode;
 
-    public CurveParams(float inExposure, float inSlope, float inOriginX,
-        float inOriginY, GamutMappingMode inActiveGamutMappingMode, bool inIsGamutCompressionActive)
-    {
-        exposure = inExposure;
-        slope = inSlope;
-        originX = inOriginX;
-        originY = inOriginY;
-        ActiveGamutMappingMode = inActiveGamutMappingMode;
-        isGamutCompressionActive = inIsGamutCompressionActive;
-
-    }
-}
 
 [CustomEditor(typeof(HDRPipeline))]
 public class HDRPipelineEditor : Editor
 {
     HDRPipeline hdrPipeline;
-    private GamutMapping colorGamut;
+    private GamutMap colorGamut;
     private float exposure = 0.0f;
     private int gamutCompressionRatioPower = 2;
     private GamutMappingMode _activeGamutMappingMode = GamutMappingMode.Max_RGB;
@@ -91,9 +71,9 @@ public class HDRPipelineEditor : Editor
     #endregion
 
     private bool isColorGradingTabOpen = true;
-    private ColorGrading colorGradingHDR;
+    private ColorGrade colorGradingHDR;
     private bool shapeImage = true;
-    private GamutMapping.CurveDataState guiWidgetsState = GamutMapping.CurveDataState.NotCalculated;
+    private GamutMap.CurveDataState guiWidgetsState = GamutMap.CurveDataState.NotCalculated;
     
     #region DebugOptions
     private bool enableCPUMode = false;
@@ -127,7 +107,7 @@ public class HDRPipelineEditor : Editor
         }
         
         // Initialise parameters for the curve with sensible values
-        if (guiWidgetsState ==  GamutMapping.CurveDataState.NotCalculated)
+        if (guiWidgetsState ==  GamutMap.CurveDataState.NotCalculated)
             colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
                 out greyPointY);
         
@@ -177,7 +157,7 @@ public class HDRPipelineEditor : Editor
         if (Application.isPlaying)
         {
             if (debugPoints == null || debugPoints.Count == 0)
-                guiWidgetsState =  GamutMapping.CurveDataState.NotCalculated;
+                guiWidgetsState =  GamutMap.CurveDataState.NotCalculated;
             
             if (colorGamut == null)
             {
@@ -207,11 +187,11 @@ public class HDRPipelineEditor : Editor
             Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
             Handles.DrawDottedLine(new Vector3(0.0f, 0.5f), new Vector3(0.5f, 0.5f), 4.0f); // Draw vertical line from 0.18f
             
-            if (guiWidgetsState ==  GamutMapping.CurveDataState.Dirty ||
-                guiWidgetsState ==  GamutMapping.CurveDataState.NotCalculated)
+            if (guiWidgetsState ==  GamutMap.CurveDataState.Dirty ||
+                guiWidgetsState ==  GamutMap.CurveDataState.NotCalculated)
             {
                 recalculateCurveParameters();
-                guiWidgetsState =  GamutMapping.CurveDataState.Calculated;
+                guiWidgetsState =  GamutMap.CurveDataState.Calculated;
             }
 
             Handles.DrawPolyLine(debugPoints.ToArray());
@@ -260,21 +240,21 @@ public class HDRPipelineEditor : Editor
             if (GUI.changed)
             {
                 Debug.Log("GUI Changed");
-                guiWidgetsState =  GamutMapping.CurveDataState.Dirty;
+                guiWidgetsState =  GamutMap.CurveDataState.Dirty;
             }
 
-            if (enableCPUMode == true && guiWidgetsState == GamutMapping.CurveDataState.Dirty && 
+            if (enableCPUMode == true && guiWidgetsState == GamutMap.CurveDataState.Dirty && 
                 GUILayout.Button("Generate Image"))
             {
                 Debug.Log("Generating new image with new parameters");
                 RecalculateImageInCpuMode();
-            } else if (enableCPUMode == false && guiWidgetsState == GamutMapping.CurveDataState.Dirty 
-                && GUILayout.Button("Recalculate Curve Parameters"))
+            } else if (enableCPUMode == false && guiWidgetsState == GamutMap.CurveDataState.Dirty 
+               /* && GUILayout.Button("Recalculate Curve Parameters")*/)
             {
                 RecalculateCurveParameters();
                 colorGamut.setActiveTransferFunction(_activeGamutMappingMode);
                 colorGamut.setExposure(exposure);
-                guiWidgetsState = GamutMapping.CurveDataState.Calculated;
+                guiWidgetsState = GamutMap.CurveDataState.Calculated;
 
             }
         }
@@ -337,7 +317,7 @@ public class HDRPipelineEditor : Editor
             originPointY, _activeGamutMappingMode, isGamutCompressionActive);
         colorGamut.setCurveParams(curveParams);
         hdrPipeline.ApplyGamutMap();
-        guiWidgetsState = GamutMapping.CurveDataState.Calculating;
+        guiWidgetsState = GamutMap.CurveDataState.Calculating;
     }
 
     private void DrawDebugOptionsWidgets()
