@@ -7,7 +7,7 @@
         greyPoint ("Middle Grey Value(XY)", Vector) = (0.18, 0.18, 0.0, 0.0)
         minExposure ("Minimum Exposure Value(EV)", Float) = -6.0
         maxExposure ("Maximum Exposure Value(EV)", Float) = 6.0
-        minRadiometricValue ("Minimum Radiometric Value", Float) = 0.0028
+//        minRadiometricValue ("Minimum Radiometric Value", Float) = 0.0028
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
         inputArraySize ("Number of curve array elements", Int) = 1024
         usePerChannel ("Use per channel gamut mapping", Int) = 0
@@ -44,7 +44,7 @@
             half4 greyPoint;
             half minExposure;
             half maxExposure;
-            half minRadiometricValue;
+            // half minRadiometricValue;
             half maxRadiometricValue;
             int inputArraySize;
             int usePerChannel;

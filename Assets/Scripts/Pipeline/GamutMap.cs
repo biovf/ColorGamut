@@ -14,7 +14,6 @@ public enum GamutMappingMode
 
 public class GamutMap
 {
-    public Material colorGamutMat;
     public Material fullScreenTextureMat;
     public Material fullScreenTextureAndSweepMat;
     public Texture2D sweepTexture;
@@ -48,10 +47,7 @@ public class GamutMap
 
     public RenderTexture ScreenGrab => screenGrab;
 
-    private AnimationCurve animationCurve;
     private Color[] hdriPixelArray;
-    private Vector2[] animationCurveLUT;
-    private string logOutput = "";
 
     // Parametric curve variables
     private float slope;
@@ -120,10 +116,10 @@ public class GamutMap
     public CurveDataState CurveState => curveDataState;
     private Camera mainCamera;
 
-    public GamutMap(Material colorGamutMat, Material fullscreenTexMat, List<Texture2D> hdriList)
+    public GamutMap( Material fullscreenTexMat, List<Texture2D> hdriList)
     {
         this.HDRIList = hdriList;
-        this.colorGamutMat = colorGamutMat;
+       
         this.fullScreenTextureMat = fullscreenTexMat;
     }
 
@@ -169,7 +165,6 @@ public class GamutMap
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         screenGrab.Create();
-        mainCamera = pipeline.gameObject.GetComponent<Camera>();
         curveDataState = CurveDataState.NotCalculated;
     }
 

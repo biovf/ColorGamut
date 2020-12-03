@@ -16,8 +16,6 @@ public class ColorGrade
     
     private Material colorGrading3DTextureMat;
     private Material fullscreenMat;
-    private Material log2Shaper;
-    private Material toneMapMat;
     
     public Texture3D hdr3DLutToDecode;
     private Texture2D testTexture;
@@ -29,12 +27,11 @@ public class ColorGrade
 
     private HDRPipeline pipeline;
     public ColorGrade(Texture2D testTexture, Material colorGrading3DTextureMat, 
-        Material fullscreenMat, Material log2Shaper)
+        Material fullscreenMat)
     {
         this.testTexture = testTexture;
         this.colorGrading3DTextureMat = colorGrading3DTextureMat;
         this.fullscreenMat = fullscreenMat;
-        this.log2Shaper = log2Shaper;
     }
 
     public void Start(HDRPipeline pipeline, Texture3D hdrLUTToDecode)
