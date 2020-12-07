@@ -65,6 +65,53 @@
                 return lerp(lerp(b0, b1, t), lerp(b1, b2, t), t);
             }
 
+            // Test if point p crosses line (a, b), returns sign of result
+float testCross(half2 a, half2 b, half2 p) {
+    return sign((b.y-a.y) * (p.x-a.x) - (b.x-a.x) * (p.y-a.y));
+}
+            // Determine which side we're on (using barycentric parameterization)
+            float signBezier(half2 A, half2 B, half2 C, half2 p)
+            { 
+                half2 a = C - A, b = B - A, c = p - A;
+                half2 bary = half2(c.x*b.y-b.x*c.y,a.x*c.y-c.x*a.y) / (a.x*b.y-b.x*a.y);
+                half2 d = half2(bary.y * 0.5, 0.0) + 1.0 - bary.x - bary.y;
+                return lerp(sign(d.x * d.x - d.y), lerp(-1.0, 1.0, 
+                    step(testCross(A, B, p) * testCross(B, C, p), 0.0)),
+                    step((d.x - d.y), 0.0)) * testCross(A, C, B);
+            }
+        half3 solveCubic(float a, float b, float c)
+        {
+            float p = b - a*a / 3.0, p3 = p*p*p;
+            float q = a * (2.0*a*a - 9.0*b) / 27.0 + c;
+            float d = q*q + 4.0*p3 / 27.0;
+            float offset = -a / 3.0;
+            if(d >= 0.0) { 
+                float z = sqrt(d);
+                half2 x = (half2(z, -z) - q) / 2.0;
+                half oneThird = 1.0/3.0;
+                half2 uv = sign(x)*pow(abs(x), half2(oneThird, oneThird));
+                float res = offset + uv.x + uv.y;
+                return half3(res, res, res);
+            }
+            float v = acos(-sqrt(-27.0 / p3) * q / 2.0) / 3.0;
+            float m = cos(v), n = sin(v)*1.732050808;
+            return half3(m + m, -n - m, n - m) * sqrt(-p / 3.0) + offset;
+        }
+            
+            float sdBezier(half2 A, half2 B, half2 C, half2 p)
+            {    
+                B = lerp(B + half2(0.0001, 0.0001), B, abs(sign(B * 2.0 - A - C)));
+                half2 a = B - A, b = A - B * 2.0 + C, c = a * 2.0, d = A - p;
+                half3 k = half3(3.*dot(a,b),2.*dot(a,a)+dot(d,b),dot(d,a)) / dot(b,b);      
+                half3 t = clamp(solveCubic(k.x, k.y, k.z), 0.0, 1.0);
+                half2 pos = A + (c + b*t.x)*t.x;
+                float dis = length(pos - p);
+                pos = A + (c + b*t.y)*t.y;
+                dis = min(dis, length(pos - p));
+                pos = A + (c + b*t.z)*t.z;
+                dis = min(dis, length(pos - p));
+                return dis * signBezier(A, B, C, p);
+            }
             float approx_distance(half2 p, half2 b0, half2 b1, half2 b2)
             {
                 return length(get_distance_vector(b0 - p, b1 - p, b2 - p));
@@ -119,32 +166,39 @@
 
                 half3 color = half3(1.0, 1.0, 1.0);
                 
-                float EDGE = 0.005;
-                float SMOOTH = 0.0025;
-                float dist = approx_distance(i.uv, p0, p1, p2);
-                if (dist < EDGE + SMOOTH)
-                {
-                    dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
-                    color *= half3(dist, dist, dist);
-                }
-                dist = approx_distance(i.uv, p2, p3, p4);
-                if (dist < EDGE + SMOOTH)
-                {
-                    dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
-                    if(dist < 1.0)
-                        dist = 1.0;
-                    color *= half3(dist, dist, dist);
-                }
-                dist = approx_distance(i.uv, p4, p5, p6);
-                if (dist < EDGE + SMOOTH)
-                {
-                    dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
-                    color *= half3(dist, dist, dist);
-                }
+                float dist = sdBezier(p0, p1, p2, i.uv);
+                color = lerp(color, half4(0.0, 0.0, 0.0, 1.0), 1.0-smoothstep(0.0,0.02,abs(dist)) );
+                dist = sdBezier(p2, p3, p4, i.uv);
+                color = lerp(color, half4(0.0, 0.0, 0.0, 1.0), 1.0-smoothstep(0.0,0.02,abs(dist)) );
+                dist = sdBezier(p4, p5, p6, i.uv);
+                color = lerp(color, half4(0.0, 0.0, 0.0, 1.0), 1.0-smoothstep(0.0,0.02,abs(dist)) );
+                
+                //  float EDGE = 0.005;
+                // float SMOOTH = 0.0025;
+                // float dist = approx_distance(i.uv, p0, p1, p2);
+                // if (dist < EDGE + SMOOTH)
+                // {
+                //     dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
+                //     color *= half3(dist, dist, dist);
+                // }
+                // dist = approx_distance(i.uv, p2, p3, p4);
+                // if (dist < EDGE + SMOOTH)
+                // {
+                //     dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
+                //     if(dist < 1.0)
+                //         dist = 1.0;
+                //     color *= half3(dist, dist, dist);
+                // }
+                // dist = approx_distance(i.uv, p4, p5, p6);
+                // if (dist < EDGE + SMOOTH)
+                // {
+                //     dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
+                //     color *= half3(dist, dist, dist);
+                // }
 
-            color = drawControlPoints(color, p2, i.uv, half3(1.0, 0.0, 0.0));
-            color = drawControlPoints(color, p3, i.uv, half3(0.0, 1.0, 0.0));
-            color = drawControlPoints(color, p4, i.uv, half3(0.0, 0.0, 1.0));
+            // color = drawControlPoints(color, p2, i.uv, half3(1.0, 0.0, 0.0));
+            // color = drawControlPoints(color, p3, i.uv, half3(0.0, 1.0, 0.0));
+            // color = drawControlPoints(color, p4, i.uv, half3(0.0, 0.0, 1.0));
 
 
 
