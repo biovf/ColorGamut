@@ -2,9 +2,6 @@
 using UnityEngine;
 using UnityEditor;
 
-
-
-
 [CustomEditor(typeof(HDRPipeline))]
 public class HDRPipelineEditor : Editor
 {
@@ -75,10 +72,10 @@ public class HDRPipelineEditor : Editor
     private bool shapeImage = true;
     private GamutMap.CurveDataState guiWidgetsState = GamutMap.CurveDataState.NotCalculated;
     
-    #region DebugOptions
-    private bool enableCPUMode = false;
+    //#region DebugOptions
+    private bool enableCPUMode = true;
     private bool saveGamutMapDebugImages = false;
-    #endregion
+    //#endregion
 
     private Rect curveRect;
     private float scaleFactor = 1.0f; 
@@ -126,15 +123,6 @@ public class HDRPipelineEditor : Editor
 
     }
 
-    public void OnDisable()
-    {
-        
-    }
-
-    private void OnValidate()
-    {
-        // Debug.Log("Values changing");
-    }
 
     private void recalculateCurveParameters()
     {
@@ -174,18 +162,16 @@ public class HDRPipelineEditor : Editor
             Vector2 p5 = controlPoints[5];
             Vector2 p6 = controlPoints[6];
 
-            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(colorGamut.MaxRadiometricValue, 0.0f)); // Draw X Axis
+            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(colorGamut.MaxRadiometricDynamicRange, 0.0f)); // Draw X Axis
             Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f)); // Draw Y axis
             // Draw auxiliary information on the graph
             Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
-            Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f),
-                4.0f); // Draw Y = 1 line
-            Handles.DrawDottedLine(new Vector3(0.0f, 1.5f), new Vector3(colorGamut.MaxRadiometricValue, 1.5f),
-            4.0f); // Draw Y = 1.5 line
-            Handles.DrawDottedLine(new Vector3(0.18f, 0.0f), new Vector3(0.18f, 1.5f), 2.0f); // Draw vertical line from 0.18f
-            Handles.DrawDottedLine(new Vector3(0.0f, 0.18f), new Vector3(0.18f, 0.18f), 2.0f); // Draw vertical line from 0.18f
-            Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
-            Handles.DrawDottedLine(new Vector3(0.0f, 0.5f), new Vector3(0.5f, 0.5f), 4.0f); // Draw vertical line from 0.18f
+            Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricDynamicRange, 1.0f), 4.0f); // Draw Y = 1 line
+            //Handles.DrawDottedLine(new Vector3(0.0f, 1.5f), new Vector3(colorGamut.MaxRadiometricValue, 1.5f), 4.0f); // Draw Y = 1.5 line
+            Handles.DrawDottedLine(new Vector3(p4.x, 0.0f), new Vector3(p4.x, p4.y), 2.0f); // Draw vertical line from 0.18f
+            Handles.DrawDottedLine(new Vector3(0.0f, p4.y), new Vector3(p4.x, p4.y), 2.0f); // Draw vertical line from 0.18f
+            //Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
+            Handles.DrawDottedLine(new Vector3(0.85f, 0.0f), new Vector3(0.85f, 1.0f), 4.0f); // Draw vertical line from 0.18f
             
             if (guiWidgetsState ==  GamutMap.CurveDataState.Dirty ||
                 guiWidgetsState ==  GamutMap.CurveDataState.NotCalculated)
@@ -239,7 +225,7 @@ public class HDRPipelineEditor : Editor
         {
             if (GUI.changed)
             {
-                Debug.Log("GUI Changed");
+                //Debug.Log("GUI Changed");
                 guiWidgetsState =  GamutMap.CurveDataState.Dirty;
             }
 

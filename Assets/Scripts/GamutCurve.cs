@@ -19,48 +19,51 @@ public class GamutCurve
         set => minDisplayValue = value;
     }
 
-    public float MaxRadiometricValue
+    public float MaxRadiometricDynamicRange
     {
-        get => maxRadiometricValue;
-        set => maxRadiometricValue = value;
+        get => maxRadiometricDynamicRange;
+        set => maxRadiometricDynamicRange = value;
     }
 
-    public float MinRadiometricValue
+    public float MinRadiometricDynamicRange
     {
-        get => minRadiometricValue;
-        set => minRadiometricValue = value;
+        get => minRadiometricDynamicRange;
+        set => minRadiometricDynamicRange = value;
     }
 
-    private float minExposureValue;
-    private float maxExposureValue;
+    private float minRadiometricExposure;
+    private float maxRadiometricExposure;
 
-    private float maxRadiometricValue;
-    private float minRadiometricValue;
+    private float maxRadiometricDynamicRange;
+    private float minRadiometricDynamicRange;
     private float maxDisplayValue;
     private float minDisplayValue;
+    private float minDisplayExposure;
+    private float maxDisplayExposure;
 
     private Vector2 middleGrey;
 
-    public GamutCurve(float minExposureValue, float maxExposureValue, float maxRadiometricValue, float maxDisplayValue)
+    public GamutCurve(float minRadiometricExposure, float maxRadiometricExposure, float maxRadiometricDynamicRange, float maxDisplayValue, float minDisplayExposure,
+        float maxDisplayExposure)
     {
-        this.minExposureValue = minExposureValue;
-        this.maxExposureValue = maxExposureValue;
-        this.maxRadiometricValue = maxRadiometricValue;
+        this.minRadiometricExposure = minRadiometricExposure;
+        this.maxRadiometricExposure = maxRadiometricExposure;
+        this.maxRadiometricDynamicRange = maxRadiometricDynamicRange;
         this.maxDisplayValue = maxDisplayValue;
+        this.minDisplayExposure = minDisplayExposure;
+        this.maxDisplayExposure = maxDisplayExposure;
     }
 
-    public Vector2[] createControlPoints(Vector2 originCoord, Vector2 greyPoint, float slope)
+    public Vector2[] createControlPoints(Vector2 originCoord, Vector2 midGrey, float slope)
     {
-        minRadiometricValue = originCoord.x;
+        minRadiometricDynamicRange = originCoord.x;
         minDisplayValue = originCoord.y;
-        //minRadiometricValue = Shaper.calculateLinearToLog2(originCoord.x, greyPoint.x, minExposureValue, maxExposureValue);
+        // Convert mid grey 
         middleGrey = new Vector2(
-            Shaper.calculateLinearToLog2(greyPoint.x, greyPoint.x, minExposureValue, maxExposureValue),
-            // Shaper.inverseSrgbEotfSimpleGamma(greyPoint.y));
-            TransferFunction.ApplyInverseTransferFunction(greyPoint.y, TransferFunction.TransferFunctionType.sRGB));
+            Shaper.calculateLinearToLog2(midGrey.x, midGrey.x, minRadiometricExposure, maxRadiometricExposure),
+            Shaper.calculateLinearToLog2(midGrey.y, midGrey.y, minDisplayExposure, maxDisplayExposure));
         float toeP2YCoord =
-            TransferFunction.ApplyInverseTransferFunction(0.085f, TransferFunction.TransferFunctionType.sRGB);
-
+        Shaper.calculateLinearToLog2(0.085f, midGrey.y, minDisplayExposure, maxDisplayExposure); 
 
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
@@ -72,7 +75,7 @@ public class GamutCurve
         Vector2 shP0Coords = this.middleGrey;
         Vector2 shP1Coords = new Vector2(0.0f, maxDisplayValue); // Unknown at this point
         Vector2 shP2Coords = new Vector2(
-            Shaper.calculateLinearToLog2(maxRadiometricValue, greyPoint.x, minExposureValue, maxExposureValue),
+            Shaper.calculateLinearToLog2(maxRadiometricDynamicRange, midGrey.x, minRadiometricExposure, maxRadiometricExposure),
             maxDisplayValue);
 
         // calculate y intersection when y = 0
@@ -153,38 +156,8 @@ public class GamutCurve
     // Assumption: the input float[] is always sorted from smallest to largest values
     public static void BilinearClosestTo(float[] inputArray, float target, Vector2[] controlPoints, out int arrayIndex, out int arrayIndex2)
     {
-        // float closest = float.MaxValue;
-        // float minDifference = float.MaxValue;
-        // float prevDifference = float.MaxValue;
-
         int outIndex = 0;
         int outIndex2 = 0;
-        
-        // for (int i = 0; i < listSize; i++)
-        // {
-        //     float currentDifference = Mathf.Abs((float) inputArray[i] - target);
-        //
-        //     // Early exit because the array is always ordered from smallest to largest
-        //     if (prevDifference < currentDifference)
-        //         break;
-        //
-        //     if (minDifference > currentDifference)
-        //     {
-        //         // Check which of the values, before or after this one, are closer to the target value
-        //         int indexBefore = Mathf.Clamp((i - 1), 0, listSize - 1);
-        //         int indexAfter = Mathf.Clamp((i + 1), 0, listSize - 1);
-        //         float currentDiffBefore = Mathf.Abs((float) inputArray[indexBefore] - target);
-        //         float currentDiffAfter = Mathf.Abs((float) inputArray[indexAfter] - target);
-        //
-        //         minDifference = currentDifference;
-        //         closest = inputArray[i];
-        //         outIndex = i;
-        //         outIndex2 = (currentDiffBefore < currentDiffAfter) ? indexBefore : indexAfter;
-        //     }
-        //
-        //     prevDifference = currentDifference;
-        // }
-        
     
         int maxArrayIndex = inputArray.Length - 1;
         float minRadiometricValue = controlPoints[0].x;
@@ -255,11 +228,11 @@ public class GamutCurve
             }
 
             float linearInputXCoord =
-                Shaper.calculateLog2ToLinear(logInputXCoord, middleGrey.x, minExposureValue, maxExposureValue);
+                Shaper.calculateLog2ToLinear(logInputXCoord, middleGrey.x, minRadiometricExposure, maxRadiometricExposure);
             float linearXCoordIdx =
-                Shaper.calculateLog2ToLinear(xCoords[idx], middleGrey.x, minExposureValue, maxExposureValue);
+                Shaper.calculateLog2ToLinear(xCoords[idx], middleGrey.x, minRadiometricExposure, maxRadiometricExposure);
             float linearXCoordIdx2 =
-                Shaper.calculateLog2ToLinear(xCoords[idx2], middleGrey.x, minExposureValue, maxExposureValue);
+                Shaper.calculateLog2ToLinear(xCoords[idx2], middleGrey.x, minRadiometricExposure, maxRadiometricExposure);
 
             // Calculate interpolation factor
             if (idx == idx2)
@@ -268,18 +241,14 @@ public class GamutCurve
             }
             else if (idx < idx2)
             {
-                // float lerpValue = (logInputXCoord - xCoords[idx]) / (xCoords[idx2] - xCoords[idx]);
                 float lerpValue = (linearInputXCoord - linearXCoordIdx) / (linearXCoordIdx2 - linearXCoordIdx);
                 return Mathf.Lerp(yCoords[idx], yCoords[idx2], lerpValue);
             }
             else
             {
-                // float lerpValue = (logInputXCoord - xCoords[idx2]) / (xCoords[idx] - xCoords[idx2]);
                 float lerpValue = (linearInputXCoord - linearXCoordIdx2) / (linearXCoordIdx - linearXCoordIdx2);
                 return Mathf.Lerp(yCoords[idx2], yCoords[idx], lerpValue);
             }
-
-            return -1.0f;
     }
 
 
@@ -295,7 +264,7 @@ public class GamutCurve
 
         // Shape the input x coord in radiometric
         float logInputXCoord =
-            Shaper.calculateLinearToLog2(inputXCoord, middleGrey.x, minExposureValue, maxExposureValue);
+            Shaper.calculateLinearToLog2(inputXCoord, middleGrey.x, minRadiometricExposure, maxRadiometricExposure);
 
         int idx = 0;
         int idx2 = 0;

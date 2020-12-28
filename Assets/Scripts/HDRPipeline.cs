@@ -141,7 +141,7 @@ public class HDRPipeline : MonoBehaviour
              gamutMap.SetVector("greyPoint", new Vector4(colorGamut.GreyPoint.x,colorGamut.GreyPoint.y, 0.0f));
              gamutMap.SetFloat("minExposure", colorGamut.MINExposureValue);
              gamutMap.SetFloat("maxExposure", colorGamut.MAXExposureValue);
-             gamutMap.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricValue);
+             gamutMap.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricDynamicRange);
              gamutMap.SetInt("inputArraySize", colorGamut.getXValues().Count - 1);
              gamutMap.SetInt("usePerChannel", activeTransferFunction);
 
