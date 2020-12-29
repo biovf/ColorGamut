@@ -40,11 +40,12 @@ public class GamutCurve
     private float minDisplayValue;
     private float minDisplayExposure;
     private float maxDisplayExposure;
-
+    private float maxRadiometricLatitude;
+    private float maxRadiometricLatitudeExposure;
     private Vector2 middleGrey;
 
     public GamutCurve(float minRadiometricExposure, float maxRadiometricExposure, float maxRadiometricDynamicRange, float maxDisplayValue, float minDisplayExposure,
-        float maxDisplayExposure)
+        float maxDisplayExposure, float maxRadiometricLatitude, float maxRadiometricLatitudeExposure)
     {
         this.minRadiometricExposure = minRadiometricExposure;
         this.maxRadiometricExposure = maxRadiometricExposure;
@@ -52,6 +53,8 @@ public class GamutCurve
         this.maxDisplayValue = maxDisplayValue;
         this.minDisplayExposure = minDisplayExposure;
         this.maxDisplayExposure = maxDisplayExposure;
+        this.maxRadiometricLatitude = maxRadiometricLatitude;
+        this.maxRadiometricLatitudeExposure = maxRadiometricLatitudeExposure;
     }
 
     public Vector2[] createControlPoints(Vector2 originCoord, Vector2 midGrey, float slope)
@@ -60,7 +63,7 @@ public class GamutCurve
         minDisplayValue = originCoord.y;
         // Convert mid grey 
         middleGrey = new Vector2(
-            Shaper.calculateLinearToLog2(midGrey.x, midGrey.x, minRadiometricExposure, maxRadiometricExposure),
+            Shaper.calculateLinearToLog2(midGrey.x, midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure),
             Shaper.calculateLinearToLog2(midGrey.y, midGrey.y, minDisplayExposure, maxDisplayExposure));
         float toeP2YCoord =
         Shaper.calculateLinearToLog2(0.085f, midGrey.y, minDisplayExposure, maxDisplayExposure); 
@@ -75,7 +78,7 @@ public class GamutCurve
         Vector2 shP0Coords = this.middleGrey;
         Vector2 shP1Coords = new Vector2(0.0f, maxDisplayValue); // Unknown at this point
         Vector2 shP2Coords = new Vector2(
-            Shaper.calculateLinearToLog2(maxRadiometricDynamicRange, midGrey.x, minRadiometricExposure, maxRadiometricExposure),
+            Shaper.calculateLinearToLog2(maxRadiometricLatitude, midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure),
             maxDisplayValue);
 
         // calculate y intersection when y = 0
@@ -228,11 +231,11 @@ public class GamutCurve
             }
 
             float linearInputXCoord =
-                Shaper.calculateLog2ToLinear(logInputXCoord, middleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+                Shaper.calculateLog2ToLinear(logInputXCoord, middleGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
             float linearXCoordIdx =
-                Shaper.calculateLog2ToLinear(xCoords[idx], middleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+                Shaper.calculateLog2ToLinear(xCoords[idx], middleGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
             float linearXCoordIdx2 =
-                Shaper.calculateLog2ToLinear(xCoords[idx2], middleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+                Shaper.calculateLog2ToLinear(xCoords[idx2], middleGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
 
             // Calculate interpolation factor
             if (idx == idx2)
@@ -263,8 +266,7 @@ public class GamutCurve
         }
 
         // Shape the input x coord in radiometric
-        float logInputXCoord =
-            Shaper.calculateLinearToLog2(inputXCoord, middleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+        float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, middleGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
 
         int idx = 0;
         int idx2 = 0;

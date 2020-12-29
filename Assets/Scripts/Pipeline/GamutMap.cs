@@ -67,11 +67,11 @@ public class GamutMap
     public float MinRadiometricValue => minRadiometricDynamicRange;
     private float minRadiometricDynamicRange;
 
-    public float MINExposureValue => minExposureValue;
-    private float minExposureValue;
+    public float MINExposureValue => minRadiometricExposure;
+    private float minRadiometricExposure;
 
-    public float MAXExposureValue => maxExposureValue;
-    private float maxExposureValue;
+    public float MAXExposureValue => maxRadiometricExposure;
+    private float maxRadiometricExposure;
 
     public float MaxRadiometricDynamicRange => maxRadiometricDynamicRange;
     private float maxRadiometricDynamicRange;
@@ -85,7 +85,7 @@ public class GamutMap
 
     private float maxRadiometricLatitude;
     private float maxLatitudeLimit;
-
+    private float maxRadiometricLatitudeExposure;
 
     private Vector2 midGrey;
 
@@ -146,17 +146,19 @@ public class GamutMap
         maxDisplayValue = 1.0f;
         minDisplayValue = 0.0005f;
         midGrey = new Vector2(0.18f, 0.18f);
-        minExposureValue = -6.0f;
-        maxExposureValue = 6.0f;
+        minRadiometricExposure = -6.0f;
+        maxRadiometricExposure = 6.0f;
 
         minDisplayExposure = Mathf.Log(minDisplayValue / midGrey.y, 2.0f);
         maxDisplayExposure = Mathf.Log(maxDisplayValue / midGrey.y, 2.0f);
 
-        minRadiometricDynamicRange = Mathf.Pow(2.0f, minExposureValue) * midGrey.x;
-        maxRadiometricDynamicRange = Mathf.Pow(2.0f, maxExposureValue) * midGrey.x;
+        minRadiometricDynamicRange = Mathf.Pow(2.0f, minRadiometricExposure) * midGrey.x;
+        maxRadiometricDynamicRange = Mathf.Pow(2.0f, maxRadiometricExposure) * midGrey.x;
         
         maxLatitudeLimit = 0.8f;
-        maxRadiometricLatitude = maxRadiometricLatitude * maxLatitudeLimit;
+        maxRadiometricLatitudeExposure = maxRadiometricExposure * maxLatitudeLimit;
+        float temp = Mathf.Pow(2.0f, maxRadiometricLatitudeExposure) * midGrey.x;
+        maxRadiometricLatitude = maxRadiometricDynamicRange * maxLatitudeLimit;
 
         origin = new Vector2(minRadiometricDynamicRange, minDisplayValue);
         createParametricCurve(midGrey, origin);
@@ -197,8 +199,8 @@ public class GamutMap
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
         if (parametricGamutCurve == null)
-            parametricGamutCurve = new GamutCurve(minExposureValue, maxExposureValue, maxRadiometricDynamicRange, maxDisplayValue, 
-                minDisplayExposure, maxDisplayExposure);
+            parametricGamutCurve = new GamutCurve(minRadiometricExposure, maxRadiometricExposure, maxRadiometricDynamicRange, maxDisplayValue, 
+                minDisplayExposure, maxDisplayExposure, maxRadiometricLatitude, maxRadiometricLatitudeExposure);
 
         controlPoints = parametricGamutCurve.createControlPoints(origin, this.midGrey, slope);
         xValues = initialiseXCoordsInRange(curveLutLength, controlPoints[6].x);
@@ -298,28 +300,25 @@ public class GamutMap
             // Shape image
             Color log2HdriPixelArray = new Color();
             log2HdriPixelArray.r = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].r),
-                midGrey.x, minExposureValue, maxExposureValue);
+                midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
             log2HdriPixelArray.g = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].g),
-                midGrey.x, minExposureValue, maxExposureValue);
+                midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
             log2HdriPixelArray.b = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].b),
-                midGrey.x, minExposureValue, maxExposureValue);
+                midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
 
             // Calculate Pixel max color and ratio
             logHdriMaxRGBChannel = log2HdriPixelArray.maxColorComponent;
             Color linearHdriPixelColor = new Color(
-                Shaper.calculateLog2ToLinear(log2HdriPixelArray.r, midGrey.x, minExposureValue,
-                    maxExposureValue),
-                Shaper.calculateLog2ToLinear(log2HdriPixelArray.g, midGrey.x, minExposureValue,
-                    maxExposureValue),
-                Shaper.calculateLog2ToLinear(log2HdriPixelArray.b, midGrey.x, minExposureValue,
-                    maxExposureValue));
+                Shaper.calculateLog2ToLinear(log2HdriPixelArray.r, midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure),
+                Shaper.calculateLog2ToLinear(log2HdriPixelArray.g, midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure),
+                Shaper.calculateLog2ToLinear(log2HdriPixelArray.b, midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure));
 
 
             if (activeGamutMappingMode == GamutMappingMode.Max_RGB)
             {
                 // Retrieve the maximum RGB value but in linear space
                 float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, midGrey.x,
-                    minExposureValue, maxExposureValue);
+                    minRadiometricExposure, maxRadiometricLatitudeExposure);
                 // Calculate the ratio in linear space
                 ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
                 rawMaxPixelValue = linearHdriMaxRGBChannel;
@@ -404,9 +403,9 @@ public class GamutMap
         gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
 
         // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-        gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(0.85f,/*
+        gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(maxLatitudeLimit,/*
             parametricGamutCurve.getXCoordinate(0.85f, xCoordsArray, yCoordsArray, tValuesArray, controlPoints),*/
-            midGrey.x, minExposureValue, maxExposureValue);
+            midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
 
         if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
             linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
@@ -417,9 +416,14 @@ public class GamutMap
                                     gamutCompressionRange;
 
             hdriPixelColorVec.Set(linearHdriPixelColor.r, linearHdriPixelColor.g, linearHdriPixelColor.b);
+            //float maxHDRIPixel = Mathf.Max(hdriPixelColorVec.x, Mathf.Max(hdriPixelColorVec.y, hdriPixelColorVec.z));
+            //Color hdriPixelColor = new Color(hdriPixelColorVec.x, hdriPixelColorVec.y, hdriPixelColorVec.z);
+            //Color colorRatios = new Color(maxHDRIPixel, maxHDRIPixel, maxHDRIPixel);
+            //colorRatios = hdriPixelColor / maxHDRIPixel;
+            //float curveEval = Mathf.SmoothStep(maxHDRIPixel, 1.0f, colorRatios.r);
+
             maxDynamicRangeVec.Set(maxRadiometricDynamicRange, maxRadiometricDynamicRange, maxRadiometricDynamicRange);
-            hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec,
-                Mathf.SmoothStep(0.0f, 1.0f, gamutCompressionRatio)
+            hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec, Mathf.SmoothStep(0.0f, 1.0f, gamutCompressionRatio)
                 /*bleachingRatio / (bleachingRatio + 1.0f));*/
                 /*Mathf.Pow(bleachingRatio, (float)gamutCompressionRatioPower)*/);
 

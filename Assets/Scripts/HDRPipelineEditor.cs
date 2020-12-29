@@ -233,6 +233,7 @@ public class HDRPipelineEditor : Editor
                 GUILayout.Button("Generate Image"))
             {
                 Debug.Log("Generating new image with new parameters");
+                colorGamut.setGamutCompression(isGamutCompressionActive);
                 RecalculateImageInCpuMode();
             } else if (enableCPUMode == false && guiWidgetsState == GamutMap.CurveDataState.Dirty 
                /* && GUILayout.Button("Recalculate Curve Parameters")*/)
@@ -240,6 +241,7 @@ public class HDRPipelineEditor : Editor
                 RecalculateCurveParameters();
                 colorGamut.setActiveTransferFunction(_activeGamutMappingMode);
                 colorGamut.setExposure(exposure);
+                colorGamut.setGamutCompression(isGamutCompressionActive);
                 guiWidgetsState = GamutMap.CurveDataState.Calculated;
 
             }
