@@ -415,27 +415,34 @@ public class GamutMap
             gamutCompressionRatio = (linearHdriPixelColor.maxColorComponent - gamutCompressionXCoordLinear) /
                                     gamutCompressionRange;
 
-            hdriPixelColorVec.Set(linearHdriPixelColor.r, linearHdriPixelColor.g, linearHdriPixelColor.b);
-            //float maxHDRIPixel = Mathf.Max(hdriPixelColorVec.x, Mathf.Max(hdriPixelColorVec.y, hdriPixelColorVec.z));
-            //Color hdriPixelColor = new Color(hdriPixelColorVec.x, hdriPixelColorVec.y, hdriPixelColorVec.z);
-            //Color colorRatios = new Color(maxHDRIPixel, maxHDRIPixel, maxHDRIPixel);
-            //colorRatios = hdriPixelColor / maxHDRIPixel;
-            //float curveEval = Mathf.SmoothStep(maxHDRIPixel, 1.0f, colorRatios.r);
+            Vector3 inRatioVec = new Vector3(inRatio.r, inRatio.g, inRatio.b);
+            inRatioVec = Vector3.Lerp(inRatioVec, Vector3.one, gamutCompressionRatio);
+            ratio = new Color(inRatioVec.x, inRatioVec.y, inRatioVec.z);
 
-            maxDynamicRangeVec.Set(maxRadiometricDynamicRange, maxRadiometricDynamicRange, maxRadiometricDynamicRange);
-            hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, maxDynamicRangeVec, Mathf.SmoothStep(0.0f, 1.0f, gamutCompressionRatio)
-                /*bleachingRatio / (bleachingRatio + 1.0f));*/
-                /*Mathf.Pow(bleachingRatio, (float)gamutCompressionRatioPower)*/);
+            //hdriPixelColorVec.Set(linearHdriPixelColor.r, linearHdriPixelColor.g, linearHdriPixelColor.b);
+            //maxDynamicRangeVec.Set(maxRadiometricDynamicRange, maxRadiometricDynamicRange, maxRadiometricDynamicRange);
 
-            linearHdriPixelColor.r = hdriPixelColorVec.x;
-            linearHdriPixelColor.g = hdriPixelColorVec.y;
-            linearHdriPixelColor.b = hdriPixelColorVec.z;
+            //hdriPixelColorVec = Vector3.Lerp(hdriPixelColorVec, linearHdriMaxRGBChannel, Mathf.SmoothStep(0.0f, 1.0f, gamutCompressionRatio)
+            //    /*bleachingRatio / (bleachingRatio + 1.0f));*/
+            //    /*Mathf.Pow(bleachingRatio, (float)gamutCompressionRatioPower)*/);
 
-            ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+            //linearHdriPixelColor.r = hdriPixelColorVec.x;
+            //linearHdriPixelColor.g = hdriPixelColorVec.y;
+            //linearHdriPixelColor.b = hdriPixelColorVec.z;
+
+            //ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
         }
 
         return ratio;
     }
+
+
+    //float maxHDRIPixel = Mathf.Max(hdriPixelColorVec.x, Mathf.Max(hdriPixelColorVec.y, hdriPixelColorVec.z));
+    //Color hdriPixelColor = new Color(hdriPixelColorVec.x, hdriPixelColorVec.y, hdriPixelColorVec.z);
+    //Color colorRatios = new Color(maxHDRIPixel, maxHDRIPixel, maxHDRIPixel);
+    //colorRatios = hdriPixelColor / maxHDRIPixel;
+    //float curveEval = Mathf.SmoothStep(maxHDRIPixel, 1.0f, colorRatios.r);
+
 
     public void exportTransferFunction(string fileName)
     {
