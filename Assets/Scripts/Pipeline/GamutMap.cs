@@ -342,7 +342,6 @@ public class GamutMap
                 float yValue = parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
                 //yValue = TransferFunction.ApplyTransferFunction(yValue, TransferFunction.TransferFunctionType.sRGB);   
                 yValue = Shaper.calculateLog2ToLinear(yValue, midGrey.y, minDisplayExposure, maxDisplayExposure);
-
                 hdriYMaxValue = Mathf.Min(yValue, 1.0f);
                 ratio.a = 1.0f;
                 hdriPixelColor = hdriYMaxValue * ratio;
@@ -356,19 +355,11 @@ public class GamutMap
                 hdriPixelColor.b = parametricGamutCurve.getYCoordinateLogXInput(log2HdriPixelArray.b,
                     xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
             }
-
-
-            //Color temp;
-            //Color temp2;
-
-
-            // TODO: REFACTOR THIS BECAUSE TROY SAID SO
+            
+            // TODO Should this be updated/removed?
             hdriPixelColor.r = remap(hdriPixelColor.r, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
             hdriPixelColor.g = remap(hdriPixelColor.g, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
             hdriPixelColor.b = remap(hdriPixelColor.b, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
-
-            //if (hdriPixelColor.r < 0.0f || hdriPixelColor.g < 0.0f || hdriPixelColor.b < 0.0f)
-            //    Debug.Log("Negative Values");
 
             hdriPixelArray[i].r = hdriPixelColor.r;//TransferFunction.ApplyInverseTransferFunction(hdriPixelColor.r, TransferFunction.TransferFunctionType.sRGB);
             hdriPixelArray[i].g = hdriPixelColor.g;//TransferFunction.ApplyInverseTransferFunction(hdriPixelColor.g, TransferFunction.TransferFunctionType.sRGB);
@@ -447,22 +438,24 @@ public class GamutMap
     public void exportTransferFunction(string fileName)
     {
         // Set the DOMAIN_MIN and DOMAIN_MAX ranges
-        Vector3 minDisplayValueVec = Vector3.zero; //new Vector3(minDisplayValue, minDisplayValue, minDisplayValue);
-        Vector3 maxDisplayValueVec = Vector3.one; //new Vector3(maxDisplayValue, maxDisplayValue, maxDisplayValue);
+        Vector3 minDisplayValueVec = /*Vector3.zero;*/new Vector3(minDisplayValue, minDisplayValue, minDisplayValue);
+        Vector3 maxDisplayValueVec = /*Vector3.one;*/ new Vector3(maxDisplayValue, maxDisplayValue, maxDisplayValue);
 
-        List<float> yValuesTmp = yValues; 
-        float[] yValuesEOTF = new float[yValuesTmp.Count];
-        int i = 0;
-        for (i = 0; i < yValuesTmp.Count; i++)
-        {
-            if (yValuesTmp[i] >= 1.0f)
-                break;
-            
-            yValuesEOTF[i] = yValuesTmp[i];
-        }
+        // List<float> yValuesTmp = yValues; 
+        // float[] yValuesEOTF = new float[yValuesTmp.Count];
+        // int i = 0;
+        // for (i = 0; i < yValuesTmp.Count; i++)
+        // {
+        //     if (yValuesTmp[i] >= 1.0f)
+        //         break;
+        //     
+        //     yValuesEOTF[i] = yValuesTmp[i];
+        // }
 
         // Pass data to be converted and written to disk as a .cube file
-        CubeLutExporter.saveLutAsCube(yValuesEOTF, fileName, i /*yValues.Count*/, minDisplayValueVec,
+        // CubeLutExporter.saveLutAsCube(yValuesEOTF, fileName, i /*yValues.Count*/, minDisplayValueVec,
+        //     maxDisplayValueVec, false);
+        CubeLutExporter.saveLutAsCube(yValues.ToArray(), fileName, yValues.Count, minDisplayValueVec,
             maxDisplayValueVec, false);
     }
 

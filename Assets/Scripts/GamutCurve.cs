@@ -65,8 +65,7 @@ public class GamutCurve
         middleGrey = new Vector2(
             Shaper.calculateLinearToLog2(midGrey.x, midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure),
             Shaper.calculateLinearToLog2(midGrey.y, midGrey.y, minDisplayExposure, maxDisplayExposure));
-        float toeP2YCoord =
-        Shaper.calculateLinearToLog2(0.085f, midGrey.y, minDisplayExposure, maxDisplayExposure); 
+        float toeP2YCoord = Shaper.calculateLinearToLog2(0.085f, midGrey.y, minDisplayExposure, maxDisplayExposure); 
 
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve

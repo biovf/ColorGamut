@@ -91,6 +91,11 @@ public class ColorGrade
 
         Texture2D inGameCapture = toTexture2D(interceptDebugRT);
         Color[] inGameCapturePixels = inGameCapture.GetPixels();
+        // TODO Convert pixels from linear to log2
+        for (int i = 0; i < inGameCapturePixels.Length; i++)
+        {
+            
+        }
         
         SaveToDisk(inGameCapturePixels, saveFilePath, inGameCapture.width, inGameCapture.height);
     }
