@@ -213,7 +213,7 @@ public class HDRPipelineEditor : Editor
         EditorGUILayout.Space();
         // gamutCompressionRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", gamutCompressionRatioPower, 1, 7);
         
-        exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
+        exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
         originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
         originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);

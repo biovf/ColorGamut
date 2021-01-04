@@ -67,28 +67,29 @@ public class GamutMap
     public float MinRadiometricValue => minRadiometricDynamicRange;
     private float minRadiometricDynamicRange;
 
-    public float MINExposureValue => minRadiometricExposure;
+    public float MinRadiometricExposure => minRadiometricExposure;
     private float minRadiometricExposure;
 
-    public float MAXExposureValue => maxRadiometricExposure;
+    public float MaxRadiometricExposure => maxRadiometricExposure;
     private float maxRadiometricExposure;
 
     public float MaxRadiometricDynamicRange => maxRadiometricDynamicRange;
     private float maxRadiometricDynamicRange;
     private float maxDisplayValue;
-
-    public float MAXDisplayValue => maxDisplayValue;
+    public float MaxDisplayValue => maxDisplayValue;
 
     private float minDisplayValue;
     private float minDisplayExposure;
+    public float MinDisplayExposure => minDisplayExposure;
     private float maxDisplayExposure;
+    public float MaxDisplayExposure => maxDisplayExposure;
 
     private float maxRadiometricLatitude;
     private float maxLatitudeLimit;
     private float maxRadiometricLatitudeExposure;
 
     private Vector2 midGrey;
-
+    private float maxNits;
     public Vector2 GreyPoint => midGrey;
 
     private List<float> xValues;
@@ -143,9 +144,11 @@ public class GamutMap
         slope = 1.8f;
         slopeMin = 1.02f;
         slopeMax = 6.5f;
-        maxDisplayValue = 1.0f;
-        minDisplayValue = 0.0005f;
-        midGrey = new Vector2(0.18f, 0.18f);
+        maxNits = 100.0f;                       // Maximum nit value we support
+        // Max and min display values are unit agnostic
+        maxDisplayValue = 100.0f / maxNits;     // in SDR we support a maximum of 100 nits
+        minDisplayValue = 0.05f / maxNits;      // in SDR we support a minimum of 0.05f nits which is an average black value for a LED display
+        midGrey = new Vector2(18.0f / maxNits, 18.0f / maxNits);
         minRadiometricExposure = -6.0f;
         maxRadiometricExposure = 6.0f;
 
@@ -157,7 +160,6 @@ public class GamutMap
         
         maxLatitudeLimit = 0.8f;
         maxRadiometricLatitudeExposure = maxRadiometricExposure * maxLatitudeLimit;
-        float temp = Mathf.Pow(2.0f, maxRadiometricLatitudeExposure) * midGrey.x;
         maxRadiometricLatitude = maxRadiometricDynamicRange * maxLatitudeLimit;
 
         origin = new Vector2(minRadiometricDynamicRange, minDisplayValue);

@@ -150,19 +150,19 @@ float testCross(half2 a, half2 b, half2 p) {
             fixed4 frag(v2f i) : SV_Target
             {
                 half2 p0 = controlPoints[0].xy;
-                p0.y = remap(p0.y, 0.0, 1.5, 0.0, 1.0);
+                //p0.y = remap(p0.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p1 = controlPoints[1].xy;
-                p1.y = remap(p1.y, 0.0, 1.5, 0.0, 1.0);
+                //p1.y = remap(p1.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p2 = controlPoints[2].xy;
-                p2.y = remap(p2.y, 0.0, 1.5, 0.0, 1.0);
+                //p2.y = remap(p2.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p3 = controlPoints[3].xy;
-                p3.y = remap(p3.y, 0.0, 1.5, 0.0, 1.0);
+                //p3.y = remap(p3.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p4 = controlPoints[4].xy;
-                p4.y = remap(p4.y, 0.0, 1.5, 0.0, 1.0);
+                //p4.y = remap(p4.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p5 = controlPoints[5].xy;
-                p5.y = remap(p5.y, 0.0, 1.5, 0.0, 1.0);
+                //p5.y = remap(p5.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p6 = controlPoints[6].xy;
-                p6.y = remap(p6.y, 0.0, 1.5, 0.0, 1.0);
+                //p6.y = remap(p6.y, 0.0, 1.5, 0.0, 1.0);
 
                 half3 color = half3(1.0, 1.0, 1.0);
                 
@@ -172,36 +172,6 @@ float testCross(half2 a, half2 b, half2 p) {
                 color = lerp(color, half4(0.0, 0.0, 0.0, 1.0), 1.0-smoothstep(0.0,0.02,abs(dist)) );
                 dist = sdBezier(p4, p5, p6, i.uv);
                 color = lerp(color, half4(0.0, 0.0, 0.0, 1.0), 1.0-smoothstep(0.0,0.02,abs(dist)) );
-                
-                //  float EDGE = 0.005;
-                // float SMOOTH = 0.0025;
-                // float dist = approx_distance(i.uv, p0, p1, p2);
-                // if (dist < EDGE + SMOOTH)
-                // {
-                //     dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
-                //     color *= half3(dist, dist, dist);
-                // }
-                // dist = approx_distance(i.uv, p2, p3, p4);
-                // if (dist < EDGE + SMOOTH)
-                // {
-                //     dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
-                //     if(dist < 1.0)
-                //         dist = 1.0;
-                //     color *= half3(dist, dist, dist);
-                // }
-                // dist = approx_distance(i.uv, p4, p5, p6);
-                // if (dist < EDGE + SMOOTH)
-                // {
-                //     dist = smoothstep(EDGE - SMOOTH, EDGE + SMOOTH, dist);
-                //     color *= half3(dist, dist, dist);
-                // }
-
-            // color = drawControlPoints(color, p2, i.uv, half3(1.0, 0.0, 0.0));
-            // color = drawControlPoints(color, p3, i.uv, half3(0.0, 1.0, 0.0));
-            // color = drawControlPoints(color, p4, i.uv, half3(0.0, 0.0, 1.0));
-
-
-
                 
                 return half4(color, 1.0);
             }
