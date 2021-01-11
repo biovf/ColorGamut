@@ -57,7 +57,7 @@ public class ColorGrade
         colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
         colorGrading3DTextureMat.SetFloat("_MinExposureValue", colorGamut.MinRadiometricExposure);
         colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MaxRadiometricExposure);
-        colorGrading3DTextureMat.SetFloat("_MidGreyX", colorGamut.GreyPoint.x);
+        colorGrading3DTextureMat.SetFloat("_MidGreyX", colorGamut.MidGrey.x);
         Graphics.Blit(src, dest, colorGrading3DTextureMat);
 
     }
@@ -80,7 +80,7 @@ public class ColorGrade
          
         // Color[] hdr1DLut = LutGenerator.generateHdrTexLutPQShape(lutDimension, maxRadiometricValue, useShaperFunction);
         Color[] hdr1DLut = LutGenerator.generateHdrTexLut(lutDimension, maxRadiometricValue, useShaperFunction,
-            colorGamut.GreyPoint, colorGamut.MinRadiometricExposure,colorGamut.MaxRadiometricExposure);
+            colorGamut.MidGrey, colorGamut.MinRadiometricExposure,colorGamut.MaxRadiometricExposure);
         CubeLutExporter.saveLutAsCube(hdr1DLut, fileName, lutDimension, Vector3.zero,
             new Vector3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue), true);
     }
@@ -94,9 +94,12 @@ public class ColorGrade
         // TODO Convert pixels from linear to log2
         for (int i = 0; i < inGameCapturePixels.Length; i++)
         {
-            inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(inGameCapturePixels[i].r, colorGamut.GreyPoint.y, colorGamut.MinDisplayExposure, colorGamut.MaxDisplayExposure);
-            inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(inGameCapturePixels[i].g, colorGamut.GreyPoint.y, colorGamut.MinDisplayExposure, colorGamut.MaxDisplayExposure);
-            inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(inGameCapturePixels[i].b, colorGamut.GreyPoint.y, colorGamut.MinDisplayExposure, colorGamut.MaxDisplayExposure);
+            inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(inGameCapturePixels[i].r, colorGamut.MidGrey.y, 
+                colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+            inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(inGameCapturePixels[i].g, colorGamut.MidGrey.y, 
+                colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+            inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(inGameCapturePixels[i].b, colorGamut.MidGrey.y, 
+                colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
         }
 
         SaveToDisk(inGameCapturePixels, saveFilePath, inGameCapture.width, inGameCapture.height);
@@ -113,7 +116,7 @@ public class ColorGrade
             Debug.Log("Generating HDR texture Lut");
             // lutColorArray = LutGenerator.generateHdrTexLutPQShape(lutDimension, maxRadiometricValue, useShaperFunction);
             lutColorArray = LutGenerator.generateHdrTexLut(lutDimension, maxRadiometricValue, useShaperFunction,
-                colorGamut.GreyPoint, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+                colorGamut.MidGrey, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
 
             Debug.Log("Saving HDR texture Lut to disk");
             SaveToDisk(lutColorArray, fileName, lutDimension * lutDimension, lutDimension);
@@ -146,11 +149,11 @@ public class ColorGrade
         int pixelsLen = pixels.Length;
         for (int i = 0; i < pixelsLen; i++)
         {
-            pixels[i].r = Shaper.calculateLinearToLog2(pixels[i].r, colorGamut.GreyPoint.x,
+            pixels[i].r = Shaper.calculateLinearToLog2(pixels[i].r, colorGamut.MidGrey.x,
                 colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-            pixels[i].g = Shaper.calculateLinearToLog2(pixels[i].g, colorGamut.GreyPoint.x,
+            pixels[i].g = Shaper.calculateLinearToLog2(pixels[i].g, colorGamut.MidGrey.x,
                 colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-            pixels[i].b = Shaper.calculateLinearToLog2(pixels[i].b, colorGamut.GreyPoint.x,
+            pixels[i].b = Shaper.calculateLinearToLog2(pixels[i].b, colorGamut.MidGrey.x,
                 colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
         }
 

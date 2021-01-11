@@ -42,7 +42,8 @@ public class GamutCurve
     private float maxDisplayExposure;
     private float maxRadiometricLatitude;
     private float maxRadiometricLatitudeExposure;
-    private Vector2 middleGrey;
+    private Vector2 logMiddleGrey;
+    private Vector2 radiometricMiddleGrey;
 
     public GamutCurve(float minRadiometricExposure, float maxRadiometricExposure, float maxRadiometricDynamicRange, float maxDisplayValue, float minDisplayExposure,
         float maxDisplayExposure, float maxRadiometricLatitude, float maxRadiometricLatitudeExposure)
@@ -57,15 +58,18 @@ public class GamutCurve
         this.maxRadiometricLatitudeExposure = maxRadiometricLatitudeExposure;
     }
 
+    // TODO: Refactor Toe start to make a variable (0.00085f)
     public Vector2[] createControlPoints(Vector2 originCoord, Vector2 midGrey, float slope)
     {
         minRadiometricDynamicRange = originCoord.x;
         minDisplayValue = originCoord.y;
+        radiometricMiddleGrey.x = midGrey.x;
+        radiometricMiddleGrey.y = midGrey.y;
         // Convert mid grey 
-        middleGrey = new Vector2(
-            Shaper.calculateLinearToLog2(midGrey.x, midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure),
+        logMiddleGrey = new Vector2(
+            Shaper.calculateLinearToLog2(midGrey.x, midGrey.x, minRadiometricExposure, maxRadiometricExposure),
             Shaper.calculateLinearToLog2(midGrey.y, midGrey.y, minDisplayExposure, maxDisplayExposure));
-        float toeP2YCoord = Shaper.calculateLinearToLog2(0.085f, midGrey.y, minDisplayExposure, maxDisplayExposure); 
+        float toeP2YCoord = Shaper.calculateLinearToLog2(0.00085f, midGrey.y, minDisplayExposure, maxDisplayExposure); 
 
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
@@ -74,14 +78,14 @@ public class GamutCurve
         Vector2 toeP1Coords = new Vector2(0.0f, 0.0f); // We don't know where it will be yet
         Vector2 toeP2Coords = new Vector2(0.0f, toeP2YCoord);
         Vector2 midP1Coords = new Vector2(0.0f, 0.0f); // Unknown at this point
-        Vector2 shP0Coords = this.middleGrey;
+        Vector2 shP0Coords = this.logMiddleGrey;
         Vector2 shP1Coords = new Vector2(0.0f, maxDisplayValue); // Unknown at this point
-        Vector2 shP2Coords = new Vector2(
-            Shaper.calculateLinearToLog2(maxRadiometricLatitude, midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure),
+        Vector2 shP2Coords = new Vector2(0.8f,
+            //Shaper.calculateLinearToLog2(maxRadiometricLatitude, midGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure),
             maxDisplayValue);
 
         // calculate y intersection when y = 0
-        float b = calculateLineYIntercept(this.middleGrey.x, this.middleGrey.y, slope);
+        float b = calculateLineYIntercept(this.logMiddleGrey.x, this.logMiddleGrey.y, slope);
         // Calculate the coords for P1 in the first segment
         float xP1Coord = calculateLineX(0.0f, b, slope);
         toeP1Coords.y = 0.001f;
@@ -149,6 +153,17 @@ public class GamutCurve
                     yValues.Add(yVal);
                     break;
                 }
+                else if(xValue >= controlPoints[6].x)
+                {
+                    //float tValue = calcTfromXquadratic(xValue, controlPoints.ToArray());
+
+                    //float yVal = (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
+                    //             (2.0f * (1.0f - tValue) * tValue * p1.y) +
+                    //             (Mathf.Pow(tValue, 2.0f) * p2.y);
+                    int lastIndex = yValues.Count - 1;
+                    yValues.Add(/*1.0f + 0.01f*/yValues[lastIndex] + 0.0001f);
+                    break;
+                }
             }
         }
 
@@ -156,17 +171,19 @@ public class GamutCurve
     }
 
     // Assumption: the input float[] is always sorted from smallest to largest values
-    public static void BilinearClosestTo(float[] inputArray, float target, Vector2[] controlPoints, out int arrayIndex, out int arrayIndex2)
+    public void BilinearClosestTo(float[] inputArray, float target, Vector2[] controlPoints, out int arrayIndex, out int arrayIndex2)
     {
         int outIndex = 0;
         int outIndex2 = 0;
     
         int maxArrayIndex = inputArray.Length - 1;
         float minRadiometricValue = controlPoints[0].x;
-        float maxRadiometricValue = controlPoints[controlPoints.Length - 1].x;
-        outIndex = Mathf.Clamp(Mathf.RoundToInt (Mathf.Sqrt((target - minRadiometricValue)/maxRadiometricValue) * inputArray.Length), 
-            0, maxArrayIndex);
-        
+        //float maxRadiometricValue = maxRadiometricValue;//controlPoints[controlPoints.Length - 1].x;
+        //outIndex = Mathf.Clamp(Mathf.RoundToInt (Mathf.Sqrt((target - minRadiometricValue)/ maxRadiometricDynamicRange) * inputArray.Length), 
+        //    0, maxArrayIndex);
+        outIndex = Mathf.Clamp(Mathf.RoundToInt((inputArray.Length - 1) * (target - Shaper.calculateLog2ToLinear(0.0f, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure))/
+            (Shaper.calculateLog2ToLinear(1.0f, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure))), 0, maxArrayIndex);
+
         int indexBefore = Mathf.Clamp((outIndex - 1), 0, maxArrayIndex);
         int indexAfter = Mathf.Clamp((outIndex + 1), 0, maxArrayIndex);
         float currentDiffBefore = Mathf.Abs((float) inputArray[indexBefore] - target);
@@ -230,11 +247,11 @@ public class GamutCurve
             }
 
             float linearInputXCoord =
-                Shaper.calculateLog2ToLinear(logInputXCoord, middleGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
+                Shaper.calculateLog2ToLinear(logInputXCoord, logMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
             float linearXCoordIdx =
-                Shaper.calculateLog2ToLinear(xCoords[idx], middleGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
+                Shaper.calculateLog2ToLinear(xCoords[idx], logMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
             float linearXCoordIdx2 =
-                Shaper.calculateLog2ToLinear(xCoords[idx2], middleGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
+                Shaper.calculateLog2ToLinear(xCoords[idx2], logMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
 
             // Calculate interpolation factor
             if (idx == idx2)
@@ -265,7 +282,7 @@ public class GamutCurve
         }
 
         // Shape the input x coord in radiometric
-        float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, middleGrey.x, minRadiometricExposure, maxRadiometricLatitudeExposure);
+        float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, logMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
 
         int idx = 0;
         int idx2 = 0;
@@ -351,7 +368,7 @@ public class GamutCurve
                 // check if it is complex
                 for (int idx = 0; idx < roots.Length; idx++)
                 {
-                    float rootAtIndex = (float) roots[idx].Real;
+                    float rootAtIndex = (float)roots[idx].Real;
                     if (tmpRoot < 0.0f || (rootAtIndex >= 0.0f && rootAtIndex <= 1.0f))
                     {
                         tmpRoot = rootAtIndex;
@@ -364,6 +381,11 @@ public class GamutCurve
                     tmpRoot = -1.0f;
                     break;
                 }
+            }
+            else if (xValue > controlPoints[6].x)
+            {
+                rootValue = controlPoints[6].x;
+                break;
             }
         }
 
@@ -418,14 +440,18 @@ public class GamutCurve
                     coefficients[2] = p0.x - (2.0f * p1.x) + p2.x;
 
                     Complex[] roots = SolveQuadraticEquation(coefficients[2], coefficients[1], coefficients[0]);
-                    // check if it is complex
+                    // check if it is positive and smaller than 1.0f
                     for (int idx = 0; idx < roots.Length; idx++)
                     {
-                        float rootAtIndex = (float) roots[idx].Real;
+                        float rootAtIndex = (float)roots[idx].Real;
                         if (tmpRoot < 0.0f || (rootAtIndex >= 0.0f && rootAtIndex <= 1.0f) ||
                             Mathf.Approximately(rootAtIndex, 1.0f))
                         {
                             tmpRoot = rootAtIndex;
+                        }
+                        else
+                        {
+                            Debug.Log("Invalid Root");
                         }
                     }
 
@@ -440,7 +466,18 @@ public class GamutCurve
                         Debug.LogError("No roots found");
                     }
                 }
-            }
+                else if (xValues[index] >= controlPointsArray[6].x)
+                {
+                    rootsLst.Add(1.0f);
+                    tmpRoot = -1.0f;
+                    break;
+                }
+                else if(i == 6)
+                {
+                    Debug.Log("Stop");
+                }
+
+            } 
         }
 
         return rootsLst;
