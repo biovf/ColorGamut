@@ -45,6 +45,7 @@ public class GamutCurve
     private Vector2 logMiddleGrey;
     private Vector2 radiometricMiddleGrey;
 
+
     public GamutCurve(float minRadiometricExposure, float maxRadiometricExposure, float maxRadiometricDynamicRange, float maxDisplayValue, float minDisplayExposure,
         float maxDisplayExposure, float maxRadiometricLatitude, float maxRadiometricLatitudeExposure)
     {
@@ -61,6 +62,8 @@ public class GamutCurve
     // TODO: Refactor Toe start to make a variable (0.00085f)
     public Vector2[] createControlPoints(Vector2 originCoord, Vector2 midGrey, float slope)
     {
+        float toeP2YLinearValue = 0.00085f;
+
         minRadiometricDynamicRange = originCoord.x;
         minDisplayValue = originCoord.y;
         radiometricMiddleGrey.x = midGrey.x;
@@ -69,7 +72,7 @@ public class GamutCurve
         logMiddleGrey = new Vector2(
             Shaper.calculateLinearToLog2(midGrey.x, midGrey.x, minRadiometricExposure, maxRadiometricExposure),
             Shaper.calculateLinearToLog2(midGrey.y, midGrey.y, minDisplayExposure, maxDisplayExposure));
-        float toeP2YCoord = Shaper.calculateLinearToLog2(0.00085f, midGrey.y, minDisplayExposure, maxDisplayExposure); 
+        float toeP2YCoord = Shaper.calculateLinearToLog2(toeP2YLinearValue, midGrey.y, minDisplayExposure, maxDisplayExposure); 
 
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
@@ -247,11 +250,11 @@ public class GamutCurve
             }
 
             float linearInputXCoord =
-                Shaper.calculateLog2ToLinear(logInputXCoord, logMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+                Shaper.calculateLog2ToLinear(logInputXCoord, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
             float linearXCoordIdx =
-                Shaper.calculateLog2ToLinear(xCoords[idx], logMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+                Shaper.calculateLog2ToLinear(xCoords[idx], radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
             float linearXCoordIdx2 =
-                Shaper.calculateLog2ToLinear(xCoords[idx2], logMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+                Shaper.calculateLog2ToLinear(xCoords[idx2], radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
 
             // Calculate interpolation factor
             if (idx == idx2)
@@ -282,7 +285,7 @@ public class GamutCurve
         }
 
         // Shape the input x coord in radiometric
-        float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, logMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+        float logInputXCoord = Shaper.calculateLinearToLog2(inputXCoord, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
 
         int idx = 0;
         int idx2 = 0;

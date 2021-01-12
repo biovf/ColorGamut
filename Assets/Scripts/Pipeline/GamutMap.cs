@@ -303,15 +303,6 @@ public class GamutMap
             }
 
             ratio = Color.blue;
-            if (Mathf.Approximately(hdriPixelArray[i].r, 0.18f) &&
-                Mathf.Approximately(hdriPixelArray[i].g, 0.18f) &&
-                Mathf.Approximately(hdriPixelArray[i].b, 0.18f) ||
-                (hdriPixelArray[i].r > 0.17f && hdriPixelArray[i].r < 0.19f &&
-                hdriPixelArray[i].g > 0.17f && hdriPixelArray[i].g < 0.19f)) 
-            {
-                Debug.Log("Mid grey");
-
-            }
 
             hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);
             // Shape image
@@ -350,10 +341,10 @@ public class GamutMap
                     linearHdriPixelColor.b = maxRadiometricValue;
                 }
 
-                //if (isGamutCompressionActive)
-                //{
-                //    ratio = calculateGamutCompression(xCoordsArray, yCoordsArray, tValuesArray, linearHdriPixelColor, ref hdriPixelColorVec, maxDynamicRangeVec, linearHdriMaxRGBChannel, ratio);
-                //}
+                if (isGamutCompressionActive)
+                {
+                    ratio = calculateGamutCompression(xCoordsArray, yCoordsArray, tValuesArray, linearHdriPixelColor, ref hdriPixelColorVec, maxDynamicRangeVec, linearHdriMaxRGBChannel, ratio);
+                }
 
                 // Get Y value from curve by retrieving the respective value from the x coordinate array
                 float yValue = parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
@@ -410,7 +401,7 @@ public class GamutMap
         gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
 
         // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-        gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(maxLatitudeLimit, midGrey.x, minRadiometricExposure, minRadiometricExposure);
+        gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(maxLatitudeLimit, midGrey.x, minRadiometricExposure, maxRadiometricExposure);
 
         if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
             linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
