@@ -443,9 +443,6 @@ public class GamutMap
 
     public void exportTransferFunction(string fileName)
     {
-
-
-
         // Set the DOMAIN_MIN and DOMAIN_MAX ranges
         Vector3 minCameraNativeVec = /*Vector3.zero;*/new Vector3(xValues[0], xValues[0], xValues[0]);
         Vector3 maxCameraNativeVec = /*Vector3.one;*/ new Vector3(xValues[xValues.Count - 1], xValues[xValues.Count - 1], xValues[xValues.Count - 1]);
@@ -466,6 +463,13 @@ public class GamutMap
         // CubeLutExporter.saveLutAsCube(yValuesEOTF, fileName, i /*yValues.Count*/, minDisplayValueVec,
         //     maxDisplayValueVec, false);
 
+
+
+        float[] xValuesArray = xValues.ToArray();
+        float[] yValuesArray = yValues.ToArray();
+        float[] tValuesArray = tValues.ToArray();
+        float[] yDisplayLinearEOTFValues = new float[yValues.Count];
+
         // X -> camera intrinsic encoding (camera negative)
         // Y -> display intrinsic (display negative)
         // get x values and y values arrays
@@ -473,16 +477,9 @@ public class GamutMap
         // go from display intrinsic to display linear
         //                  Shaper.calculateLog2toLinear(yVal, midGrey.y, minDisplayExposure, maxDisplayExposure);
         // go from display linear to display inverse EOTF encoded
-
-        float[] xValuesArray = xValues.ToArray();
-        float[] yValuesArray = yValues.ToArray();
-        float[] tValuesArray = tValues.ToArray();
-
-        float[] yDisplayLinearEOTFValues = new float[yValues.Count];
         for (int j = 0; j < xValues.Count; j++)
         {
-
-            // getYcoordinate from X
+            // get Y coordinate from X
             float yDisplayIntrinsicValue = parametricGamutCurve.getYCoordinateLogXInput(xValues[j],xValuesArray, yValuesArray, tValuesArray , controlPoints);
             // Shaper.calculateLog2toLinear(yVal, midGrey.y, minDisplayExposure, maxDisplayExposure);
             float yDisplayLinearValue = Shaper.calculateLog2ToLinear(yDisplayIntrinsicValue, midGrey.y, minDisplayExposure, maxDisplayExposure);
