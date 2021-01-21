@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.IO;
 using System.Text;
 
@@ -94,11 +95,11 @@ public class ColorGrade
         // TODO Convert pixels from linear to log2
         for (int i = 0; i < inGameCapturePixels.Length; i++)
         {
-            inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(inGameCapturePixels[i].r, colorGamut.MidGrey.y, 
+            inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].r), colorGamut.MidGrey.y,
                 colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-            inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(inGameCapturePixels[i].g, colorGamut.MidGrey.y, 
+            inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].g), colorGamut.MidGrey.y,
                 colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-            inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(inGameCapturePixels[i].b, colorGamut.MidGrey.y, 
+            inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].b), colorGamut.MidGrey.y,
                 colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
         }
 

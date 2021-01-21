@@ -441,46 +441,58 @@ public class GamutMap
     }
 
 
-    //float maxHDRIPixel = Mathf.Max(hdriPixelColorVec.x, Mathf.Max(hdriPixelColorVec.y, hdriPixelColorVec.z));
-    //Color hdriPixelColor = new Color(hdriPixelColorVec.x, hdriPixelColorVec.y, hdriPixelColorVec.z);
-    //Color colorRatios = new Color(maxHDRIPixel, maxHDRIPixel, maxHDRIPixel);
-    //colorRatios = hdriPixelColor / maxHDRIPixel;
-    //float curveEval = Mathf.SmoothStep(maxHDRIPixel, 1.0f, colorRatios.r);
-
-
     public void exportTransferFunction(string fileName)
     {
 
-        // X -> camera intrinsic encoding (camera negative)
-        // Y -> display intrinsic (display negative)
-        // get x values and y values arrays
-        // get aesthetic curve in display intrinsic from camera intrisinc encoding (x camera axis)
-        // go from display intrinsic to display linear 
-        //                  Shaper.calculateLog2toLinear(yVal, midGrey.y, minDisplayExposure, maxDisplayExposure); 
-        // go from display linear to display inverse EOTF encoded
 
 
         // Set the DOMAIN_MIN and DOMAIN_MAX ranges
         Vector3 minCameraNativeVec = /*Vector3.zero;*/new Vector3(xValues[0], xValues[0], xValues[0]);
         Vector3 maxCameraNativeVec = /*Vector3.one;*/ new Vector3(xValues[xValues.Count - 1], xValues[xValues.Count - 1], xValues[xValues.Count - 1]);
 
-        List<float> yValuesTmp = yValues;
-        float[] yValuesEOTF = new float[yValuesTmp.Count];
-        int i = 0;
-        for (i = 0; i < yValuesTmp.Count; i++)
-        {
-
-            //if (yValuesTmp[i] >= 1.0f)
-            //    break;
-
-            //yValuesEOTF[i] = yValuesTmp[i];
-        }
+        // List<float> yValuesTmp = yValues;
+        // float[] yValuesEOTF = new float[yValuesTmp.Count];
+        // int i = 0;
+        // for (i = 0; i < yValuesTmp.Count; i++)
+        // {
+        //
+        //     //if (yValuesTmp[i] >= 1.0f)
+        //     //    break;
+        //
+        //     //yValuesEOTF[i] = yValuesTmp[i];
+        // }
 
         // Pass data to be converted and written to disk as a .cube file
         // CubeLutExporter.saveLutAsCube(yValuesEOTF, fileName, i /*yValues.Count*/, minDisplayValueVec,
         //     maxDisplayValueVec, false);
 
-        CubeLutExporter.saveLutAsCube(xValues.ToArray(), fileName, xValues.Count, minCameraNativeVec,
+        // X -> camera intrinsic encoding (camera negative)
+        // Y -> display intrinsic (display negative)
+        // get x values and y values arrays
+        // get aesthetic curve in display intrinsic from camera intrisinc encoding (x camera axis)
+        // go from display intrinsic to display linear
+        //                  Shaper.calculateLog2toLinear(yVal, midGrey.y, minDisplayExposure, maxDisplayExposure);
+        // go from display linear to display inverse EOTF encoded
+
+        float[] xValuesArray = xValues.ToArray();
+        float[] yValuesArray = yValues.ToArray();
+        float[] tValuesArray = tValues.ToArray();
+
+        float[] yDisplayLinearEOTFValues = new float[yValues.Count];
+        for (int j = 0; j < xValues.Count; j++)
+        {
+
+            // getYcoordinate from X
+            float yDisplayIntrinsicValue = parametricGamutCurve.getYCoordinateLogXInput(xValues[j],xValuesArray, yValuesArray, tValuesArray , controlPoints);
+            // Shaper.calculateLog2toLinear(yVal, midGrey.y, minDisplayExposure, maxDisplayExposure);
+            float yDisplayLinearValue = Shaper.calculateLog2ToLinear(yDisplayIntrinsicValue, midGrey.y, minDisplayExposure, maxDisplayExposure);
+            // encode pow(y, 1.0/2.2)
+            yDisplayLinearEOTFValues[j] =
+                TransferFunction.ApplyInverseTransferFunction(yDisplayLinearValue, TransferFunction.TransferFunctionType.sRGB);
+        }
+
+
+        CubeLutExporter.saveLutAsCube(yDisplayLinearEOTFValues, fileName, xValues.Count, minCameraNativeVec,
             maxCameraNativeVec, false);
     }
 
