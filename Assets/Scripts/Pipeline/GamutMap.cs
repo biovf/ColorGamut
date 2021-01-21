@@ -194,9 +194,11 @@ public class GamutMap
         for (int i = 0; i < lutDimension; ++i)
         {
             
-            xCoord = minValue + (((float)i / (float)(lutDimension - 1))) * maxValue;
+            //xCoord = minValue + (((float)i / (float)(lutDimension - 1))) * maxValue;
             //xCoord = minValue + (Mathf.Pow((float) i / (float) lutDimension, 2.0f) * maxValue);
-            xValues.Add(Mathf.Clamp01(xCoord));
+            //xValues.Add(Shaper.calculateLinearToLog2(xCoord, midGrey.x, minRadiometricExposure, maxRadiometricExposure));
+            //xValues.Add(Mathf.Clamp01(xCoord));
+            xValues.Add(((float)i / (float)(lutDimension - 1)));
         }
 
         return xValues;
@@ -273,7 +275,7 @@ public class GamutMap
         Texture2D textureToProcess = toTexture2D(inputRenderTexture);
 
         hdriPixelArray = textureToProcess.GetPixels();
-        // File.WriteAllBytes("PreTransferFunctionImage.exr", textureToProcess.EncodeToEXR());
+        File.WriteAllBytes("PreTransferFunctionImage.exr", textureToProcess.EncodeToEXR());
 
         hdriPixelArrayLen = hdriPixelArray.Length;
         int quarterSize = hdriPixelArrayLen / 4;
@@ -305,6 +307,7 @@ public class GamutMap
             ratio = Color.blue;
 
             hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);
+            Color temp = hdriPixelArray[i];
             // Shape image
             Color log2HdriPixelArray = new Color();
             log2HdriPixelArray.r = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].r),
@@ -313,6 +316,11 @@ public class GamutMap
                 midGrey.x, minRadiometricExposure, maxRadiometricExposure);
             log2HdriPixelArray.b = Shaper.calculateLinearToLog2(Math.Max(0.0f, hdriPixelArray[i].b),
                 midGrey.x, minRadiometricExposure, maxRadiometricExposure);
+
+            if (hdriPixelArray[i].r > 0.17f && hdriPixelArray[i].r < 0.19f)
+            {
+                Debug.Log("Stop " + temp.r + " " + temp.g + " " + temp.b);
+            }
 
             // Calculate Pixel max color and ratio
             logHdriMaxRGBChannel = log2HdriPixelArray.maxColorComponent;
@@ -384,7 +392,7 @@ public class GamutMap
         hdriTextureTransformed.Apply();
 
         // Write texture to disk
-        // File.WriteAllBytes("PostTransferFunctionImage.exr", hdriTextureTransformed.EncodeToEXR());
+        File.WriteAllBytes("PostTransferFunctionImage.exr", hdriTextureTransformed.EncodeToEXR());
         curveDataState = CurveDataState.Calculated;
         mainCamera.clearFlags = CameraClearFlags.Nothing;
         Debug.Log("Image Processing has finished");
@@ -442,24 +450,36 @@ public class GamutMap
 
     public void exportTransferFunction(string fileName)
     {
+
+        // X -> camera intrinsic encoding (camera negative)
+        // Y -> display intrinsic (display negative)
+        // get x values and y values arrays
+        // get aesthetic curve in display intrinsic from camera intrisinc encoding (x camera axis)
+        // go from display intrinsic to display linear 
+        //                  Shaper.calculateLog2toLinear(yVal, midGrey.y, minDisplayExposure, maxDisplayExposure); 
+        // go from display linear to display inverse EOTF encoded
+
+
         // Set the DOMAIN_MIN and DOMAIN_MAX ranges
         Vector3 minCameraNativeVec = /*Vector3.zero;*/new Vector3(xValues[0], xValues[0], xValues[0]);
         Vector3 maxCameraNativeVec = /*Vector3.one;*/ new Vector3(xValues[xValues.Count - 1], xValues[xValues.Count - 1], xValues[xValues.Count - 1]);
 
-        // List<float> yValuesTmp = yValues; 
-        // float[] yValuesEOTF = new float[yValuesTmp.Count];
-        // int i = 0;
-        // for (i = 0; i < yValuesTmp.Count; i++)
-        // {
-        //     if (yValuesTmp[i] >= 1.0f)
-        //         break;
-        //     
-        //     yValuesEOTF[i] = yValuesTmp[i];
-        // }
+        List<float> yValuesTmp = yValues;
+        float[] yValuesEOTF = new float[yValuesTmp.Count];
+        int i = 0;
+        for (i = 0; i < yValuesTmp.Count; i++)
+        {
+
+            //if (yValuesTmp[i] >= 1.0f)
+            //    break;
+
+            //yValuesEOTF[i] = yValuesTmp[i];
+        }
 
         // Pass data to be converted and written to disk as a .cube file
         // CubeLutExporter.saveLutAsCube(yValuesEOTF, fileName, i /*yValues.Count*/, minDisplayValueVec,
         //     maxDisplayValueVec, false);
+
         CubeLutExporter.saveLutAsCube(xValues.ToArray(), fileName, xValues.Count, minCameraNativeVec,
             maxCameraNativeVec, false);
     }

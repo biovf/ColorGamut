@@ -314,22 +314,6 @@ public class HDRPipelineEditor : Editor
         isGamutCompressionActive = EditorGUILayout.Toggle("Enable Gamut Compression", isGamutCompressionActive);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
         showPixelsOutOfGamut = EditorGUILayout.Toggle("Show Pixels Out of Gamut", showPixelsOutOfGamut);
-        // @TODO Needs to be properly rewritten
-        // if (EditorGUILayout.Toggle("Enable CPU mode", enableCPUMode))
-        // {
-        //     enableCPUMode = true;
-        //     if (enableCPUMode != hdrPipeline.CPUMode)
-        //     {
-        //         RecalculateImageInCpuMode();
-        //     }
-        //     hdrPipeline.CPUMode = enableCPUMode;
-        // }
-        // else
-        // {
-        //     enableCPUMode = false;
-        // }
-
-        // saveGamutMapDebugImages = EditorGUILayout.Toggle("Save gamut mapping debug images to disk", saveGamutMapDebugImages);
     }
 
     private void DrawSaveGameCaptureWidgets()

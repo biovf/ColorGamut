@@ -156,7 +156,7 @@ public class GamutCurve
                     yValues.Add(yVal);
                     break;
                 }
-                else if(xValue >= controlPoints[6].x)
+                else if (xValue >= controlPoints[6].x)
                 {
                     //float tValue = calcTfromXquadratic(xValue, controlPoints.ToArray());
 
@@ -165,6 +165,11 @@ public class GamutCurve
                     //             (Mathf.Pow(tValue, 2.0f) * p2.y);
                     int lastIndex = yValues.Count - 1;
                     yValues.Add(/*1.0f + 0.01f*/yValues[lastIndex] + 0.0001f);
+                    break;
+                }
+                else if (xValue <= controlPoints[0].x) 
+                {
+                    yValues.Add(xValue);
                     break;
                 }
             }
@@ -184,8 +189,9 @@ public class GamutCurve
         //float maxRadiometricValue = maxRadiometricValue;//controlPoints[controlPoints.Length - 1].x;
         //outIndex = Mathf.Clamp(Mathf.RoundToInt (Mathf.Sqrt((target - minRadiometricValue)/ maxRadiometricDynamicRange) * inputArray.Length), 
         //    0, maxArrayIndex);
-        outIndex = Mathf.Clamp(Mathf.RoundToInt((inputArray.Length - 1) * (target - Shaper.calculateLog2ToLinear(0.0f, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure))/
-            (Shaper.calculateLog2ToLinear(1.0f, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure))), 0, maxArrayIndex);
+        outIndex = Mathf.Clamp(Mathf.RoundToInt(target * (inputArray.Length - 1)), 0, maxArrayIndex);
+            //Mathf.RoundToInt((inputArray.Length - 1) * (target - Shaper.calculateLog2ToLinear(0.0f, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure))/
+            //(Shaper.calculateLog2ToLinear(1.0f, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure))), 0, maxArrayIndex);
 
         int indexBefore = Mathf.Clamp((outIndex - 1), 0, maxArrayIndex);
         int indexAfter = Mathf.Clamp((outIndex + 1), 0, maxArrayIndex);
@@ -469,9 +475,9 @@ public class GamutCurve
                         Debug.LogError("No roots found");
                     }
                 }
-                else if (xValues[index] >= controlPointsArray[6].x)
+                else if (xValues[index] >= controlPoints[6].x || xValues[index] <= controlPoints[0].x)
                 {
-                    rootsLst.Add(1.0f);
+                    rootsLst.Add(xValues[index]);
                     tmpRoot = -1.0f;
                     break;
                 }
