@@ -481,12 +481,12 @@ public class GamutMap
         {
             // get Y coordinate from X
             float yDisplayIntrinsicValue = parametricGamutCurve.getYCoordinateLogXInput(xValues[j],xValuesArray, yValuesArray, tValuesArray , controlPoints);
-            // Shaper.calculateLog2toLinear(yVal, midGrey.y, minDisplayExposure, maxDisplayExposure);
             float yDisplayLinearValue = Shaper.calculateLog2ToLinear(yDisplayIntrinsicValue, midGrey.y, minDisplayExposure, maxDisplayExposure);
             // encode pow(y, 1.0/2.2)
-            yDisplayLinearEOTFValues[j] =
-                TransferFunction.ApplyInverseTransferFunction(yDisplayLinearValue, TransferFunction.TransferFunctionType.sRGB);
+            yDisplayLinearEOTFValues[j] = TransferFunction.ApplyInverseTransferFunction(yDisplayLinearValue, TransferFunction.TransferFunctionType.sRGB);
         }
+
+        exportDualColumnDataToCSV(xValues.ToArray(), yDisplayLinearEOTFValues, "ResolveExportTF.csv");
 
 
         CubeLutExporter.saveLutAsCube(yDisplayLinearEOTFValues, fileName, xValues.Count, minCameraNativeVec,
