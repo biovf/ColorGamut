@@ -42,7 +42,7 @@ public class ColorGrade
             RenderTextureReadWrite.Linear);
         interceptDebugRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
-        
+
         hdr3DLutToDecode = hdrLUTToDecode;
         this.pipeline = pipeline;
         colorGamut = pipeline.getColorGamut();
@@ -55,6 +55,7 @@ public class ColorGrade
         Graphics.Blit(src, interceptDebugRT, fullscreenMat);
 
         hdr3DLutToDecode = LUT;
+        colorGrading3DTextureMat.SetTexture("_MainTex", src);
         colorGrading3DTextureMat.SetTexture("_LUT", hdr3DLutToDecode);
         colorGrading3DTextureMat.SetFloat("_MinExposureValue", colorGamut.MinRadiometricExposure);
         colorGrading3DTextureMat.SetFloat("_MaxExposureValue", colorGamut.MaxRadiometricExposure);
@@ -86,25 +87,25 @@ public class ColorGrade
             new Vector3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue), true);
     }
 
-    public void saveInGameCapture(string saveFilePath, bool shapeImage)
-    {
-        Vector3 colorVec = Vector3.zero;
-
-        Texture2D inGameCapture = toTexture2D(interceptDebugRT);
-        Color[] inGameCapturePixels = inGameCapture.GetPixels();
-        // TODO Convert pixels from linear to log2
-        for (int i = 0; i < inGameCapturePixels.Length; i++)
-        {
-            inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].r), colorGamut.MidGreySdr.y,
-                colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-            inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].g), colorGamut.MidGreySdr.y,
-                colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-            inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].b), colorGamut.MidGreySdr.y,
-                colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-        }
-
-        SaveToDisk(inGameCapturePixels, saveFilePath, inGameCapture.width, inGameCapture.height);
-    }
+    // public void saveInGameCapture(string saveFilePath)
+    // {
+    //     Vector3 colorVec = Vector3.zero;
+    //
+    //     Texture2D inGameCapture = toTexture2D(interceptDebugRT);
+    //     Color[] inGameCapturePixels = inGameCapture.GetPixels();
+    //     // TODO Convert pixels from linear to log2
+    //     for (int i = 0; i < inGameCapturePixels.Length; i++)
+    //     {
+    //         inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].r), colorGamut.MidGreySdr.x,
+    //             colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+    //         inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].g), colorGamut.MidGreySdr.x,
+    //             colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+    //         inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].b), colorGamut.MidGreySdr.x,
+    //             colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+    //     }
+    //
+    //     SaveToDisk(inGameCapturePixels, saveFilePath, inGameCapture.width, inGameCapture.height);
+    // }
 
     public void generateTextureLut(string fileName, int lutDimension, bool generateHDRLut, bool useShaperFunction, bool useDisplayP3,
         float maxRadiometricValue)

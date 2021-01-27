@@ -51,8 +51,9 @@ public class CubeLutExporter
         if (outFilePath.Length > 0)
             outFile = outFilePath + "\\" + outFile;
         
-        Debug.Log("Writing file " + outFile + " to disk");
         File.WriteAllText(outFile, fileContents.ToString());
+        Debug.Log("Saved file " + outFile + " to disk");
+
     }
     
     

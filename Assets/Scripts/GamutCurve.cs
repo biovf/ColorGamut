@@ -158,13 +158,8 @@ public class GamutCurve
                 }
                 else if (xValue >= controlPoints[6].x)
                 {
-                    //float tValue = calcTfromXquadratic(xValue, controlPoints.ToArray());
-
-                    //float yVal = (Mathf.Pow(1.0f - tValue, 2.0f) * p0.y) +
-                    //             (2.0f * (1.0f - tValue) * tValue * p1.y) +
-                    //             (Mathf.Pow(tValue, 2.0f) * p2.y);
                     int lastIndex = yValues.Count - 1;
-                    yValues.Add(/*1.0f + 0.01f*/yValues[lastIndex] + 0.0001f);
+                    yValues.Add(yValues[lastIndex] + 0.0001f);
                     break;
                 }
                 else if (xValue <= controlPoints[0].x) 
@@ -186,12 +181,15 @@ public class GamutCurve
     
         int maxArrayIndex = inputArray.Length - 1;
         float minRadiometricValue = controlPoints[0].x;
-        //float maxRadiometricValue = maxRadiometricValue;//controlPoints[controlPoints.Length - 1].x;
-        //outIndex = Mathf.Clamp(Mathf.RoundToInt (Mathf.Sqrt((target - minRadiometricValue)/ maxRadiometricDynamicRange) * inputArray.Length), 
-        //    0, maxArrayIndex);
         outIndex = Mathf.Clamp(Mathf.RoundToInt(target * (inputArray.Length - 1)), 0, maxArrayIndex);
-            //Mathf.RoundToInt((inputArray.Length - 1) * (target - Shaper.calculateLog2ToLinear(0.0f, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure))/
-            //(Shaper.calculateLog2ToLinear(1.0f, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure))), 0, maxArrayIndex);
+
+        // If we find an entry which is a perfect match, just return that index
+        if (Mathf.Approximately(inputArray[outIndex], target))
+        {
+            arrayIndex = outIndex;
+            arrayIndex2 = outIndex;
+            return;
+        }
 
         int indexBefore = Mathf.Clamp((outIndex - 1), 0, maxArrayIndex);
         int indexAfter = Mathf.Clamp((outIndex + 1), 0, maxArrayIndex);

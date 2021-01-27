@@ -333,7 +333,7 @@ public class HDRPipelineEditor : Editor
                 return;
             }
          
-            colorGradingHDR.saveInGameCapture(outPathGameCapture, shapeImage);
+            colorGamut.saveInGameCapture(outPathGameCapture);
         }
         else if (outPathGameCapture.Length < 1)
         {
