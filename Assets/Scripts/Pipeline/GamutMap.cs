@@ -96,6 +96,13 @@ public class GamutMap
 
     private float maxRadiometricLatitude;
     private float maxLatitudeLimit;
+
+    public float MaxLatitudeLimit
+    {
+        get => maxLatitudeLimit;
+        set => maxLatitudeLimit = value;
+    }
+
     private float maxRadiometricLatitudeExposure;
 
     private Vector2 midGreySDR;
@@ -800,6 +807,11 @@ public class GamutMap
     {
         this.inputTexture = inputTexture;
         SetCurveDataState(CurveDataState.Dirty);
+    }
+
+    public void setMaxLatitudeLimit(float latitudeLimit)
+    {
+        maxLatitudeLimit = latitudeLimit;
     }
 
     // public void setHDRIIndex(int index)

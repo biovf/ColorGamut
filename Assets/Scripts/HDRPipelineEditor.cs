@@ -69,7 +69,6 @@ public class HDRPipelineEditor : Editor
 
     private bool isColorGradingTabOpen = true;
     private ColorGrade colorGradingHDR;
-    private bool shapeImage = true;
     private GamutMap.CurveDataState guiWidgetsState = GamutMap.CurveDataState.NotCalculated;
     
     //#region DebugOptions
@@ -78,7 +77,8 @@ public class HDRPipelineEditor : Editor
     //#endregion
 
     private Rect curveRect;
-    private float scaleFactor = 1.0f; 
+    private float scaleFactor = 1.0f;
+    private float maxLatitudeLimit = 0.8f;
 
     public void OnEnable()
     {
@@ -120,7 +120,7 @@ public class HDRPipelineEditor : Editor
                                  "MaxRange" + maxRadiometricValue.ToString();
         
         hdrPipeline.CPUMode = enableCPUMode;
-
+        maxLatitudeLimit = colorGamut.MaxLatitudeLimit;
     }
 
 
@@ -215,11 +215,15 @@ public class HDRPipelineEditor : Editor
         
         exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
-        originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
-        originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
-        greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
-        greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
+        maxLatitudeLimit = EditorGUILayout.Slider("Max Latitude", maxLatitudeLimit, 0.1f, 1.0f);
+        // originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
+        // originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
+        // greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
+        // greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
+
         EditorGUILayout.Space();
+
+        DrawGamutMapCurveWidget();
 
         if (Application.isPlaying)
         {
@@ -267,7 +271,7 @@ public class HDRPipelineEditor : Editor
         // DrawGradingLUTWidgets();
         // DrawCubeLUTWidgets();
 
-        DrawGamutMapCurveWidget();
+
         
         EditorGUILayout.Separator();
         EditorGUILayout.LabelField("Debug Options");
@@ -280,7 +284,7 @@ public class HDRPipelineEditor : Editor
 
     private void DrawGamutMapCurveWidget()
     {
-        hdrPipeline.ScaleFactor = EditorGUILayout.Slider("Curve Scale Factor", hdrPipeline.ScaleFactor, 0.0f, 10.0f);
+        // hdrPipeline.ScaleFactor = EditorGUILayout.Slider("Curve Scale Factor", hdrPipeline.ScaleFactor, 0.0f, 10.0f);
         curveRect = GUILayoutUtility.GetRect(128, 256);
 
         if (hdrPipeline.CurveRT != null && hdrPipeline.CurveRT.IsCreated() && 
@@ -301,6 +305,7 @@ public class HDRPipelineEditor : Editor
 
     private void RecalculateImageInCpuMode()
     {
+        colorGamut.setMaxLatitudeLimit(maxLatitudeLimit);
         CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
             originPointY, _activeGamutMappingMode, isGamutCompressionActive);
         colorGamut.setCurveParams(curveParams);
@@ -320,8 +325,6 @@ public class HDRPipelineEditor : Editor
     {
         EditorGUILayout.Space(10.0f);
         EditorGUILayout.LabelField("Export of In-Game Capture ");
-        
-        shapeImage = EditorGUILayout.Toggle("Apply Shaper to exported capture", shapeImage);
 
         if (GUILayout.Button("Export Game Capture to Resolve"))
         {
