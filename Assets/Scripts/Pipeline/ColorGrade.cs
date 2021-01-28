@@ -24,7 +24,7 @@ public class ColorGrade
     private RenderTexture colorGradeRT;
     
     private RenderTexture decodedRTLUT;
-    private RenderTexture interceptDebugRT;
+    // private RenderTexture interceptDebugRT;
 
     private HDRPipeline pipeline;
     public ColorGrade(Texture2D testTexture, Material colorGrading3DTextureMat, 
@@ -40,8 +40,8 @@ public class ColorGrade
         // testTexture = colorGamut.getHDRITexture();
         colorGradeRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
-        interceptDebugRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
-            RenderTextureReadWrite.Linear);
+        // interceptDebugRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
+        //     RenderTextureReadWrite.Linear);
 
         hdr3DLutToDecode = hdrLUTToDecode;
         this.pipeline = pipeline;
@@ -52,7 +52,7 @@ public class ColorGrade
     
     public void OnRenderImage(Texture src, RenderTexture dest, Texture3D LUT)
     {
-        Graphics.Blit(src, interceptDebugRT, fullscreenMat);
+        // Graphics.Blit(src, interceptDebugRT, fullscreenMat);
 
         hdr3DLutToDecode = LUT;
         colorGrading3DTextureMat.SetTexture("_MainTex", src);
