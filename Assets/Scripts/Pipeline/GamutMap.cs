@@ -204,11 +204,10 @@ public class GamutMap
         Debug.Log("Maximum Radiometric Value: \t " + maxRadiometricValue.ToString("F6"));
     }
 
-    public List<float> initialiseXCoordsInRange(int lutDimension, float minValue, float maxValue)
+    public List<float> initialiseXCoordsInRange(int lutDimension)
     {
         List<float> xCameraIntrinsicValues = new List<float>(lutDimension);
 
-        float xCoord = 0.0f;
         for (int i = 0; i < lutDimension; ++i)
         {
             xCameraIntrinsicValues.Add(((float)i / (float)(lutDimension - 1)));
@@ -225,8 +224,7 @@ public class GamutMap
                 minDisplayExposure, maxDisplayExposure, maxRadiometricLatitude, maxRadiometricLatitudeExposure, maxLatitudeLimit);
 
         controlPoints = parametricGamutCurve.createControlPoints(origin, this.midGreySDR, slope);
-        xCameraIntrinsicValues = initialiseXCoordsInRange(curveLutLength, Shaper.calculateLog2ToLinear(0.0f, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
-            Shaper.calculateLog2ToLinear(1.0f, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure));
+        xCameraIntrinsicValues = initialiseXCoordsInRange(curveLutLength);
         tValues = parametricGamutCurve.calcTfromXquadratic(xCameraIntrinsicValues.ToArray(), controlPoints);
         yDisplayIntrinsicValues = parametricGamutCurve.calcYfromXQuadratic(xCameraIntrinsicValues, tValues, new List<Vector2>(controlPoints));
 
@@ -273,7 +271,6 @@ public class GamutMap
     private List<Color> logPixelData;
     private List<Color> finalImage;
     // private RenderTexture inputLinearImage;
-
     public IEnumerator ApplyTransferFunction(RenderTexture inputRenderTexture)
     {
         int counter = maxIterationsPerFrame;
@@ -444,7 +441,7 @@ public class GamutMap
 
         finalImageTexture.SetPixels(finalImage.ToArray());
         finalImageTexture.Apply();
-        File.WriteAllBytes(debugDataPath + "PostGamutMap_DisplayLinearWithInverseEOTF.exr", hdriTextureTransformed.EncodeToEXR());
+        File.WriteAllBytes(debugDataPath + "PostGamutMap_DisplayLinearWithInverseEOTF.exr", finalImageTexture.EncodeToEXR());
 
         // Save Log encoded data
         Texture2D logImageToSave = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false, true);
@@ -507,12 +504,9 @@ public class GamutMap
         // TODO Convert pixels from linear to log2
         for (int i = 0; i < inGameCapturePixels.Length; i++)
         {
-            inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].r), MidGreySdr.x,
-                MinRadiometricExposure, MaxRadiometricExposure);
-            inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].g), MidGreySdr.x,
-                MinRadiometricExposure, MaxRadiometricExposure);
-            inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].b), MidGreySdr.x,
-                MinRadiometricExposure, MaxRadiometricExposure);
+            inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].r), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+            inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].g), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+            inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].b), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
         }
 
         SaveToDisk(inGameCapturePixels, saveFilePath, inputTexture.width, inputTexture.height);
@@ -547,11 +541,14 @@ public class GamutMap
             // Take curved and convert it to display linear
 
             // get Y coordinate from X
-            // float yDisplayIntrinsicValue = parametricGamutCurve.getYCoordinateLogXInput(xCameraIntrinsicArray[index], xCameraIntrinsicArray, yDisplayIntrinsicArray, tValuesArray , controlPoints);
-            float yDisplayIntrinsicValue = yDisplayIntrinsicArray[index];
+            float yDisplayIntrinsicValue = parametricGamutCurve.getYCoordinateLogXInput(xCameraIntrinsicArray[index], xCameraIntrinsicValues.ToArray(), yDisplayIntrinsicValues.ToArray(), tValuesArray, controlPoints);
+            //float yDisplayIntrinsicValue = yDisplayIntrinsicArray[index];
             float yDisplayLinearValue = Shaper.calculateLog2ToLinear(yDisplayIntrinsicValue, midGreySDR.y, minDisplayExposure, maxDisplayExposure);
+            yDisplayLinearEOTFValues[index] = TransferFunction.ApplyInverseTransferFunction(yDisplayLinearValue, TransferFunction.TransferFunctionType.sRGB);
+
+            // Debug only stuff
             yDisplayLinearValues[index] = yDisplayLinearValue;
-            yDisplayLinearEOTFValues[index] = TransferFunction.ApplyInverseTransferFunction(yDisplayLinearValue, TransferFunction.TransferFunctionType.sRGB_2PartFunction);
+
         }
 
         // for (int index = 0; index < logInputColorPixelValues.Count; index++)
