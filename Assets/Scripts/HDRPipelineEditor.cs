@@ -63,7 +63,7 @@ public class HDRPipelineEditor : Editor
     #endregion
 
     #region EXR Capture Variables 
-    private bool foldoutStateSaveExr = false;
+    // private bool foldoutStateSaveExr = false;
     private string outPathGameCapture = "";
     #endregion
 

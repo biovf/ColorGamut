@@ -59,7 +59,7 @@ public class CubeLutExporter
     
     
     public static void saveLutAsCube(Color[] inputLutTex, string fileName, int lutDim,
-        Vector3 domainMin, Vector3 domainMax, bool convertTo3DLut, string outFilePath = "")
+        Vector3 domainMin, Vector3 domainMax, bool isLut3D, string outFilePath = "")
     {
         StringBuilder fileContents = new StringBuilder();
         fileContents.Append("TITLE \"" + fileName + "\"");
@@ -71,8 +71,9 @@ public class CubeLutExporter
         fileContents.Append("DOMAIN_MAX " + domainMax.x.ToString() + " " + domainMax.y.ToString() + " " + domainMax.z.ToString());
         fileContents.AppendLine();
         
-        if (convertTo3DLut == false)
+        if (isLut3D == false)
         {
+            // Write a 1D LUT out
             int texPixelsLen = inputLutTex.Length;
             int lut1DSize = texPixelsLen;
             fileContents.Append("LUT_1D_SIZE " + lut1DSize.ToString());
@@ -86,14 +87,15 @@ public class CubeLutExporter
         }
         else
         {
-            // Write out 3D file
+            // Write out a 3D LUT file
             fileContents.Append("LUT_3D_SIZE " + lutDim.ToString());
             fileContents.AppendLine();
 
-            Color[] lut3D = convertLut1DTo3D(inputLutTex,lutDim);
-            for (int i = 0; i < lut3D.Length; i++)
+            // Color[] lut3D = convertLut1DTo3D(inputLutTex,lutDim);
+            int inputLutColorsArrayLen = inputLutTex.Length;
+            for (int i = 0; i < inputLutColorsArrayLen; i++)
             {
-                fileContents.Append(lut3D[i].r.ToString() + " " + lut3D[i].g.ToString() + " " + lut3D[i].b.ToString());
+                fileContents.Append(inputLutTex[i].r.ToString() + " " + inputLutTex[i].g.ToString() + " " + inputLutTex[i].b.ToString());
                 fileContents.AppendLine();
             }
         }

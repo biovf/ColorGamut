@@ -5,6 +5,30 @@ using UnityEngine;
 
 public class LutGenerator 
 {
+
+
+  public static Color[] generateIdentityCubeLUT(int cubeSideLenght)
+  {
+    Color[] identityLUT = new Color[cubeSideLenght * cubeSideLenght * cubeSideLenght];
+
+    for (int bChannel = 0; bChannel < cubeSideLenght; bChannel++)
+    {
+      for (int gChannel = 0; gChannel < cubeSideLenght; gChannel++)
+      {
+        for (int rChannel = 0; rChannel < cubeSideLenght; rChannel++)
+        {
+          int index = rChannel + (cubeSideLenght * gChannel) + (cubeSideLenght * cubeSideLenght * bChannel);
+          identityLUT[index] =
+            new Color((float)rChannel / (float)(cubeSideLenght - 1),
+                      (float)gChannel / (float)(cubeSideLenght - 1),
+                      (float)bChannel / (float)(cubeSideLenght - 1));
+        }
+      }
+    }
+
+    return identityLUT;
+  }
+
   public static Color[] generateSdrTexLut(int sliceLength)
   {
     float redCounter = 0.0f;

@@ -315,7 +315,6 @@ public class GamutCurve
             return Mathf.Lerp(yCoords[idx2], yCoords[idx], lerpValue);
         }
 
-        return -1.0f;
     }
 
 
