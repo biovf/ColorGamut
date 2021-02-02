@@ -29,7 +29,7 @@ public class GamutMap
 
     public float Exposure => exposure;
 
-    private Texture2D inputTexture;
+    private Texture2D inputRadiometricLinearTexture;
 
     private bool isSweepActive;
     private bool isGamutCompressionActive;
@@ -179,7 +179,7 @@ public class GamutMap
         minRadiometricValue = Mathf.Pow(2.0f, minRadiometricExposure) * midGreySDR.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxRadiometricExposure) * midGreySDR.x;
         
-        maxLatitudeLimit = 0.8f;                                // value in camera encoded log2/EV
+        maxLatitudeLimit = 0.6f;                                // value in camera encoded log2/EV
         maxRadiometricLatitudeExposure = totalRadiometricExposure * maxLatitudeLimit;
         maxRadiometricLatitude = Shaper.calculateLog2ToLinear(maxLatitudeLimit, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
 
@@ -189,12 +189,12 @@ public class GamutMap
         if (HDRIList == null)
             Debug.LogError("HDRIs list is empty");
 
-        inputTexture = HDRIList[hdriIndex];
+        inputRadiometricLinearTexture = HDRIList[hdriIndex];
         mainCamera = pipeline.gameObject.GetComponent<Camera>();
 
-        hdriPixelArray = new Color[inputTexture.width * inputTexture.height];
+        hdriPixelArray = new Color[inputRadiometricLinearTexture.width * inputRadiometricLinearTexture.height];
         hdriTextureTransformed =
-            new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false, true);
+            new Texture2D(inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height, TextureFormat.RGBAHalf, false, true);
         screenGrab = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         screenGrab.Create();
@@ -247,10 +247,10 @@ public class GamutMap
             // into the texture width/height range
             float normalisedXCoord = (float) xCoord / (float) Screen.width;
             float normalisedYCoord = (float) yCoord / (float) Screen.height;
-            xCoord = (int) (normalisedXCoord * (float) inputTexture.width);
-            yCoord = (int) (normalisedYCoord * (float) inputTexture.height);
+            xCoord = (int) (normalisedXCoord * (float) inputRadiometricLinearTexture.width);
+            yCoord = (int) (normalisedYCoord * (float) inputRadiometricLinearTexture.height);
 
-            Color initialHDRIColor = inputTexture.GetPixel(xCoord, yCoord);
+            Color initialHDRIColor = inputRadiometricLinearTexture.GetPixel(xCoord, yCoord);
             Color finalHDRIColor = hdriTextureTransformed.GetPixel(xCoord, yCoord);
 
             Vector2 shapedHDRIColor = new Vector2(initialHDRIColor.maxColorComponent, 0.0f);
@@ -279,7 +279,6 @@ public class GamutMap
 
         float logHdriMaxRGBChannel = 0.0f;
         float hdriYMaxValue = 0.0f;
-        float rawMaxPixelValue = 0.0f;
 
         Color ratio = Color.black;
         Color hdriPixelColor = Color.black;
@@ -307,7 +306,7 @@ public class GamutMap
         if (tValues == null)
             yield return new WaitForEndOfFrame();
 
-        Texture2D finalImageTexture = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false, true);
+        Texture2D finalImageTexture = new Texture2D(inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height, TextureFormat.RGBAHalf, false, true);
         xCoordsArray = xCameraIntrinsicValues.ToArray();
         yCoordsArray = yDisplayIntrinsicValues.ToArray();
         tValuesArray = tValues.ToArray();
@@ -361,19 +360,10 @@ public class GamutMap
             {
                 // Retrieve the maximum RGB value but in linear space
                 float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
-
-                // Debug
-                // float linearMax = hdriPixelArray[i].maxColorComponent;
-                // if(!Mathf.Approximately(linearHdriMaxRGBChannel, linearMax))
-                // {
-                //     Debug.Log("Different values " + linearHdriMaxRGBChannel + " " + linearMax);
-                // }
                 logInputColorPixelValues.Add(logHdriMaxRGBChannel);
-
 
                 // Calculate the ratio in linear space
                 ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
-                rawMaxPixelValue = linearHdriMaxRGBChannel;
 
                 // Secondary Nuance Grade, guardrails
                 if (linearHdriPixelColor.r > maxRadiometricValue ||
@@ -387,7 +377,7 @@ public class GamutMap
 
                 if (isGamutCompressionActive)
                 {
-                    ratio = calculateGamutCompression(xCoordsArray, yCoordsArray, tValuesArray, linearHdriPixelColor, ref hdriPixelColorVec, maxDynamicRangeVec, linearHdriMaxRGBChannel, ratio);
+                    ratio = calculateGamutCompression(xCoordsArray, yCoordsArray, tValuesArray, linearHdriPixelColor, ratio);
                 }
 
                 // Get Y value from curve by retrieving the respective value from the x coordinate array
@@ -445,7 +435,7 @@ public class GamutMap
         File.WriteAllBytes(debugDataPath + "PostGamutMap_DisplayLinearWithInverseEOTF.exr", finalImageTexture.EncodeToEXR());
 
         // Save Log encoded data
-        Texture2D logImageToSave = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false, true);
+        Texture2D logImageToSave = new Texture2D(inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height, TextureFormat.RGBAHalf, false, true);
         logImageToSave.SetPixels(logPixelData.ToArray());
         logImageToSave.Apply();
         File.WriteAllBytes(debugDataPath + "PreGamutMap_CameraIntrinsic.exr", logImageToSave.EncodeToEXR());
@@ -456,8 +446,7 @@ public class GamutMap
     }
 
     private Color calculateGamutCompression(float[] xCoordsArray, float[] yCoordsArray, float[] tValuesArray,
-        Color linearHdriPixelColor, ref Vector3 hdriPixelColorVec, Vector3 maxDynamicRangeVec,
-        float linearHdriMaxRGBChannel, Color inRatio)
+        Color linearHdriPixelColor, Color inRatio)
     {
         float gamutCompressionXCoordLinear;
         float gamutCompressionRange;
@@ -500,17 +489,73 @@ public class GamutMap
     public void saveInGameCapture(string saveFilePath)
     {
         Vector3 colorVec = Vector3.zero;
+        Color[] outputColorBuffer = inputRadiometricLinearTexture.GetPixels();
 
-        Color[] inGameCapturePixels = inputTexture.GetPixels();
-        // TODO Convert pixels from linear to log2
-        for (int i = 0; i < inGameCapturePixels.Length; i++)
+        if (false)
         {
-            inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].r), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
-            inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].g), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
-            inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].b), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+            // TODO Convert pixels from linear to log2
+            for (int i = 0; i < outputColorBuffer.Length; i++)
+            {
+                outputColorBuffer[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].r), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+                outputColorBuffer[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].g), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+                outputColorBuffer[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].b), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+            }
+        }
+        else
+        {
+            float[] xCameraIntrinsicArray = xCameraIntrinsicValues.ToArray();
+            float[] yDisplayIntrinsicArray = yDisplayIntrinsicValues.ToArray();
+            float[] tValuesArray = tValues.ToArray();
+
+            Color logPixelColor = new Color();
+            Color linearPixelColor = new Color();
+            Color tempColor = new Color();
+            Color ratio = Color.white;
+            for (int index = 0; index < outputColorBuffer.Length; index++)
+            {
+                linearPixelColor.r = Math.Max(0.0f, outputColorBuffer[index].r);
+                linearPixelColor.g = Math.Max(0.0f, outputColorBuffer[index].g);
+                linearPixelColor.b = Math.Max(0.0f, outputColorBuffer[index].b);
+                tempColor = linearPixelColor;
+                float maxLinearPixelColor = linearPixelColor.maxColorComponent;
+                if (maxLinearPixelColor > 0.0f)
+                {
+                    ratio = linearPixelColor / maxLinearPixelColor;
+
+                    ratio = calculateGamutCompression(xCameraIntrinsicArray, yDisplayIntrinsicArray, tValuesArray,
+                        linearPixelColor, ratio);
+
+                    // logPixelColor.r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+                    // logPixelColor.g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+                    // logPixelColor.b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+                    //
+                    // float maxLogPixelColor = logPixelColor.maxColorComponent;
+                    // float displayIntrinsicValue = parametricGamutCurve.getYCoordinateLogXInput(maxLogPixelColor,
+                    //     xCameraIntrinsicArray, yDisplayIntrinsicArray, tValuesArray, controlPoints);
+                    // float displayLinearValue = Shaper.calculateLog2ToLinear(displayIntrinsicValue, midGreySDR.y,
+                    //     minDisplayExposure, maxDisplayExposure);
+                    // displayLinearValue = Mathf.Min(displayLinearValue, 1.0f);
+                    // ratio.a = 1.0f;
+                    // linearPixelColor = displayLinearValue * ratio;
+                    linearPixelColor = maxLinearPixelColor * ratio;
+
+                    if (float.IsNaN(linearPixelColor.r) || float.IsNaN(linearPixelColor.g) ||
+                        float.IsNaN(linearPixelColor.b))
+                    {
+                        Debug.Log("t");
+                    }
+                }
+
+                outputColorBuffer[index].r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x,
+                    MinRadiometricExposure, MaxRadiometricExposure);
+                outputColorBuffer[index].g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x,
+                    MinRadiometricExposure, MaxRadiometricExposure);
+                outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
+                    MinRadiometricExposure, MaxRadiometricExposure);
+            }
         }
 
-        SaveToDisk(inGameCapturePixels, saveFilePath, inputTexture.width, inputTexture.height);
+        SaveToDisk(outputColorBuffer, saveFilePath, inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height);
     }
 
 
@@ -523,14 +568,9 @@ public class GamutMap
         float[] xCameraIntrinsicArray = xCameraIntrinsicValues.ToArray();
         float[] yDisplayIntrinsicArray = yDisplayIntrinsicValues.ToArray();
         float[] tValuesArray = tValues.ToArray();
-        float[] yDisplayLinearEOTFValues = new float[yDisplayIntrinsicValues.Count];
-        float[] yDisplayLinearValues = new float[yDisplayIntrinsicValues.Count];
-        float[] resultsArray = new float[logInputColorPixelValues.Count];
 
         int lutDimension = 33;
         Color[] identity3DLut = LutGenerator.generateIdentityCubeLUT(lutDimension);
-
-
 
         // X -> camera intrinsic encoding (camera negative)
         // Y -> display intrinsic (display negative)
@@ -539,22 +579,6 @@ public class GamutMap
         // go from display intrinsic to display linear
         //                  Shaper.calculateLog2toLinear(yVal, midGreySDR.y, minDisplayExposure, maxDisplayExposure);
         // go from display linear to display inverse EOTF encoded
-        // for (int index = 0; index < yDisplayIntrinsicArray.Length; index++)
-        // {
-        //     // Take camera intrinsic index and turn it into a float cameraIntrinsicIndex/num entries
-        //     // Take result and run it through the aesthetic compression function and store into curved
-        //     // Take curved and convert it to display linear
-        //
-        //     // get Y coordinate from X
-        //     float yDisplayIntrinsicValue = parametricGamutCurve.getYCoordinateLogXInput(xCameraIntrinsicArray[index], xCameraIntrinsicValues.ToArray(), yDisplayIntrinsicValues.ToArray(), tValuesArray, controlPoints);
-        //     //float yDisplayIntrinsicValue = yDisplayIntrinsicArray[index];
-        //     float yDisplayLinearValue = Shaper.calculateLog2ToLinear(yDisplayIntrinsicValue, midGreySDR.y, minDisplayExposure, maxDisplayExposure);
-        //     yDisplayLinearEOTFValues[index] = TransferFunction.ApplyInverseTransferFunction(yDisplayLinearValue, TransferFunction.TransferFunctionType.sRGB);
-        //
-        //     // Debug only stuff
-        //     yDisplayLinearValues[index] = yDisplayLinearValue;
-        // }
-
         Color logPixelColor = new Color();
         Color linearPixelColor = new Color();
 
@@ -584,47 +608,6 @@ public class GamutMap
         }
 
         CubeLutExporter.saveLutAsCube(identity3DLut, filePath, lutDimension, minCameraNativeVec, maxCameraNativeVec, true);
-
-        // for (int index = 0; index < logInputColorPixelValues.Count; index++)
-        // {
-        //     float yDisplayIntrinsicValue = parametricGamutCurve.getYCoordinateLogXInput(logInputColorPixelValues[index], xCameraIntrinsicArray, yDisplayIntrinsicArray, tValuesArray , controlPoints);
-        //     float yDisplayLinearValue = Shaper.calculateLog2ToLinear(yDisplayIntrinsicValue, midGreySDR.y, minDisplayExposure, maxDisplayExposure);
-        //     resultsArray[index] = yDisplayLinearValue;
-        // }
-        //
-        // for (int i = 0; i < logOutputColorPixelValues.Count; i++)
-        // {
-        //     float value1 = resultsArray[i];
-        //     float value2 = logOutputColorPixelValues[i];
-        //     if (!Mathf.Approximately(value1, value2))
-        //     {
-        //         Debug.Log("Different results " + value1 + " != " + value2);
-        //     }
-        // }
-        //
-        // // Export camera intrinsic/display intrinsic and display intrinsic/display linear
-        // // Initialise all the arrays
-        // float[][] dataToExport = new float[6][];
-        // for (int i = 0; i < dataToExport.Length; i++)
-        // {
-        //     dataToExport[i] = new float[xCameraIntrinsicArray.Length];
-        // }
-        //
-        // dataToExport[0] = xCameraIntrinsicArray;
-        // dataToExport[1] = yDisplayIntrinsicArray;
-        // dataToExport[2] = yDisplayIntrinsicArray;
-        // dataToExport[3] = yDisplayLinearValues;
-        // dataToExport[4] = yDisplayIntrinsicArray;
-        // dataToExport[5] = yDisplayLinearEOTFValues;
-        //
-        // exportDataToCSV(dataToExport, "FullCurveData.csv");
-        //
-        // string pathToSaveFile = Path.GetFullPath(filePath);
-        // string fileName = Path.GetFileName(filePath);
-        // // CubeLutExporter.saveLutAsCube(yDisplayLinearValues, pathToSaveFile + "linear" + fileName, xCameraIntrinsicValues.Count, minCameraNativeVec, maxCameraNativeVec, false);
-        // CubeLutExporter.saveLutAsCube(yDisplayLinearEOTFValues, filePath, xCameraIntrinsicValues.Count, minCameraNativeVec, maxCameraNativeVec, false);
-        // CubeLutExporter.saveLutAsCube(LUT, "IDENTITY_CUBE_3DLUT.cube", 33, Vector3.zero, Vector3.one, true);
-
     }
 
     private void SaveToDisk(Color[] pixels, string fileName, int width, int height)
@@ -713,7 +696,7 @@ public class GamutMap
     public void setShowSweep(bool isActive, Texture2D inputTexture)
     {
         isSweepActive = isActive;
-        this.inputTexture = inputTexture;
+        this.inputRadiometricLinearTexture = inputTexture;
         SetCurveDataState(CurveDataState.Dirty);
     }
 
@@ -838,7 +821,7 @@ public class GamutMap
 
     public void setInputTexture(Texture2D inputTexture)
     {
-        this.inputTexture = inputTexture;
+        this.inputRadiometricLinearTexture = inputTexture;
         SetCurveDataState(CurveDataState.Dirty);
     }
 
