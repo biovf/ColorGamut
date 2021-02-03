@@ -166,9 +166,10 @@ public class GamutCurve
                     yValues.Add(yValues[lastIndex] + 0.0001f);
                     break;
                 }
-                else if (xValue <= controlPoints[0].x) 
+                else if (xValue <= controlPoints[0].x)
                 {
-                    yValues.Add(xValue);
+                    float value = (index > 0) ? (yValues[index - 1] + 0.00001f) : 0.00001f;
+                    yValues.Add(value);
                     break;
                 }
             }
