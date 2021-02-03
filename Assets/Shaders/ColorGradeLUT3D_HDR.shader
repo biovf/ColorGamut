@@ -64,8 +64,8 @@
 
              float sRgbEOTF(float inputValue) 
              {
-                 return (inputValue <= inverseSrgbEOTF(0.0031308)) ?  inputValue / 12.92 :
-                                                                                pow((inputValue + 0.055) / 1.055, 2.4);
+                 return inputValue;//(inputValue <= inverseSrgbEOTF(0.0031308)) ?  inputValue / 12.92 :
+                                                                               // pow((inputValue + 0.055) / 1.055, 2.4);
              }
         
             half4 frag(v2f i) : SV_Target
@@ -75,8 +75,9 @@
                 half3 offset = 1.0 / (2.0 * 33.0);
                 half3 gradedCol = tex3D(_LUT, scale * col + offset).rgb;
 
+                return half4(gradedCol.rgb, 1.0);
                 //return half4(sRgbEOTF(gradedCol.r), sRgbEOTF(gradedCol.g), sRgbEOTF(gradedCol.b), 1.0);
-                return half4(col, 1.0);
+                //return half4(col, 1.0);
             }
             ENDCG
         }
