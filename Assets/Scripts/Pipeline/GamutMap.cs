@@ -1,6 +1,9 @@
-﻿using System;
+﻿//#define DEBUG_IMAGES
+//#define DEBUG_CURVE_DATA
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using MathNet.Numerics;
@@ -161,7 +164,7 @@ public class GamutMap
         isSweepActive = false;
 
         // Parametric curve
-        slope = 2.05f;
+        slope = 1.7f;
         slopeMin = 1.02f;
         slopeMax = 6.5f;
         maxNits = 100.0f;                       // Maximum nit value we support
@@ -179,7 +182,7 @@ public class GamutMap
         minRadiometricValue = Mathf.Pow(2.0f, minRadiometricExposure) * midGreySDR.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxRadiometricExposure) * midGreySDR.x;
         
-        maxLatitudeLimit = 0.6f;                                // value in camera encoded log2/EV
+        maxLatitudeLimit = 0.85f;                                // value in camera encoded log2/EV
         maxRadiometricLatitudeExposure = totalRadiometricExposure * maxLatitudeLimit;
         maxRadiometricLatitude = Shaper.calculateLog2ToLinear(maxLatitudeLimit, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
 
@@ -217,7 +220,6 @@ public class GamutMap
         return xCameraIntrinsicValues;
     }
 
-    // TODO: return constant slope (bunch of monotonically increasing values from 1.0) for values above the maximum latitude range
     private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
         if (parametricGamutCurve == null)
@@ -228,12 +230,7 @@ public class GamutMap
         xCameraIntrinsicValues = initialiseXCoordsInRange(curveLutLength);
         tValues = parametricGamutCurve.calcTfromXquadratic(xCameraIntrinsicValues.ToArray(), controlPoints);
         yDisplayIntrinsicValues = parametricGamutCurve.calcYfromXQuadratic(xCameraIntrinsicValues, tValues, new List<Vector2>(controlPoints));
-
-    }
-
-    public static bool FastApproximately(float a, float b, float threshold)
-    {
-        return ((a - b) < 0 ? ((a - b) * -1) : (a - b)) <= threshold;
+        exportDualColumnDataToCSV(xCameraIntrinsicValues.ToArray(), yDisplayIntrinsicValues.ToArray(), "DebugData/CurveData.csv");
     }
 
     public void Update()
@@ -291,8 +288,7 @@ public class GamutMap
         float[] tValuesArray;
 
         hdriPixelArray = HDRIList[0].GetPixels();
-        string debugDataPath = "DebugData/";
-        File.WriteAllBytes(debugDataPath + "PreGamutMap_LinearData.exr", HDRIList[0].EncodeToEXR());
+        saveDebugImageToDisk(HDRIList[0], "PreGamutMap_LinearData.exr");
 
         hdriPixelArrayLen = hdriPixelArray.Length;
         int quarterSize = hdriPixelArrayLen / 4;
@@ -377,7 +373,7 @@ public class GamutMap
 
                 if (isGamutCompressionActive)
                 {
-                    ratio = calculateGamutCompression(xCoordsArray, yCoordsArray, tValuesArray, linearHdriPixelColor, ratio);
+                    ratio = calculateGamutCompression(linearHdriPixelColor, ratio, xCoordsArray, yCoordsArray, tValuesArray);
                 }
 
                 // Get Y value from curve by retrieving the respective value from the x coordinate array
@@ -413,9 +409,6 @@ public class GamutMap
             finalImageColour.g = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].g, TransferFunction.TransferFunctionType.sRGB);
             finalImageColour.b = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].b, TransferFunction.TransferFunctionType.sRGB);
             finalImage.Add(finalImageColour);
-            // hdriPixelArray[i].r = temp.r;
-            // hdriPixelArray[i].g = temp.g;
-            // hdriPixelArray[i].b = temp.b;
         }
 
         // Make sure the result should be written out to the texture
@@ -428,25 +421,26 @@ public class GamutMap
         hdriTextureTransformed.Apply();
 
         // Write texture to disk
-        File.WriteAllBytes(debugDataPath + "PostGamutMap_DisplayLinear.exr", hdriTextureTransformed.EncodeToEXR());
+        saveDebugImageToDisk(hdriTextureTransformed, "PostGamutMap_DisplayLinear.exr");
 
         finalImageTexture.SetPixels(finalImage.ToArray());
         finalImageTexture.Apply();
-        File.WriteAllBytes(debugDataPath + "PostGamutMap_DisplayLinearWithInverseEOTF.exr", finalImageTexture.EncodeToEXR());
+
+        saveDebugImageToDisk(finalImageTexture, "PostGamutMap_DisplayLinearWithInverseEOTF.exr");
 
         // Save Log encoded data
         Texture2D logImageToSave = new Texture2D(inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height, TextureFormat.RGBAHalf, false, true);
         logImageToSave.SetPixels(logPixelData.ToArray());
         logImageToSave.Apply();
-        File.WriteAllBytes(debugDataPath + "PreGamutMap_CameraIntrinsic.exr", logImageToSave.EncodeToEXR());
+        saveDebugImageToDisk(logImageToSave, "PreGamutMap_CameraIntrinsic.exr");
 
         curveDataState = CurveDataState.Calculated;
         mainCamera.clearFlags = CameraClearFlags.Nothing;
         Debug.Log("Image Processing has finished");
     }
 
-    private Color calculateGamutCompression(float[] xCoordsArray, float[] yCoordsArray, float[] tValuesArray,
-        Color linearHdriPixelColor, Color inRatio)
+    private Color calculateGamutCompression(Color linearHdriPixelColor, Color inRatio ,
+        float[] xCoordsArray, float[] yCoordsArray, float[] tValuesArray)
     {
         float gamutCompressionXCoordLinear;
         float gamutCompressionRange;
@@ -491,69 +485,41 @@ public class GamutMap
         Vector3 colorVec = Vector3.zero;
         Color[] outputColorBuffer = inputRadiometricLinearTexture.GetPixels();
 
-        if (false)
+        float[] xCameraIntrinsicArray = xCameraIntrinsicValues.ToArray();
+        float[] yDisplayIntrinsicArray = yDisplayIntrinsicValues.ToArray();
+        float[] tValuesArray = tValues.ToArray();
+
+        Color linearPixelColor = new Color();
+        Color ratio = Color.white;
+        for (int index = 0; index < outputColorBuffer.Length; index++)
         {
-            // TODO Convert pixels from linear to log2
-            for (int i = 0; i < outputColorBuffer.Length; i++)
+            linearPixelColor.r = Math.Max(0.0f, outputColorBuffer[index].r);
+            linearPixelColor.g = Math.Max(0.0f, outputColorBuffer[index].g);
+            linearPixelColor.b = Math.Max(0.0f, outputColorBuffer[index].b);
+            float maxLinearPixelColor = linearPixelColor.maxColorComponent;
+            if (maxLinearPixelColor > 0.0f)
             {
-                outputColorBuffer[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].r), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
-                outputColorBuffer[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].g), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
-                outputColorBuffer[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].b), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+                ratio = linearPixelColor / maxLinearPixelColor;
+                ratio = calculateGamutCompression(linearPixelColor, ratio, xCameraIntrinsicArray, yDisplayIntrinsicArray, tValuesArray);
+
+                linearPixelColor = maxLinearPixelColor * ratio;
             }
+
+            outputColorBuffer[index].r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x,
+                MinRadiometricExposure, MaxRadiometricExposure);
+            outputColorBuffer[index].g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x,
+                MinRadiometricExposure, MaxRadiometricExposure);
+            outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
+                MinRadiometricExposure, MaxRadiometricExposure);
         }
-        else
-        {
-            float[] xCameraIntrinsicArray = xCameraIntrinsicValues.ToArray();
-            float[] yDisplayIntrinsicArray = yDisplayIntrinsicValues.ToArray();
-            float[] tValuesArray = tValues.ToArray();
 
-            Color logPixelColor = new Color();
-            Color linearPixelColor = new Color();
-            Color tempColor = new Color();
-            Color ratio = Color.white;
-            for (int index = 0; index < outputColorBuffer.Length; index++)
-            {
-                linearPixelColor.r = Math.Max(0.0f, outputColorBuffer[index].r);
-                linearPixelColor.g = Math.Max(0.0f, outputColorBuffer[index].g);
-                linearPixelColor.b = Math.Max(0.0f, outputColorBuffer[index].b);
-                tempColor = linearPixelColor;
-                float maxLinearPixelColor = linearPixelColor.maxColorComponent;
-                if (maxLinearPixelColor > 0.0f)
-                {
-                    ratio = linearPixelColor / maxLinearPixelColor;
+        //     for (int i = 0; i < outputColorBuffer.Length; i++)
+        //     {
+        //         outputColorBuffer[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].r), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+        //         outputColorBuffer[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].g), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+        //         outputColorBuffer[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].b), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
+        //     }
 
-                    ratio = calculateGamutCompression(xCameraIntrinsicArray, yDisplayIntrinsicArray, tValuesArray,
-                        linearPixelColor, ratio);
-
-                    // logPixelColor.r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
-                    // logPixelColor.g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
-                    // logPixelColor.b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
-                    //
-                    // float maxLogPixelColor = logPixelColor.maxColorComponent;
-                    // float displayIntrinsicValue = parametricGamutCurve.getYCoordinateLogXInput(maxLogPixelColor,
-                    //     xCameraIntrinsicArray, yDisplayIntrinsicArray, tValuesArray, controlPoints);
-                    // float displayLinearValue = Shaper.calculateLog2ToLinear(displayIntrinsicValue, midGreySDR.y,
-                    //     minDisplayExposure, maxDisplayExposure);
-                    // displayLinearValue = Mathf.Min(displayLinearValue, 1.0f);
-                    // ratio.a = 1.0f;
-                    // linearPixelColor = displayLinearValue * ratio;
-                    linearPixelColor = maxLinearPixelColor * ratio;
-
-                    if (float.IsNaN(linearPixelColor.r) || float.IsNaN(linearPixelColor.g) ||
-                        float.IsNaN(linearPixelColor.b))
-                    {
-                        Debug.Log("t");
-                    }
-                }
-
-                outputColorBuffer[index].r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x,
-                    MinRadiometricExposure, MaxRadiometricExposure);
-                outputColorBuffer[index].g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x,
-                    MinRadiometricExposure, MaxRadiometricExposure);
-                outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
-                    MinRadiometricExposure, MaxRadiometricExposure);
-            }
-        }
 
         SaveToDisk(outputColorBuffer, saveFilePath, inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height);
     }
@@ -621,6 +587,69 @@ public class GamutMap
 
         Debug.Log("Successfully saved " + fileName + " to disk");
     }
+
+    [Conditional("DEBUG_IMAGES")]
+    private void saveDebugImageToDisk(Texture2D imageToSave, string fileName)
+    {
+        string debugDataPath = "DebugData/";
+        File.WriteAllBytes(debugDataPath + fileName, imageToSave.EncodeToEXR());
+    }
+    [Conditional("DEBUG_CURVE_DATA")]
+    private void exportDataToCSV(float[][] dataToExport, string fileName)
+    {
+        if (dataToExport.Length % 2 != 0)
+        {
+            Debug.LogError("Odd number of arrays being loaded in exportDataToCSV");
+            return;
+        }
+        StringBuilder strBuilder = new StringBuilder(dataToExport[0].Length);
+
+        int arrayLen = dataToExport[0].Length;
+        for (int j = 0; j < arrayLen; j++)
+        {
+            for (int i = 0; i < dataToExport.Length; i++)
+            {
+                strBuilder.Append(dataToExport[i][j].ToString() + " , ");
+            }
+
+            strBuilder.AppendLine("");
+        }
+
+        File.WriteAllText(fileName, strBuilder.ToString());
+        Debug.Log("Successfully saved the file " + fileName + " to disk");
+    }
+
+    [Conditional("DEBUG_CURVE_DATA")]
+    private void exportDualColumnDataToCSV(float[] data1ToExport, float[] data2ToExport, string fileName)
+    {
+        if (data1ToExport.Length != data2ToExport.Length)
+        {
+            Debug.LogError("Input arrays must have the same size");
+            return;
+        }
+
+        StringBuilder strBuilder = new StringBuilder(data1ToExport.Length);
+        for (int i = 0; i < data1ToExport.Length; i++)
+        {
+            strBuilder.AppendLine(data1ToExport[i].ToString() + " , " + data2ToExport[i].ToString());
+        }
+
+        File.WriteAllText(fileName, strBuilder.ToString());
+    }
+    [Conditional("DEBUG_CURVE_DATA")]
+
+    private void exportSingleColumnDataToCSV(float[] dataToExport, string fileName)
+    {
+        StringBuilder strBuilder = new StringBuilder(dataToExport.Length);
+        foreach (var value in dataToExport)
+        {
+            strBuilder.AppendLine(dataToExport.ToString() + ",");
+        }
+
+        File.WriteAllText(fileName, strBuilder.ToString());
+    }
+
+
 
     public void SetCurveDataState(CurveDataState newState)
     {
@@ -744,57 +773,7 @@ public class GamutMap
         return controlPoints;
     }
 
-    private void exportDataToCSV(float[][] dataToExport, string fileName)
-    {
-        if (dataToExport.Length % 2 != 0)
-        {
-            Debug.LogError("Odd number of arrays being loaded in exportDataToCSV");
-            return;
-        }
-        StringBuilder strBuilder = new StringBuilder(dataToExport[0].Length);
 
-        int arrayLen = dataToExport[0].Length;
-        for (int j = 0; j < arrayLen; j++)
-        {
-            for (int i = 0; i < dataToExport.Length; i++)
-            {
-                strBuilder.Append(dataToExport[i][j].ToString() + " , ");
-            }
-
-            strBuilder.AppendLine("");
-        }
-
-        File.WriteAllText(fileName, strBuilder.ToString());
-        Debug.Log("Successfully saved the file " + fileName + " to disk");
-    }
-
-    private void exportDualColumnDataToCSV(float[] data1ToExport, float[] data2ToExport, string fileName)
-    {
-        if (data1ToExport.Length != data2ToExport.Length)
-        {
-            Debug.LogError("Input arrays must have the same size");
-            return;
-        }
-
-        StringBuilder strBuilder = new StringBuilder(data1ToExport.Length);
-        for (int i = 0; i < data1ToExport.Length; i++)
-        {
-            strBuilder.AppendLine(data1ToExport[i].ToString() + " , " + data2ToExport[i].ToString());
-        }
-
-        File.WriteAllText(fileName, strBuilder.ToString());
-    }
-
-    private void exportSingleColumnDataToCSV(float[] dataToExport, string fileName)
-    {
-        StringBuilder strBuilder = new StringBuilder(dataToExport.Length);
-        foreach (var value in dataToExport)
-        {
-            strBuilder.AppendLine(dataToExport.ToString() + ",");
-        }
-
-        File.WriteAllText(fileName, strBuilder.ToString());
-    }
 
     public List<float> getTValues()
     {
@@ -891,5 +870,10 @@ public class GamutMap
         // Restorie previously active render texture
         RenderTexture.active = currentActiveRT;
         return tex;
+    }
+
+    public static bool FastApproximately(float a, float b, float threshold)
+    {
+        return ((a - b) < 0 ? ((a - b) * -1) : (a - b)) <= threshold;
     }
 }

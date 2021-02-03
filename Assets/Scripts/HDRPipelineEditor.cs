@@ -223,8 +223,6 @@ public class HDRPipelineEditor : Editor
 
         EditorGUILayout.Space();
 
-        DrawGamutMapCurveWidget();
-
         if (Application.isPlaying)
         {
             if (GUI.changed)
@@ -239,7 +237,7 @@ public class HDRPipelineEditor : Editor
                 Debug.Log("Generating new image with new parameters");
                 colorGamut.setGamutCompression(isGamutCompressionActive);
                 RecalculateImageInCpuMode();
-            } else if (enableCPUMode == false && guiWidgetsState == GamutMap.CurveDataState.Dirty 
+            } else if (enableCPUMode == false && guiWidgetsState == GamutMap.CurveDataState.Dirty
                /* && GUILayout.Button("Recalculate Curve Parameters")*/)
             {
                 RecalculateCurveParameters();
@@ -250,6 +248,8 @@ public class HDRPipelineEditor : Editor
 
             }
         }
+
+        DrawGamutCurveWidget();
 
         
         EditorGUILayout.LabelField("Transfer Function Export ");
@@ -271,8 +271,6 @@ public class HDRPipelineEditor : Editor
         // DrawGradingLUTWidgets();
         // DrawCubeLUTWidgets();
 
-
-        
         EditorGUILayout.Separator();
         EditorGUILayout.LabelField("Debug Options");
         EditorGUILayout.Space();
@@ -282,7 +280,7 @@ public class HDRPipelineEditor : Editor
         base.serializedObject.ApplyModifiedProperties();
     }
 
-    private void DrawGamutMapCurveWidget()
+    private void DrawGamutCurveWidget()
     {
         // hdrPipeline.ScaleFactor = EditorGUILayout.Slider("Curve Scale Factor", hdrPipeline.ScaleFactor, 0.0f, 10.0f);
         curveRect = GUILayoutUtility.GetRect(128, 256);

@@ -65,7 +65,8 @@ public class GamutCurve
     // TODO: Refactor Toe start to make a variable (0.00085f)
     public Vector2[] createControlPoints(Vector2 originCoord, Vector2 midGrey, float slope)
     {
-        float toeP2YLinearValue = 0.00085f;
+        float toeP2YLinearValue = 0.00055f;
+        float toeP1YLinearValue = 0.00001f;
 
         minRadiometricDynamicRange = originCoord.x;
         minDisplayValue = originCoord.y;
@@ -76,6 +77,8 @@ public class GamutCurve
             Shaper.calculateLinearToLog2(midGrey.x, midGrey.x, minRadiometricExposure, maxRadiometricExposure),
             Shaper.calculateLinearToLog2(midGrey.y, midGrey.y, minDisplayExposure, maxDisplayExposure));
         float toeP2YCoord = Shaper.calculateLinearToLog2(toeP2YLinearValue, midGrey.y, minDisplayExposure, maxDisplayExposure); 
+        float toeP1YCoord = Shaper.calculateLinearToLog2(toeP1YLinearValue, midGrey.y, minDisplayExposure, maxDisplayExposure);
+
 
         Vector2[] controlPoints = new Vector2[7];
         // P0, P1 and P2 correspond to the originCoord, control point and final point of a quadratic Bezier curve
@@ -92,7 +95,7 @@ public class GamutCurve
         float b = calculateLineYIntercept(this.logMiddleGrey.x, this.logMiddleGrey.y, slope);
         // Calculate the coords for P1 in the first segment
         float xP1Coord = calculateLineX(0.0f, b, slope);
-        toeP1Coords.y = 0.001f;
+        toeP1Coords.y = toeP1YCoord;//0.001f;
         toeP1Coords.x = xP1Coord;
         // Calculate the toe's P2 using an already known Y value and the equation y = mx + b 
         toeP2Coords.x = calculateLineX(toeP2Coords.y, b, slope);
