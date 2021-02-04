@@ -213,7 +213,7 @@ MonoBehaviour:
   gamutMap: {fileID: 2100000, guid: 3ad70d92c2f5144ae96f0934284760e7, type: 2}
   sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
   HDRIList:
-  - {fileID: 2800000, guid: 6f4fa7cff76a44224bb110d440e13610, type: 3}
+  - {fileID: 2800000, guid: c068227c6b8e0471ea126f5c91091f8f, type: 3}
   colorGradingMat: {fileID: 2100000, guid: 83cef61a096da4d9d86919f05dca8030, type: 2}
-  colorGradeLUT: {fileID: 8534537815417165676, guid: 40f6a44842f56404799d3a1fbfd5ae0c,
+  colorGradeLUT: {fileID: 8534537815417165676, guid: eff868ee6f3874007ad576ccbb6c4fff,
     type: 3}

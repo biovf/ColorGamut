@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using MathNet.Numerics;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
@@ -356,6 +355,8 @@ public class GamutMap
             {
                 // Retrieve the maximum RGB value but in linear space
                 float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+
+                //Debug data
                 logInputColorPixelValues.Add(logHdriMaxRGBChannel);
 
                 // Calculate the ratio in linear space
@@ -480,6 +481,42 @@ public class GamutMap
         return ratio;
     }
 
+    public Color[] ChromaticityCompression(Color[] linearRadiometricInputPixels)
+    {
+        Vector3 colorVec = Vector3.zero;
+        Color[] outputColorBuffer = new Color[linearRadiometricInputPixels.Length];
+
+        float[] xCameraIntrinsicArray = xCameraIntrinsicValues.ToArray();
+        float[] yDisplayIntrinsicArray = yDisplayIntrinsicValues.ToArray();
+        float[] tValuesArray = tValues.ToArray();
+
+        Color linearPixelColor = new Color();
+        Color ratio = Color.white;
+        for (int index = 0; index < linearRadiometricInputPixels.Length; index++)
+        {
+            linearPixelColor.r = Math.Max(0.0f, linearRadiometricInputPixels[index].r);
+            linearPixelColor.g = Math.Max(0.0f, linearRadiometricInputPixels[index].g);
+            linearPixelColor.b = Math.Max(0.0f, linearRadiometricInputPixels[index].b);
+            float maxLinearPixelColor = linearPixelColor.maxColorComponent;
+            if (maxLinearPixelColor > 0.0f)
+            {
+                ratio = linearPixelColor / maxLinearPixelColor;
+                ratio = calculateGamutCompression(linearPixelColor, ratio, xCameraIntrinsicArray, yDisplayIntrinsicArray, tValuesArray);
+
+                linearPixelColor = maxLinearPixelColor * ratio;
+            }
+
+            outputColorBuffer[index].r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x,
+                MinRadiometricExposure, MaxRadiometricExposure);
+            outputColorBuffer[index].g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x,
+                MinRadiometricExposure, MaxRadiometricExposure);
+            outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
+                MinRadiometricExposure, MaxRadiometricExposure);
+        }
+
+        return outputColorBuffer;
+    }
+
     public void saveInGameCapture(string saveFilePath)
     {
         Vector3 colorVec = Vector3.zero;
@@ -519,7 +556,6 @@ public class GamutMap
         //         outputColorBuffer[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].g), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
         //         outputColorBuffer[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,outputColorBuffer[i].b), MidGreySdr.x, MinRadiometricExposure, MaxRadiometricExposure);
         //     }
-
 
         SaveToDisk(outputColorBuffer, saveFilePath, inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height);
     }

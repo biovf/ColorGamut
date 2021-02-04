@@ -5,10 +5,12 @@
         _MainTex ("Texture", 2D) = "white" {}
         exposure ("Exposure Value(EV)", Float) = 0.0
         greyPoint ("Middle Grey Value(XY)", Vector) = (0.18, 0.18, 0.0, 0.0)
-        minExposure ("Minimum Exposure Value(EV)", Float) = -6.0
-        maxExposure ("Maximum Exposure Value(EV)", Float) = 6.0
-//        minRadiometricValue ("Minimum Radiometric Value", Float) = 0.0028
+        minRadiometricExposure ("Minimum Radiometric Exposure Value(EV)", Float) = -6.0
+        maxRadiometricExposure ("Maximum Radiometric Exposure Value(EV)", Float) = 6.0
+        minDisplayValue ("Min Display Value (unit agnostic)", Float) = 0.0
+        maxDisplayValue ("Max Display Value (unit agnostic)", Float) = 1.0
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
+        maxLatitudeLimit ("Start value for Gamut compression", Float) = 0.8
         inputArraySize ("Number of curve array elements", Int) = 1024
         usePerChannel ("Use per channel gamut mapping", Int) = 0
     }
@@ -42,14 +44,15 @@
             sampler2D_half _MainTex;
             float exposure;
             half4 greyPoint;
-            half minExposure;
-            half maxExposure;
-            // half minRadiometricValue;
+            half minRadiometricExposure;
+            half maxRadiometricExposure;
+            half minDisplayValue;
+            half maxDisplayValue;
             half maxRadiometricValue;
+            half maxLatitudeLimit;
+
             int inputArraySize;
             int usePerChannel;
-            // float xCoords[1024];
-            // float yCoords[1024];
 
             struct GamutCurveCoords
             {
@@ -77,7 +80,7 @@
                 half dynamicRange = maxExposureValue - minExposureValue;
                 half logRadiometricVal = clamp(log2(linearRadValue / midGreyX), minExposureValue, maxExposureValue);
 
-                return (logRadiometricVal - minExposureValue) / dynamicRange;
+                return saturate((logRadiometricVal - minExposureValue) / dynamicRange);
             }
 
             static float calculateLog2ToLinear(float logRadValue, float midGreyX, float minExposureValue,
@@ -98,7 +101,7 @@
                 return pow(inputValue, 2.2f);
             }
 
-            void BilinearClosestTo(/*float inputArray[1024],*/ float target, out int arrayIndex, out int arrayIndex2)
+            void BilinearClosestTo(float target, out int arrayIndex, out int arrayIndex2)
             {
                 // Terrible horrible hack since there is not MaxValue for a float variable
                 float closest = 9999999.0;
@@ -109,11 +112,7 @@
                 int outIndex2 = 0;
             
                 int maxArrayIndex = inputArraySize - 1;
-                float minXValue = controlPoints[0].x;
-                float maxXValue = controlPoints[6].x;
-                outIndex = (int)clamp(
-                    round(sqrt((target - minXValue) / maxXValue) * (float)inputArraySize),
-                    0.0, (float)maxArrayIndex);
+                outIndex = clamp(round(target * maxArrayIndex), 0, maxArrayIndex);
 
                 int indexBefore = clamp((outIndex - 1), 0, maxArrayIndex);
                 int indexAfter = clamp((outIndex + 1), 0, maxArrayIndex);
@@ -123,10 +122,9 @@
 
                 arrayIndex = outIndex;
                 arrayIndex2 = outIndex2;
-                
             }
 
-            float ClosestTo(/*float inputArray[1024,*/ float target, out int arrayIndex)
+            float ClosestTo(float target, out int arrayIndex)
             {
                 float closest = 999999.0f;
                 float minDifference = 999999.0f;
@@ -155,10 +153,10 @@
                 return closest;
             }
 
-            float getXCoordinate(float inputYCoord/*, float xCoords[1024], float YCoords[1024]*/)
+            float getXCoordinate(float inputYCoord)
             {
                 int idx = 0;
-                ClosestTo(/*YCoords,*/ inputYCoord, idx);
+                ClosestTo(inputYCoord, idx);
                 return xCurveCoordsCBuffer[idx].curveCoord;
             }
 
@@ -169,7 +167,7 @@
 
                 // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
                 gamutCompressionXCoordLinear = calculateLog2ToLinear(
-                    getXCoordinate(1.0f/*, xCoords, yCoords*/), greyPoint.x, minExposure, maxExposure);
+                    getXCoordinate(maxLatitudeLimit), greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
 
                 if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
                     linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
@@ -181,12 +179,7 @@
                             gamutCompressionXCoordLinear) /
                         gamutCompressionRange;
 
-
-                    half3 maxDynamicRangeVec = half3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue);
-                    linearHdriPixelColor = lerp(linearHdriPixelColor, maxDynamicRangeVec,
-                                                smoothstep(0.0f, 1.0f, gamutCompressionRatio));
-
-                    newRatio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+                   ratio = lerp(ratio, half3(1.0, 1.0, 1.0), gamutCompressionRatio);
                 }
                 return newRatio;
             }
@@ -197,13 +190,13 @@
 
                 int idx = 0;
                 int idx2 = 0;
-                BilinearClosestTo(/*xCoords,*/ logInputXCoord, idx, idx2);
+                BilinearClosestTo(logInputXCoord, idx, idx2);
                 float linearInputXCoord =
-                    calculateLog2ToLinear(logInputXCoord, greyPoint.x, minExposure, maxExposure);
+                    calculateLog2ToLinear(logInputXCoord, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
                 float linearXCoordIdx = calculateLog2ToLinear(
-                    xCurveCoordsCBuffer[idx].curveCoord, greyPoint.x, minExposure, maxExposure);
+                    xCurveCoordsCBuffer[idx].curveCoord, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
                 float linearXCoordIdx2 = calculateLog2ToLinear(
-                    xCurveCoordsCBuffer[idx2].curveCoord, greyPoint.x, minExposure, maxExposure);
+                    xCurveCoordsCBuffer[idx2].curveCoord, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
 
                 // Calculate interpolation factor
                 if (idx == idx2)
@@ -222,50 +215,55 @@
                 }
             }
 
+            half remap(half inputValue, half min0, half max0, half min1, half max1)
+            {
+                return min1 + (inputValue - min0) * ((max1 - min1) / (max0 - min0));
+            }
+
             float4 gamutMap(half4 inColor)
             {
                 half4 hdriPixelColor = half4(0.0, 0.0, 0.0, 1.0);
                 half4 colorExposed = inColor * pow(2.0, exposure);
                 // Shape image
                 half3 log2HdriPixelArray = half3(0.0, 0.0, 0.0);
-                log2HdriPixelArray.r = calculateLinearToLog2(max(0.0f, colorExposed.r), greyPoint.x, minExposure,
-                                                             maxExposure);
-                log2HdriPixelArray.g = calculateLinearToLog2(max(0.0f, colorExposed.g), greyPoint.x, minExposure,
-                                                             maxExposure);
-                log2HdriPixelArray.b = calculateLinearToLog2(max(0.0f, colorExposed.b), greyPoint.x, minExposure,
-                                                             maxExposure);
+                log2HdriPixelArray.r = calculateLinearToLog2(max(0.0f, colorExposed.r), greyPoint.x, minRadiometricExposure,
+                                                             maxRadiometricExposure);
+                log2HdriPixelArray.g = calculateLinearToLog2(max(0.0f, colorExposed.g), greyPoint.x, minRadiometricExposure,
+                                                             maxRadiometricExposure);
+                log2HdriPixelArray.b = calculateLinearToLog2(max(0.0f, colorExposed.b), greyPoint.x, minRadiometricExposure,
+                                                             maxRadiometricExposure);
 
                 // Calculate Pixel max color and ratio
                 half logHdriMaxRGBChannel = max(max(log2HdriPixelArray.r, log2HdriPixelArray.g), log2HdriPixelArray.b);
                 half3 linearHdriPixelColor = half3(
-                    calculateLog2ToLinear(log2HdriPixelArray.r, greyPoint.x, minExposure, maxExposure),
-                    calculateLog2ToLinear(log2HdriPixelArray.g, greyPoint.x, minExposure, maxExposure),
-                    calculateLog2ToLinear(log2HdriPixelArray.b, greyPoint.x, minExposure, maxExposure));
+                    calculateLog2ToLinear(log2HdriPixelArray.r, greyPoint.x, minRadiometricExposure, maxRadiometricExposure),
+                    calculateLog2ToLinear(log2HdriPixelArray.g, greyPoint.x, minRadiometricExposure, maxRadiometricExposure),
+                    calculateLog2ToLinear(log2HdriPixelArray.b, greyPoint.x, minRadiometricExposure, maxRadiometricExposure));
 
                 if (usePerChannel == 0)
                 {
                     // Retrieve the maximum RGB value but in linear space
                     half linearHdriMaxRGBChannel = calculateLog2ToLinear(logHdriMaxRGBChannel, greyPoint.x,
-                                                                         minExposure, maxExposure);
+                                                                         minRadiometricExposure, maxRadiometricExposure);
                     // Calculate the ratio in linear space
                     half3 ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
-                    half rawMaxPixelValue = linearHdriMaxRGBChannel;
 
                     // Secondary Nuance Grade, guardrails
-                    if (linearHdriPixelColor.r > maxRadiometricValue ||
-                        linearHdriPixelColor.g > maxRadiometricValue ||
-                        linearHdriPixelColor.b > maxRadiometricValue)
-                    {
-                        linearHdriPixelColor.r = maxRadiometricValue;
-                        linearHdriPixelColor.g = maxRadiometricValue;
-                        linearHdriPixelColor.b = maxRadiometricValue;
-                    }
+                     if (linearHdriPixelColor.r > maxRadiometricValue ||
+                         linearHdriPixelColor.g > maxRadiometricValue ||
+                         linearHdriPixelColor.b > maxRadiometricValue)
+                     {
+                         linearHdriPixelColor.r = maxRadiometricValue;
+                         linearHdriPixelColor.g = maxRadiometricValue;
+                         linearHdriPixelColor.b = maxRadiometricValue;
+                     }
 
                     ratio = calculateGamutCompression(linearHdriPixelColor, ratio, linearHdriMaxRGBChannel);
 
                     half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
-                    yValue = srgbEOTF(yValue);
-
+                    half minDisplayExposure = log2(minDisplayValue / greyPoint.y);
+                    half maxDisplayExposure = log2(maxDisplayValue / greyPoint.y);
+                    yValue = calculateLog2ToLinear(yValue, greyPoint.y, minDisplayExposure, maxDisplayExposure);
                     half hdriYMaxValue = min(yValue, 1.0f);
                     hdriPixelColor.rgb = hdriYMaxValue * ratio;
                 }
@@ -276,9 +274,9 @@
                     hdriPixelColor.b = getYCoordinateLogXInput(log2HdriPixelArray.b);
                 }
 
-                hdriPixelColor.r = inverseSrgbEOTF(hdriPixelColor.r);
-                hdriPixelColor.g = inverseSrgbEOTF(hdriPixelColor.g);
-                hdriPixelColor.b = inverseSrgbEOTF(hdriPixelColor.b);
+                hdriPixelColor.r = remap(hdriPixelColor.r, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                hdriPixelColor.g = remap(hdriPixelColor.g, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                hdriPixelColor.b = remap(hdriPixelColor.b, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
                 hdriPixelColor.a = 1.0f;
 
                 return hdriPixelColor;

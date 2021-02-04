@@ -185,7 +185,7 @@ public class GamutCurve
         int outIndex2 = 0;
     
         int maxArrayIndex = inputArray.Length - 1;
-        outIndex = Mathf.Clamp(Mathf.RoundToInt(target * (inputArray.Length - 1)), 0, maxArrayIndex);
+        outIndex = Mathf.Clamp(Mathf.RoundToInt(target * maxArrayIndex), 0, maxArrayIndex);
 
         // If we find an entry which is a perfect match, just return that index
         if (Mathf.Approximately(inputArray[outIndex], target))
@@ -249,36 +249,36 @@ public class GamutCurve
         // Shape the input x coord in radiometric
         float logInputXCoord = inputXCoord;
 
-            int idx = 0;
-            int idx2 = 0;
-            BilinearClosestTo(xCoords, logInputXCoord, controlPoints, out idx, out idx2);
-            if (idx >= tValues.Length || idx2 >= tValues.Length)
-            {
-                Debug.LogError("Index " + idx.ToString() + "or Index " + idx2.ToString() + " is invalid");
-            }
+        int idx = 0;
+        int idx2 = 0;
+        BilinearClosestTo(xCoords, logInputXCoord, controlPoints, out idx, out idx2);
+        if (idx >= tValues.Length || idx2 >= tValues.Length)
+        {
+            Debug.LogError("Index " + idx.ToString() + "or Index " + idx2.ToString() + " is invalid");
+        }
 
-            float linearInputXCoord =
-                Shaper.calculateLog2ToLinear(logInputXCoord, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
-            float linearXCoordIdx =
-                Shaper.calculateLog2ToLinear(xCoords[idx], radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
-            float linearXCoordIdx2 =
-                Shaper.calculateLog2ToLinear(xCoords[idx2], radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+        float linearInputXCoord =
+            Shaper.calculateLog2ToLinear(logInputXCoord, radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+        float linearXCoordIdx =
+            Shaper.calculateLog2ToLinear(xCoords[idx], radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
+        float linearXCoordIdx2 =
+            Shaper.calculateLog2ToLinear(xCoords[idx2], radiometricMiddleGrey.x, minRadiometricExposure, maxRadiometricExposure);
 
-            // Calculate interpolation factor
-            if (idx == idx2)
-            {
-                return yCoords[idx];
-            }
-            else if (idx < idx2)
-            {
-                float lerpValue = (linearInputXCoord - linearXCoordIdx) / (linearXCoordIdx2 - linearXCoordIdx);
-                return Mathf.Lerp(yCoords[idx], yCoords[idx2], lerpValue);
-            }
-            else
-            {
-                float lerpValue = (linearInputXCoord - linearXCoordIdx2) / (linearXCoordIdx - linearXCoordIdx2);
-                return Mathf.Lerp(yCoords[idx2], yCoords[idx], lerpValue);
-            }
+        // Calculate interpolation factor
+        if (idx == idx2)
+        {
+            return yCoords[idx];
+        }
+        else if (idx < idx2)
+        {
+            float lerpValue = (linearInputXCoord - linearXCoordIdx) / (linearXCoordIdx2 - linearXCoordIdx);
+            return Mathf.Lerp(yCoords[idx], yCoords[idx2], lerpValue);
+        }
+        else
+        {
+            float lerpValue = (linearInputXCoord - linearXCoordIdx2) / (linearXCoordIdx - linearXCoordIdx2);
+            return Mathf.Lerp(yCoords[idx2], yCoords[idx], lerpValue);
+        }
     }
 
 

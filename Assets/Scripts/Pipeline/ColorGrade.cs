@@ -37,11 +37,8 @@ public class ColorGrade
 
     public void Start(HDRPipeline pipeline, Texture3D hdrLUTToDecode)
     {
-        // testTexture = colorGamut.getHDRITexture();
         colorGradeRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
-        // interceptDebugRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
-        //     RenderTextureReadWrite.Linear);
 
         hdr3DLutToDecode = hdrLUTToDecode;
         this.pipeline = pipeline;
@@ -64,18 +61,6 @@ public class ColorGrade
 
     }
 
-    public void Update()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            int xCoord = (int) Input.mousePosition.x;
-            int yCoord = (int) Input.mousePosition.y;
-            Texture2D colorGradedTexture = toTexture2D(colorGradeRT);
-            Color colorGradedValues = colorGradedTexture.GetPixel(xCoord, yCoord);
-            Debug.Log("Pixel color is \t" + colorGradedValues.ToString("F4"));
-        }
-    }
-
     public void generateCubeLut(string fileName, int lutDimension, bool useShaperFunction, bool useDisplayP3, float maxRadiometricValue)
     {
         Debug.Log("Generating .cube LUT of size " + lutDimension.ToString());
@@ -86,26 +71,6 @@ public class ColorGrade
         CubeLutExporter.saveLutAsCube(hdr1DLut, fileName, lutDimension, Vector3.zero,
             new Vector3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue), true);
     }
-
-    // public void saveInGameCapture(string saveFilePath)
-    // {
-    //     Vector3 colorVec = Vector3.zero;
-    //
-    //     Texture2D inGameCapture = toTexture2D(interceptDebugRT);
-    //     Color[] inGameCapturePixels = inGameCapture.GetPixels();
-    //     // TODO Convert pixels from linear to log2
-    //     for (int i = 0; i < inGameCapturePixels.Length; i++)
-    //     {
-    //         inGameCapturePixels[i].r = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].r), colorGamut.MidGreySdr.x,
-    //             colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-    //         inGameCapturePixels[i].g = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].g), colorGamut.MidGreySdr.x,
-    //             colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-    //         inGameCapturePixels[i].b = Shaper.calculateLinearToLog2(Math.Max(0.0f,inGameCapturePixels[i].b), colorGamut.MidGreySdr.x,
-    //             colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-    //     }
-    //
-    //     SaveToDisk(inGameCapturePixels, saveFilePath, inGameCapture.width, inGameCapture.height);
-    // }
 
     public void generateTextureLut(string fileName, int lutDimension, bool generateHDRLut, bool useShaperFunction, bool useDisplayP3,
         float maxRadiometricValue)
