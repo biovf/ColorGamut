@@ -21,7 +21,7 @@ public class ColorGrade
     public Texture3D hdr3DLutToDecode;
     private Texture2D testTexture;
 
-    private RenderTexture colorGradeRT;
+    // private RenderTexture colorGradeRT;
     
     private RenderTexture decodedRTLUT;
     // private RenderTexture interceptDebugRT;
@@ -37,12 +37,12 @@ public class ColorGrade
 
     public void Start(HDRPipeline pipeline, Texture3D hdrLUTToDecode)
     {
-        colorGradeRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
-            RenderTextureReadWrite.Linear);
+        // colorGradeRT = new RenderTexture(testTexture.width, testTexture.height, 0, RenderTextureFormat.ARGBHalf,
+        //     RenderTextureReadWrite.Linear);
 
         hdr3DLutToDecode = hdrLUTToDecode;
         this.pipeline = pipeline;
-        colorGamut = pipeline.getColorGamut();
+        colorGamut = pipeline.getGamutMap();
 
     }
     
@@ -61,95 +61,95 @@ public class ColorGrade
 
     }
 
-    public void generateCubeLut(string fileName, int lutDimension, bool useShaperFunction, bool useDisplayP3, float maxRadiometricValue)
-    {
-        Debug.Log("Generating .cube LUT of size " + lutDimension.ToString());
-         
-        // Color[] hdr1DLut = LutGenerator.generateHdrTexLutPQShape(lutDimension, maxRadiometricValue, useShaperFunction);
-        Color[] hdr1DLut = LutGenerator.generateHdrTexLut(lutDimension, maxRadiometricValue, useShaperFunction,
-            colorGamut.MidGreySdr, colorGamut.MinRadiometricExposure,colorGamut.MaxRadiometricExposure);
-        CubeLutExporter.saveLutAsCube(hdr1DLut, fileName, lutDimension, Vector3.zero,
-            new Vector3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue), true);
-    }
+    // public void generateCubeLut(string fileName, int lutDimension, bool useShaperFunction, bool useDisplayP3, float maxRadiometricValue)
+    // {
+    //     Debug.Log("Generating .cube LUT of size " + lutDimension.ToString());
+    //
+    //     // Color[] hdr1DLut = LutGenerator.generateHdrTexLutPQShape(lutDimension, maxRadiometricValue, useShaperFunction);
+    //     Color[] hdr1DLut = LutGenerator.generateHdrTexLut(lutDimension, maxRadiometricValue, useShaperFunction,
+    //         colorGamut.MidGreySdr, colorGamut.MinRadiometricExposure,colorGamut.MaxRadiometricExposure);
+    //     CubeLutExporter.saveLutAsCube(hdr1DLut, fileName, lutDimension, Vector3.zero,
+    //         new Vector3(maxRadiometricValue, maxRadiometricValue, maxRadiometricValue), true);
+    // }
 
-    public void generateTextureLut(string fileName, int lutDimension, bool generateHDRLut, bool useShaperFunction, bool useDisplayP3,
-        float maxRadiometricValue)
-    {
-        Debug.Log("Generating LUT of size " + lutDimension.ToString());
-        // TODO generateHdrTexLutPQShape does not use the P3 conversion yet
-        Color[] lutColorArray;
-        if (generateHDRLut)
-        {
-            Debug.Log("Generating HDR texture Lut");
-            // lutColorArray = LutGenerator.generateHdrTexLutPQShape(lutDimension, maxRadiometricValue, useShaperFunction);
-            lutColorArray = LutGenerator.generateHdrTexLut(lutDimension, maxRadiometricValue, useShaperFunction,
-                colorGamut.MidGreySdr, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+    // public void generateTextureLut(string fileName, int lutDimension, bool generateHDRLut, bool useShaperFunction, bool useDisplayP3,
+    //     float maxRadiometricValue)
+    // {
+    //     Debug.Log("Generating LUT of size " + lutDimension.ToString());
+    //     // TODO generateHdrTexLutPQShape does not use the P3 conversion yet
+    //     Color[] lutColorArray;
+    //     if (generateHDRLut)
+    //     {
+    //         Debug.Log("Generating HDR texture Lut");
+    //         // lutColorArray = LutGenerator.generateHdrTexLutPQShape(lutDimension, maxRadiometricValue, useShaperFunction);
+    //         lutColorArray = LutGenerator.generateHdrTexLut(lutDimension, maxRadiometricValue, useShaperFunction,
+    //             colorGamut.MidGreySdr, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+    //
+    //         Debug.Log("Saving HDR texture Lut to disk");
+    //         SaveToDisk(lutColorArray, fileName, lutDimension * lutDimension, lutDimension);
+    //     }
+    //     else
+    //     {
+    //         Debug.Log("Generating SDR texture Lut");
+    //         lutColorArray = LutGenerator.generateSdrTexLut(lutDimension);
+    //
+    //         Debug.Log("Saving SDR texture Lut to disk");
+    //         SaveToDisk(lutColorArray, fileName, lutDimension * lutDimension, lutDimension, false);
+    //     }
+    // }
 
-            Debug.Log("Saving HDR texture Lut to disk");
-            SaveToDisk(lutColorArray, fileName, lutDimension * lutDimension, lutDimension);
-        }
-        else
-        {
-            Debug.Log("Generating SDR texture Lut");
-            lutColorArray = LutGenerator.generateSdrTexLut(lutDimension);
-            
-            Debug.Log("Saving SDR texture Lut to disk");
-            SaveToDisk(lutColorArray, fileName, lutDimension * lutDimension, lutDimension, false);
-        }
-    }
+    // private Texture2D toTexture2D(RenderTexture rTex)
+    // {
+    //     Texture2D tex = new Texture2D(rTex.width, rTex.height, TextureFormat.RGBAHalf, false, true);
+    //     RenderTexture.active = rTex;
+    //     tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
+    //     tex.Apply();
+    //     RenderTexture.active = null;
+    //      File.WriteAllBytes("toTexture2D.exr", tex.EncodeToEXR());
+    //     return tex;
+    // }
 
-    private Texture2D toTexture2D(RenderTexture rTex)
-    {
-        Texture2D tex = new Texture2D(rTex.width, rTex.height, TextureFormat.RGBAHalf, false, true);
-        RenderTexture.active = rTex;
-        tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
-        tex.Apply();
-        RenderTexture.active = null;
-         File.WriteAllBytes("toTexture2D.exr", tex.EncodeToEXR());
-        return tex;
-    }
-
-    private Color[] applyShaperToTexture(Color[] pixels)
-    {
-        Debug.Log("Starting to encode LUT");
-        Vector3 tmpColorVec = Vector3.zero;
-        int pixelsLen = pixels.Length;
-        for (int i = 0; i < pixelsLen; i++)
-        {
-            pixels[i].r = Shaper.calculateLinearToLog2(pixels[i].r, colorGamut.MidGreySdr.x,
-                colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-            pixels[i].g = Shaper.calculateLinearToLog2(pixels[i].g, colorGamut.MidGreySdr.x,
-                colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-            pixels[i].b = Shaper.calculateLinearToLog2(pixels[i].b, colorGamut.MidGreySdr.x,
-                colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
-        }
-
-        Debug.Log("Finished encoding LUT");
-        return pixels;
-    }
+    // private Color[] applyShaperToTexture(Color[] pixels)
+    // {
+    //     Debug.Log("Starting to encode LUT");
+    //     Vector3 tmpColorVec = Vector3.zero;
+    //     int pixelsLen = pixels.Length;
+    //     for (int i = 0; i < pixelsLen; i++)
+    //     {
+    //         pixels[i].r = Shaper.calculateLinearToLog2(pixels[i].r, colorGamut.MidGreySdr.x,
+    //             colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+    //         pixels[i].g = Shaper.calculateLinearToLog2(pixels[i].g, colorGamut.MidGreySdr.x,
+    //             colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+    //         pixels[i].b = Shaper.calculateLinearToLog2(pixels[i].b, colorGamut.MidGreySdr.x,
+    //             colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+    //     }
+    //
+    //     Debug.Log("Finished encoding LUT");
+    //     return pixels;
+    // }
   
     
-    private void SaveToDisk(Color[] pixels, string fileName, int width, int height, bool useExr = true)
-    {
-        Debug.Log("Preparing to save texture to disk");
-
-        if (useExr)
-        {
-            Texture2D textureToSave = new Texture2D(width, height, TextureFormat.RGBAHalf, false, true);
-            textureToSave.SetPixels(pixels);
-            textureToSave.Apply();
-            File.WriteAllBytes(@fileName, textureToSave.EncodeToEXR());
-        }
-        else
-        {
-            Texture2D textureToSave = new Texture2D(width, height, TextureFormat.RGBA32, false, true);
-            textureToSave.SetPixels(pixels);
-            textureToSave.Apply();
-            File.WriteAllBytes(@fileName, textureToSave.EncodeToPNG());
-        }
-
-        Debug.Log("Texture " + fileName + " successfully saved to disk");
-    }
+    // private void SaveToDisk(Color[] pixels, string fileName, int width, int height, bool useExr = true)
+    // {
+    //     Debug.Log("Preparing to save texture to disk");
+    //
+    //     if (useExr)
+    //     {
+    //         Texture2D textureToSave = new Texture2D(width, height, TextureFormat.RGBAHalf, false, true);
+    //         textureToSave.SetPixels(pixels);
+    //         textureToSave.Apply();
+    //         File.WriteAllBytes(@fileName, textureToSave.EncodeToEXR());
+    //     }
+    //     else
+    //     {
+    //         Texture2D textureToSave = new Texture2D(width, height, TextureFormat.RGBA32, false, true);
+    //         textureToSave.SetPixels(pixels);
+    //         textureToSave.Apply();
+    //         File.WriteAllBytes(@fileName, textureToSave.EncodeToPNG());
+    //     }
+    //
+    //     Debug.Log("Texture " + fileName + " successfully saved to disk");
+    // }
     
     /// ***********************************************************
     /// Section with tests to verify correctness of the algorithms

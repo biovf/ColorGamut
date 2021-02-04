@@ -4,34 +4,36 @@ using UnityEngine;
 
 public class LutBaker
 {
+    private HDRPipeline hdrPipeline;
     private GamutMap gamutMap;
-    private ColorGrade colorGrade;
 
-    public LutBaker(GamutMap gamutMap, ColorGrade colorGrade)
+    public LutBaker(HDRPipeline hdrPipeline)
     {
-        this.gamutMap = gamutMap;
-        this.colorGrade = colorGrade;
+        this.hdrPipeline = hdrPipeline;
+        this.gamutMap = hdrPipeline.getGamutMap();
     }
 
     public Texture3D BakeLUT(int lutDimension)
     {
-        var lut = new Texture3D(lutDimension, lutDimension, lutDimension, TextureFormat.RGBAHalf, false)
+        var lut3DTexture = new Texture3D(lutDimension, lutDimension, lutDimension, TextureFormat.RGBAHalf, false)
         {
             // @TODO enable trilinear?
             filterMode = FilterMode.Bilinear,
             wrapMode = TextureWrapMode.Clamp,
             anisoLevel = 0
         };
+
+        // Start identity cube LUT
         Color[] identity3DLut = LutGenerator.generateIdentityCubeLUT(lutDimension);
-
-        // Chromaticity compression
-        Color[] lutPixels = gamutMap.ChromaticityCompression(identity3DLut);
+        // Apply Chromaticity compression
+        Color[] lutPixels = gamutMap.ApplyChromaticityCompression(identity3DLut);
         // ColorGrade blit
-
-        // ReadPixels
+        // hdrPipeline.ApplyColorGrade();
+        // dest.ReadPixels(new Rect(0, 0, dest.width, dest.height), 0, 0, false);
         // Aesthetic TF baking
+        gamutMap.CalculateTransferTransform(ref lutPixels);
         // Store data in LUT
 
-        return lut;
+        return lut3DTexture;
     }
 }

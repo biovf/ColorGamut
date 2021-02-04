@@ -39,7 +39,6 @@ public class HDRPipeline : MonoBehaviour
     public Texture3D colorGradeLUT;
     
     private GamutMap colorGamut;
-    private ColorGrade colorGrade;
 
     private RenderTexture renderBuffer;
     private RenderTexture hdriRenderTexture;
@@ -80,8 +79,7 @@ public class HDRPipeline : MonoBehaviour
         gamutMapRT = new RenderTexture(HDRIList[0].width, HDRIList[0].height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         initialiseColorGamut();
-        initialiseColorGrading();
-        
+
         curveRT = new RenderTexture(512, 512, 0, RenderTextureFormat.ARGB32);
         curveDrawMaterial = new Material(Shader.Find("Custom/DrawCurve"));
         controlPointsUniform = new Vector4[7];
@@ -95,16 +93,9 @@ public class HDRPipeline : MonoBehaviour
         colorGamut = new GamutMap(fullScreenTextureMat, HDRIList);
         colorGamut.Start(this);
     }
-    private void initialiseColorGrading()
-    {
-        colorGrade = new ColorGrade(colorGamut.getHDRITexture(), colorGradingMat, 
-            fullScreenTextureMat);
-        colorGrade.Start(this, colorGradeLUT);
-    }
-    
+
     void Update()
     {
-        // colorGrade.Update();
         colorGamut.Update();
     }
 
@@ -164,16 +155,27 @@ public class HDRPipeline : MonoBehaviour
          {
             if (useCpuMode)
             {
-                colorGrade.OnRenderImage(colorGamut.HdriTextureTransformed, renderBuffer, colorGradeLUT);
+                ApplyColorGrade(colorGamut.HdriTextureTransformed, renderBuffer, colorGradeLUT);
             }
             else
             {
-                colorGrade.OnRenderImage(hdriRenderTexture, renderBuffer, colorGradeLUT);
+                ApplyColorGrade(hdriRenderTexture, renderBuffer, colorGradeLUT);
             }
 
             fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
             Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
          }
+    }
+
+    public void ApplyColorGrade(Texture src, RenderTexture dest, Texture3D LUT)
+    {
+        colorGradingMat.SetTexture("_MainTex", src);
+        colorGradingMat.SetTexture("_LUT", LUT);
+        colorGradingMat.SetFloat("_MinExposureValue", colorGamut.MinRadiometricExposure);
+        colorGradingMat.SetFloat("_MaxExposureValue", colorGamut.MaxRadiometricExposure);
+        colorGradingMat.SetFloat("_MidGreyX", colorGamut.MidGreySdr.x);
+        Graphics.Blit(src, dest, colorGradingMat);
+
     }
 
     public void ApplyGamutMap()
@@ -183,19 +185,11 @@ public class HDRPipeline : MonoBehaviour
         StartCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
     }
 
-    public GamutMap getColorGamut()
+    public GamutMap getGamutMap()
     {
         if(colorGamut == null)
             initialiseColorGamut();
         
         return colorGamut;
-    }
-    
-    public ColorGrade getColorGrading()
-    {
-        if(colorGrade == null)
-            initialiseColorGrading();
-        
-        return colorGrade;
     }
 }
