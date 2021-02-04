@@ -72,7 +72,7 @@ public class HDRPipelineEditor : Editor
     private GamutMap.CurveDataState guiWidgetsState = GamutMap.CurveDataState.NotCalculated;
     
     //#region DebugOptions
-    private bool enableCPUMode = false;
+    private bool enableCPUMode = true;
     private bool saveGamutMapDebugImages = false;
     //#endregion
 
