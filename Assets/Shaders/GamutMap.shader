@@ -163,10 +163,9 @@
             half3 calculateGamutCompression(half3 linearHdriPixelColor, half3 ratio, half linearHdriMaxRGBChannel)
             {
                 half3 newRatio = ratio;
-                float gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
 
                 // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-                gamutCompressionXCoordLinear = calculateLog2ToLinear(
+                float gamutCompressionXCoordLinear = calculateLog2ToLinear(
                     getXCoordinate(maxLatitudeLimit), greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
 
                 if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
@@ -175,11 +174,10 @@
                 {
                     half gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
                     half gamutCompressionRatio = (max(linearHdriPixelColor.r,
-                                                      max(linearHdriPixelColor.g, linearHdriPixelColor.b)) -
-                            gamutCompressionXCoordLinear) /
-                        gamutCompressionRange;
+                                                  max(linearHdriPixelColor.g, linearHdriPixelColor.b)) -
+                            gamutCompressionXCoordLinear) / gamutCompressionRange;
 
-                   ratio = lerp(ratio, half3(1.0, 1.0, 1.0), gamutCompressionRatio);
+                   newRatio = lerp(ratio, half3(1.0, 1.0, 1.0), gamutCompressionRatio);
                 }
                 return newRatio;
             }
@@ -220,10 +218,10 @@
                 return min1 + (inputValue - min0) * ((max1 - min1) / (max0 - min0));
             }
 
-            float4 gamutMap(half4 inColor)
+            float4 gamutMap(half4 inRadiometricLinearColor)
             {
                 half4 hdriPixelColor = half4(0.0, 0.0, 0.0, 1.0);
-                half4 colorExposed = inColor * pow(2.0, exposure);
+                half4 colorExposed = inRadiometricLinearColor * pow(2.0, exposure);
                 // Shape image
                 half3 log2HdriPixelArray = half3(0.0, 0.0, 0.0);
                 log2HdriPixelArray.r = calculateLinearToLog2(max(0.0f, colorExposed.r), greyPoint.x, minRadiometricExposure,
@@ -274,9 +272,9 @@
                     hdriPixelColor.b = getYCoordinateLogXInput(log2HdriPixelArray.b);
                 }
 
-                hdriPixelColor.r = remap(hdriPixelColor.r, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
-                hdriPixelColor.g = remap(hdriPixelColor.g, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
-                hdriPixelColor.b = remap(hdriPixelColor.b, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                // hdriPixelColor.r = remap(hdriPixelColor.r, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                // hdriPixelColor.g = remap(hdriPixelColor.g, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                // hdriPixelColor.b = remap(hdriPixelColor.b, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
                 hdriPixelColor.a = 1.0f;
 
                 return hdriPixelColor;
