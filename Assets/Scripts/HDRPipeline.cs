@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
+﻿#define DEBUG_CHECKS
+
+using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
+using Debug = UnityEngine.Debug;
 
 public struct CurveParams
 {
@@ -72,6 +76,8 @@ public class HDRPipeline : MonoBehaviour
     
     void Start()
     {
+        isObjectNull(colorGradeLUT,"colorGradeLUT");
+
         renderBuffer = new RenderTexture(HDRIList[0].width, HDRIList[0].height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
         hdriRenderTexture = new RenderTexture(HDRIList[0].width, HDRIList[0].height, 0, RenderTextureFormat.ARGBHalf,
@@ -86,6 +92,15 @@ public class HDRPipeline : MonoBehaviour
         
         xCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
         yCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
+    }
+
+    [Conditional("DEBUG_CHECKS")]
+    private void isObjectNull(Object obj, string objName)
+    {
+        if (obj == null)
+        {
+            Debug.LogError(objName + " is null");
+        }
     }
 
     private void initialiseColorGamut()
