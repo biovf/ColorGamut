@@ -28,7 +28,8 @@ public class LutBaker
         // Apply Chromaticity compression
         Color[] lutPixels = gamutMap.ApplyChromaticityCompression(identity3DLut);
         // ColorGrade blit
-        // hdrPipeline.ApplyColorGrade();
+        // hdrPipeline.RenderColorGrade();
+
         // dest.ReadPixels(new Rect(0, 0, dest.width, dest.height), 0, 0, false);
         // Aesthetic TF baking
         gamutMap.CalculateTransferTransform(ref lutPixels);

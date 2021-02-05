@@ -7,8 +7,8 @@
         greyPoint ("Middle Grey Value(XY)", Vector) = (0.18, 0.18, 0.0, 0.0)
         minRadiometricExposure ("Minimum Radiometric Exposure Value(EV)", Float) = -6.0
         maxRadiometricExposure ("Maximum Radiometric Exposure Value(EV)", Float) = 6.0
-        minDisplayValue ("Min Display Value (unit agnostic)", Float) = 0.0
-        maxDisplayValue ("Max Display Value (unit agnostic)", Float) = 1.0
+        minDisplayExposure ("Min Display Value (unit agnostic)", Float) = 0.0
+        maxDisplayExposure ("Max Display Value (unit agnostic)", Float) = 1.0
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
         maxLatitudeLimit ("Start value for Gamut compression", Float) = 0.8
         inputArraySize ("Number of curve array elements", Int) = 1024
@@ -45,8 +45,8 @@
             half4 greyPoint;
             half minRadiometricExposure;
             half maxRadiometricExposure;
-            half minDisplayValue;
-            half maxDisplayValue;
+            half minDisplayExposure;
+            half maxDisplayExposure;
             half maxRadiometricValue;
             half maxLatitudeLimit;
 
@@ -109,7 +109,7 @@
 
                 int outIndex = 0;
                 int outIndex2 = 0;
-            
+
                 int maxArrayIndex = inputArraySize - 1;
                 outIndex = clamp(round(target * maxArrayIndex), 0, maxArrayIndex);
 
@@ -258,8 +258,6 @@
                     ratio = calculateGamutCompression(linearHdriPixelColor, ratio, linearHdriMaxRGBChannel);
 
                     half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
-                    half minDisplayExposure = log2(minDisplayValue / greyPoint.y);
-                    half maxDisplayExposure = log2(maxDisplayValue / greyPoint.y);
                     yValue = calculateLog2ToLinear(yValue, greyPoint.y, minDisplayExposure, maxDisplayExposure);
                     half hdriYMaxValue = min(yValue, 1.0f);
                     hdriPixelColor.rgb = hdriYMaxValue * ratio;

@@ -40,6 +40,7 @@ public class HDRPipeline : MonoBehaviour
 
     // Color Grading public member variables
     public Material colorGradingMat;
+    public Material colorGradingBakerMat;
     public Texture3D colorGradeLUT;
     
     private GamutMap colorGamut;
@@ -77,6 +78,7 @@ public class HDRPipeline : MonoBehaviour
     void Start()
     {
         isObjectNull(colorGradeLUT,"colorGradeLUT");
+        isObjectNull(colorGradingBakerMat, "colorGradingBakerMat");
 
         renderBuffer = new RenderTexture(HDRIList[0].width, HDRIList[0].height, 0, RenderTextureFormat.ARGBHalf,
             RenderTextureReadWrite.Linear);
@@ -88,6 +90,7 @@ public class HDRPipeline : MonoBehaviour
 
         curveRT = new RenderTexture(512, 512, 0, RenderTextureFormat.ARGB32);
         curveDrawMaterial = new Material(Shader.Find("Custom/DrawCurve"));
+
         controlPointsUniform = new Vector4[7];
         
         xCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
@@ -101,6 +104,7 @@ public class HDRPipeline : MonoBehaviour
         {
             Debug.LogError(objName + " is null");
         }
+
     }
 
     private void initialiseColorGamut()
@@ -148,8 +152,8 @@ public class HDRPipeline : MonoBehaviour
              gamutMapMat.SetFloat("minExposure", colorGamut.MinRadiometricExposure);
              gamutMapMat.SetFloat("maxExposure", colorGamut.MaxRadiometricExposure);
              gamutMapMat.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricDynamicRange);
-             gamutMapMat.SetFloat("minDisplayValue", colorGamut.MinDisplayExposure);
-             gamutMapMat.SetFloat("maxDisplayValue", colorGamut.MaxDisplayExposure);
+             gamutMapMat.SetFloat("minDisplayExposure", colorGamut.MinDisplayExposure);
+             gamutMapMat.SetFloat("maxDisplayExposure", colorGamut.MaxDisplayExposure);
              gamutMapMat.SetFloat("maxLatitudeLimit", colorGamut.MaxLatitudeLimit);
              gamutMapMat.SetInt("inputArraySize", colorGamut.getXValues().Count - 1);
              gamutMapMat.SetInt("usePerChannel", activeTransferFunction);
@@ -170,11 +174,11 @@ public class HDRPipeline : MonoBehaviour
          {
             if (useCpuMode)
             {
-                ApplyColorGrade(colorGamut.HdriTextureTransformed, renderBuffer, colorGradeLUT);
+                RenderColorGrade(colorGamut.HdriTextureTransformed, renderBuffer, colorGradeLUT);
             }
             else
             {
-                ApplyColorGrade(hdriRenderTexture, renderBuffer, colorGradeLUT);
+                RenderColorGrade(hdriRenderTexture, renderBuffer, colorGradeLUT);
             }
 
             fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
@@ -182,7 +186,7 @@ public class HDRPipeline : MonoBehaviour
          }
     }
 
-    public void ApplyColorGrade(Texture src, RenderTexture dest, Texture3D LUT)
+    public void RenderColorGrade(Texture src, RenderTexture dest, Texture3D LUT)
     {
         colorGradingMat.SetTexture("_MainTex", src);
         colorGradingMat.SetTexture("_LUT", LUT);
@@ -190,7 +194,16 @@ public class HDRPipeline : MonoBehaviour
         colorGradingMat.SetFloat("_MaxExposureValue", colorGamut.MaxRadiometricExposure);
         colorGradingMat.SetFloat("_MidGreyX", colorGamut.MidGreySdr.x);
         Graphics.Blit(src, dest, colorGradingMat);
+    }
 
+    public void BakeColorGrade(Texture src, RenderTexture dest, Texture3D LUT)
+    {
+        colorGradingBakerMat.SetTexture("_MainTex", src);
+        colorGradingBakerMat.SetTexture("_LUT", LUT);
+        colorGradingBakerMat.SetFloat("_MinExposureValue", colorGamut.MinRadiometricExposure);
+        colorGradingBakerMat.SetFloat("_MaxExposureValue", colorGamut.MaxRadiometricExposure);
+        colorGradingBakerMat.SetFloat("_MidGreyX", colorGamut.MidGreySdr.x);
+        Graphics.Blit(src, dest, colorGradingBakerMat);
     }
 
     public void ApplyGamutMap()

@@ -74,10 +74,15 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     - exposure: 0
-    - inputArraySize: 1022
+    - inputArraySize: 1023
+    - maxDisplayValue: 2.473931
     - maxExposure: 6
+    - maxLatitudeLimit: 0.85
+    - maxRadiometricExposure: 6
     - maxRadiometricValue: 11.52
+    - minDisplayValue: -8.491853
     - minExposure: -6
+    - minRadiometricExposure: -6
     - minRadiometricValue: 0.0028125
     - usePerChannel: 0
     m_Colors:
