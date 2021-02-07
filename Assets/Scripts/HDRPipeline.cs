@@ -14,10 +14,11 @@ public struct CurveParams
     public float slope;
     public float originX;
     public float originY;
+    public float maxLatitude;
     public GamutMappingMode ActiveGamutMappingMode;
 
     public CurveParams(float inExposure, float inSlope, float inOriginX,
-        float inOriginY, GamutMappingMode inActiveGamutMappingMode, bool inIsGamutCompressionActive)
+        float inOriginY, GamutMappingMode inActiveGamutMappingMode, bool inIsGamutCompressionActive, float inMaxLatitude)
     {
         exposure = inExposure;
         slope = inSlope;
@@ -25,7 +26,7 @@ public struct CurveParams
         originY = inOriginY;
         ActiveGamutMappingMode = inActiveGamutMappingMode;
         isGamutCompressionActive = inIsGamutCompressionActive;
-
+        maxLatitude = inMaxLatitude;
     }
 }
 
@@ -42,13 +43,13 @@ public class HDRPipeline : MonoBehaviour
     public Material colorGradingMat;
     public Material colorGradingBakerMat;
     public Texture3D colorGradeLUT;
-    
+
     private GamutMap colorGamut;
 
     private RenderTexture renderBuffer;
     private RenderTexture hdriRenderTexture;
     private RenderTexture gamutMapRT;
-    
+
     private bool useCpuMode = true;
     private int activeTransferFunction = 0;
 
@@ -57,7 +58,7 @@ public class HDRPipeline : MonoBehaviour
         get => useCpuMode;
         set => useCpuMode = value;
     }
-    
+
     // Curve widget member variables
     private Material curveDrawMaterial;
     private RenderTexture curveRT;
@@ -74,10 +75,10 @@ public class HDRPipeline : MonoBehaviour
     private ComputeBuffer xCurveCoordsCBuffer;
     private ComputeBuffer yCurveCoordsCBuffer;
 
-    
+
     void Start()
     {
-        isObjectNull(colorGradeLUT,"colorGradeLUT");
+        isObjectNull(colorGradeLUT, "colorGradeLUT");
         isObjectNull(colorGradingBakerMat, "colorGradingBakerMat");
 
         renderBuffer = new RenderTexture(HDRIList[0].width, HDRIList[0].height, 0, RenderTextureFormat.ARGBHalf,
@@ -92,7 +93,7 @@ public class HDRPipeline : MonoBehaviour
         curveDrawMaterial = new Material(Shader.Find("Custom/DrawCurve"));
 
         controlPointsUniform = new Vector4[7];
-        
+
         xCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
         yCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
     }
@@ -135,43 +136,45 @@ public class HDRPipeline : MonoBehaviour
             controlPointsUniform[i] = new Vector4(controlPoints[i].x, controlPoints[i].y);
         }
         drawGamutCurveWidget();
-        
-         Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
-        
-         if (useCpuMode && (colorGamut.CurveState == GamutMap.CurveDataState.NotCalculated ||
-             colorGamut.CurveState == GamutMap.CurveDataState.Dirty))
-         {
-             ApplyGamutMap();
-         }
-         else if(!useCpuMode)
-         {
-             activeTransferFunction = (colorGamut.ActiveGamutMappingMode == GamutMappingMode.Max_RGB) ? 0 : 1;
-             gamutMapMat.SetTexture("_MainTex", hdriRenderTexture);
-             gamutMapMat.SetFloat("exposure", colorGamut.Exposure);
-             gamutMapMat.SetVector("greyPoint", new Vector4(colorGamut.MidGreySdr.x,colorGamut.MidGreySdr.y, 0.0f));
-             gamutMapMat.SetFloat("minExposure", colorGamut.MinRadiometricExposure);
-             gamutMapMat.SetFloat("maxExposure", colorGamut.MaxRadiometricExposure);
-             gamutMapMat.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricDynamicRange);
-             gamutMapMat.SetFloat("minDisplayExposure", colorGamut.MinDisplayExposure);
-             gamutMapMat.SetFloat("maxDisplayExposure", colorGamut.MaxDisplayExposure);
-             gamutMapMat.SetFloat("maxLatitudeLimit", colorGamut.MaxLatitudeLimit);
-             gamutMapMat.SetInt("inputArraySize", colorGamut.getXValues().Count - 1);
-             gamutMapMat.SetInt("usePerChannel", activeTransferFunction);
 
-             xCurveCoordsCBuffer.SetData(colorGamut.getXValues().ToArray());
-             yCurveCoordsCBuffer.SetData(colorGamut.getYValues().ToArray());
-             gamutMapMat.SetBuffer(Shader.PropertyToID("xCurveCoordsCBuffer"), xCurveCoordsCBuffer);
-             gamutMapMat.SetBuffer(Shader.PropertyToID("yCurveCoordsCBuffer"), yCurveCoordsCBuffer);
-             gamutMapMat.SetVectorArray("controlPoints", controlPointsUniform);
-             
-             Graphics.Blit(hdriRenderTexture, gamutMapRT, gamutMapMat);
-                 
-             Graphics.Blit(gamutMapRT, hdriRenderTexture, fullScreenTextureMat);
-             colorGamut.SetCurveDataState(GamutMap.CurveDataState.Calculated);
-         }
-         
-         if (colorGamut.CurveState == GamutMap.CurveDataState.Calculated)
-         {
+        Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
+
+        if (useCpuMode && (colorGamut.CurveState == GamutMap.CurveDataState.NotCalculated ||
+            colorGamut.CurveState == GamutMap.CurveDataState.Dirty))
+        {
+            ApplyGamutMap();
+        }
+        else if (!useCpuMode)
+        {
+            activeTransferFunction = (colorGamut.ActiveGamutMappingMode == GamutMappingMode.Max_RGB) ? 0 : 1;
+            gamutMapMat.SetTexture("_MainTex", hdriRenderTexture);
+            gamutMapMat.SetFloat("exposure", colorGamut.Exposure);
+            gamutMapMat.SetVector("greyPoint", new Vector4(colorGamut.MidGreySdr.x, colorGamut.MidGreySdr.y, 0.0f));
+            gamutMapMat.SetFloat("minExposure", colorGamut.MinRadiometricExposure);
+            gamutMapMat.SetFloat("maxExposure", colorGamut.MaxRadiometricExposure);
+            gamutMapMat.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricDynamicRange);
+            gamutMapMat.SetFloat("minDisplayExposure", colorGamut.MinDisplayExposure);
+            gamutMapMat.SetFloat("maxDisplayExposure", colorGamut.MaxDisplayExposure);
+            gamutMapMat.SetFloat("minDisplayValue", colorGamut.MinDisplayValue);
+            gamutMapMat.SetFloat("maxDisplayValue", colorGamut.MaxDisplayValue);
+            gamutMapMat.SetFloat("maxLatitudeLimit", colorGamut.MaxLatitudeLimit);
+            gamutMapMat.SetInt("inputArraySize", colorGamut.getXValues().Count - 1);
+            gamutMapMat.SetInt("usePerChannel", activeTransferFunction);
+
+            xCurveCoordsCBuffer.SetData(colorGamut.getXValues().ToArray());
+            yCurveCoordsCBuffer.SetData(colorGamut.getYValues().ToArray());
+            gamutMapMat.SetBuffer(Shader.PropertyToID("xCurveCoordsCBuffer"), xCurveCoordsCBuffer);
+            gamutMapMat.SetBuffer(Shader.PropertyToID("yCurveCoordsCBuffer"), yCurveCoordsCBuffer);
+            gamutMapMat.SetVectorArray("controlPoints", controlPointsUniform);
+
+            Graphics.Blit(hdriRenderTexture, gamutMapRT, gamutMapMat);
+
+            Graphics.Blit(gamutMapRT, hdriRenderTexture, fullScreenTextureMat);
+            colorGamut.SetCurveDataState(GamutMap.CurveDataState.Calculated);
+        }
+
+        if (colorGamut.CurveState == GamutMap.CurveDataState.Calculated)
+        {
             if (useCpuMode)
             {
                 RenderColorGrade(colorGamut.HdriTextureTransformed, renderBuffer, colorGradeLUT);
@@ -183,7 +186,7 @@ public class HDRPipeline : MonoBehaviour
 
             fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
             Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
-         }
+        }
     }
 
     public void RenderColorGrade(Texture src, RenderTexture dest, Texture3D LUT)
@@ -215,9 +218,9 @@ public class HDRPipeline : MonoBehaviour
 
     public GamutMap getGamutMap()
     {
-        if(colorGamut == null)
+        if (colorGamut == null)
             initialiseColorGamut();
-        
+
         return colorGamut;
     }
 }

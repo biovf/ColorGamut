@@ -297,7 +297,7 @@ public class HDRPipelineEditor : Editor
     private void RecalculateCurveParameters() 
     {
         CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
-         originPointY, _activeGamutMappingMode, isGamutCompressionActive);
+         originPointY, _activeGamutMappingMode, isGamutCompressionActive, maxLatitudeLimit);
         colorGamut.setCurveParams(curveParams);
     }
 
@@ -305,7 +305,7 @@ public class HDRPipelineEditor : Editor
     {
         colorGamut.setMaxLatitudeLimit(maxLatitudeLimit);
         CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
-            originPointY, _activeGamutMappingMode, isGamutCompressionActive);
+            originPointY, _activeGamutMappingMode, isGamutCompressionActive, maxLatitudeLimit);
         colorGamut.setCurveParams(curveParams);
         hdrPipeline.ApplyGamutMap();
         guiWidgetsState = GamutMap.CurveDataState.Calculating;

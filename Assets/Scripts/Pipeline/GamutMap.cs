@@ -58,6 +58,7 @@ public class GamutMap
 
     public float Slope => slope;
 
+    public Vector2 Origin => origin;
     private Vector2 origin;
     private GamutCurve parametricGamutCurve = null;
 
@@ -89,7 +90,7 @@ public class GamutMap
     private float maxRadiometricValue;
     private float maxDisplayValue;
     public float MaxDisplayValue => maxDisplayValue;
-
+    public float MinDisplayValue => minDisplayValue;
     private float minDisplayValue;
     private float minDisplayExposure;
     public float MinDisplayExposure => minDisplayExposure;
@@ -219,8 +220,11 @@ public class GamutMap
         return xCameraIntrinsicValues;
     }
 
-    private void createParametricCurve(Vector2 greyPoint, Vector2 origin)
+    public void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
+        maxRadiometricLatitudeExposure = totalRadiometricExposure * maxLatitudeLimit;
+        maxRadiometricLatitude = Shaper.calculateLog2ToLinear(maxLatitudeLimit, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+
         if (parametricGamutCurve == null)
             parametricGamutCurve = new GamutCurve(minRadiometricExposure, maxRadiometricExposure, maxRadiometricValue, maxDisplayValue, 
                 minDisplayExposure, maxDisplayExposure, maxRadiometricLatitude, maxRadiometricLatitudeExposure, maxLatitudeLimit);
@@ -857,6 +861,7 @@ public class GamutMap
         origin.x = curveParams.originX;
         origin.y = curveParams.originY;
         activeGamutMappingMode = curveParams.ActiveGamutMappingMode;
+        maxLatitudeLimit = curveParams.maxLatitude;
         createParametricCurve(midGreySDR, origin);
     }
 

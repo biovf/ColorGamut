@@ -26,7 +26,7 @@ public class LutBaker
         // Start identity cube LUT
         Color[] identity3DLut = LutGenerator.generateIdentityCubeLUT(lutDimension);
         // Apply Chromaticity compression
-        Color[] lutPixels = gamutMap.ApplyChromaticityCompression(identity3DLut);
+        //Color[] lutPixels = gamutMap.ApplyChromaticityCompression(identity3DLut);
         // ColorGrade blit
         // hdrPipeline.RenderColorGrade();
 

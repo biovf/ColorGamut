@@ -7,8 +7,10 @@
         greyPoint ("Middle Grey Value(XY)", Vector) = (0.18, 0.18, 0.0, 0.0)
         minRadiometricExposure ("Minimum Radiometric Exposure Value(EV)", Float) = -6.0
         maxRadiometricExposure ("Maximum Radiometric Exposure Value(EV)", Float) = 6.0
-        minDisplayExposure ("Min Display Value (unit agnostic)", Float) = 0.0
-        maxDisplayExposure ("Max Display Value (unit agnostic)", Float) = 1.0
+        minDisplayExposure ("Min Display Exposure (unit agnostic)", Float) = 0.0
+        maxDisplayExposure ("Max Display Exposure (unit agnostic)", Float) = 1.0
+        minDisplayValue("Min Display Value (unit agnostic)", Float) = 0.0005
+        maxDisplayValue("Max Display Value (unit agnostic)", Float) = 1.0
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
         maxLatitudeLimit ("Start value for Gamut compression", Float) = 0.8
         inputArraySize ("Number of curve array elements", Int) = 1024
@@ -47,6 +49,8 @@
             half maxRadiometricExposure;
             half minDisplayExposure;
             half maxDisplayExposure;
+            half minDisplayValue;
+            half maxDisplayValue;
             half maxRadiometricValue;
             half maxLatitudeLimit;
 
@@ -269,9 +273,9 @@
                     hdriPixelColor.b = getYCoordinateLogXInput(log2HdriPixelArray.b);
                 }
 
-                // hdriPixelColor.r = remap(hdriPixelColor.r, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
-                // hdriPixelColor.g = remap(hdriPixelColor.g, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
-                // hdriPixelColor.b = remap(hdriPixelColor.b, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                 hdriPixelColor.r = remap(hdriPixelColor.r, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                 hdriPixelColor.g = remap(hdriPixelColor.g, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                 hdriPixelColor.b = remap(hdriPixelColor.b, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
                 hdriPixelColor.a = 1.0f;
 
                 return hdriPixelColor;
