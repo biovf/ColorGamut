@@ -142,7 +142,24 @@ public class HDRPipeline : MonoBehaviour
         if (useCpuMode && (colorGamut.CurveState == GamutMap.CurveDataState.NotCalculated ||
             colorGamut.CurveState == GamutMap.CurveDataState.Dirty))
         {
-            ApplyGamutMap();
+            // Chromaticity compression
+            Texture2D hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
+            Color[] hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels());
+            hdriTexture2D.SetPixels(hdriTexturePixels);
+            // colorGamut.SaveToDisk(hdriTexture2D.GetPixels(), "ColorGradingInput.exr", hdriTexture2D.width, hdriTexture2D.height);
+            // Color grade
+            if (useCpuMode)
+            {
+                RenderColorGrade(hdriTexture2D, renderBuffer, colorGradeLUT);
+            }
+            else
+            {
+                RenderColorGrade(hdriRenderTexture, renderBuffer, colorGradeLUT);
+            }
+            // Aesthetic curve
+
+            ApplyGamutMap(renderBuffer);
+
         }
         else if (!useCpuMode)
         {
@@ -175,14 +192,7 @@ public class HDRPipeline : MonoBehaviour
 
         if (colorGamut.CurveState == GamutMap.CurveDataState.Calculated)
         {
-            if (useCpuMode)
-            {
-                RenderColorGrade(colorGamut.HdriTextureTransformed, renderBuffer, colorGradeLUT);
-            }
-            else
-            {
-                RenderColorGrade(hdriRenderTexture, renderBuffer, colorGradeLUT);
-            }
+            Graphics.Blit(colorGamut.HdriTextureTransformed, renderBuffer, fullScreenTextureMat);
 
             fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
             Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
@@ -211,9 +221,14 @@ public class HDRPipeline : MonoBehaviour
 
     public void ApplyGamutMap()
     {
+        ApplyGamutMap(renderBuffer);
+    }
+
+    public void ApplyGamutMap(RenderTexture renderTexture)
+    {
         // Attempt to stop CoRoutine if it hasn't stopped already
-        StopCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
-        StartCoroutine(colorGamut.ApplyTransferFunction(hdriRenderTexture));
+        StopCoroutine(colorGamut.ApplyTransferFunction(renderTexture));
+        StartCoroutine(colorGamut.ApplyTransferFunction(renderTexture));
     }
 
     public GamutMap getGamutMap()

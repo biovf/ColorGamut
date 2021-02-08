@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ColorGrade3DLUTHDR
-  m_Shader: {fileID: 4800000, guid: 36b50e6b3a3fa4fdeb14daf793f4ef78, type: 3}
+  m_Name: ColorGradeBaker
+  m_Shader: {fileID: 4800000, guid: 357a8c2ab462b4bc5a63754c078ceda0, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -40,13 +40,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _LUT:
-        m_Texture: {fileID: 8534537815417165676, guid: a1062169b9cd94d93ad334c95c13e696,
-          type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _Lut:
-        m_Texture: {fileID: 8534537815417165676, guid: 877fe0ba166dd48e8aaf8b2ec952cf8f,
-          type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
