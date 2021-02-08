@@ -64,8 +64,8 @@
 
              float sRgbEOTF(float inputValue) 
              {
-                 return inputValue;//(inputValue <= inverseSrgbEOTF(0.0031308)) ?  inputValue / 12.92 :
-                                                                               // pow((inputValue + 0.055) / 1.055, 2.4);
+                 return (inputValue <= inverseSrgbEOTF(0.0031308)) ?  inputValue / 12.92 :
+                                                                      pow((inputValue + 0.055) / 1.055, 2.4);
              }
         
             half4 frag(v2f i) : SV_Target

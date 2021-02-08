@@ -1,4 +1,4 @@
-﻿#define DEBUG_CHECKS
+﻿//#define DEBUG_CHECKS
 
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -144,9 +144,9 @@ public class HDRPipeline : MonoBehaviour
         {
             // Chromaticity compression
             Texture2D hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
-            Color[] hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels());
+            Color[] hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels(), false);
             hdriTexture2D.SetPixels(hdriTexturePixels);
-            // colorGamut.SaveToDisk(hdriTexture2D.GetPixels(), "ColorGradingInput.exr", hdriTexture2D.width, hdriTexture2D.height);
+            colorGamut.SaveToDisk(hdriTexture2D.GetPixels(), "DebugData/ColorGradingInput.exr", hdriTexture2D.width, hdriTexture2D.height);
             // Color grade
             if (useCpuMode)
             {
@@ -157,7 +157,6 @@ public class HDRPipeline : MonoBehaviour
                 RenderColorGrade(hdriRenderTexture, renderBuffer, colorGradeLUT);
             }
             // Aesthetic curve
-
             ApplyGamutMap(renderBuffer);
 
         }

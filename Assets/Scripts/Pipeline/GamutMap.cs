@@ -275,7 +275,6 @@ public class GamutMap
     private List<float> logOutputColorPixelValues;
     private List<Color> logPixelData;
     private List<Color> finalImage;
-    // private RenderTexture inputLinearImage;
     public IEnumerator ApplyTransferFunction(RenderTexture inputRenderTexture)
     {
         int counter = maxIterationsPerFrame;
@@ -299,7 +298,7 @@ public class GamutMap
         hdriPixelArray = inputTexture.GetPixels();
         // hdriPixelArray = HDRIList[0].GetPixels();
 
-        saveDebugImageToDisk(inputTexture, "PreGamutMap_LinearData.exr");
+        saveDebugImageToDisk(inputTexture, "PreGamutMap_texture.exr");
 
         hdriPixelArrayLen = hdriPixelArray.Length;
         int quarterSize = hdriPixelArrayLen / 4;
@@ -384,10 +383,10 @@ public class GamutMap
                     linearHdriPixelColor.b = maxRadiometricValue;
                 }
 
-                if (isGamutCompressionActive)
-                {
-                    ratio = calculateGamutCompression(linearHdriPixelColor, ratio, xCoordsArray, yCoordsArray, tValuesArray);
-                }
+                //if (isGamutCompressionActive)
+                //{
+                //    ratio = calculateGamutCompression(linearHdriPixelColor, ratio, xCoordsArray, yCoordsArray, tValuesArray);
+                //}
 
                 // Get Y value from curve by retrieving the respective value from the x coordinate array
                 float yValue = parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
@@ -493,7 +492,7 @@ public class GamutMap
         return ratio;
     }
 
-    public Color[] ApplyChromaticityCompression(Color[] linearRadiometricInputPixels)
+    public Color[] ApplyChromaticityCompression(Color[] linearRadiometricInputPixels, bool outputInCameraIntrinsic)
     {
         Vector3 colorVec = Vector3.zero;
         Color[] outputColorBuffer = new Color[linearRadiometricInputPixels.Length];
@@ -518,12 +517,20 @@ public class GamutMap
                 linearPixelColor = maxLinearPixelColor * ratio;
             }
 
-            outputColorBuffer[index].r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x,
-                MinRadiometricExposure, MaxRadiometricExposure);
-            outputColorBuffer[index].g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x,
-                MinRadiometricExposure, MaxRadiometricExposure);
-            outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
-                MinRadiometricExposure, MaxRadiometricExposure);
+            if (outputInCameraIntrinsic == true)
+            {
+                outputColorBuffer[index].r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x,
+                    MinRadiometricExposure, MaxRadiometricExposure);
+                outputColorBuffer[index].g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x,
+                    MinRadiometricExposure, MaxRadiometricExposure);
+                outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
+                    MinRadiometricExposure, MaxRadiometricExposure);
+            } else 
+            {
+                outputColorBuffer[index].r = linearPixelColor.r;
+                outputColorBuffer[index].g = linearPixelColor.g;
+                outputColorBuffer[index].b = linearPixelColor.b;
+            }
             outputColorBuffer[index].a = 1.0f;
         }
 
@@ -533,7 +540,7 @@ public class GamutMap
     public void saveInGameCapture(string saveFilePath)
     {
         Vector3 colorVec = Vector3.zero;
-        Color[] outputColorBuffer = ApplyChromaticityCompression(inputRadiometricLinearTexture.GetPixels());
+        Color[] outputColorBuffer = ApplyChromaticityCompression(inputRadiometricLinearTexture.GetPixels(), true);
         SaveToDisk(outputColorBuffer, saveFilePath, inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height);
     }
 
