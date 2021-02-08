@@ -157,7 +157,7 @@ public class HDRPipeline : MonoBehaviour
             gamutMapMat.SetFloat("maxDisplayExposure", colorGamut.MaxDisplayExposure);
             gamutMapMat.SetFloat("minDisplayValue", colorGamut.MinDisplayValue);
             gamutMapMat.SetFloat("maxDisplayValue", colorGamut.MaxDisplayValue);
-            gamutMapMat.SetFloat("maxLatitudeLimit", colorGamut.MaxLatitudeLimit);
+            gamutMapMat.SetFloat("maxLatitudeLimit", colorGamut.CurveMaxLatitude);
             gamutMapMat.SetInt("inputArraySize", colorGamut.getXValues().Count - 1);
             gamutMapMat.SetInt("usePerChannel", activeTransferFunction);
 

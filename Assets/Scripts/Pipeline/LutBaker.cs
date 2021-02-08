@@ -32,7 +32,7 @@ public class LutBaker
 
         // dest.ReadPixels(new Rect(0, 0, dest.width, dest.height), 0, 0, false);
         // Aesthetic TF baking
-        gamutMap.CalculateTransferTransform(ref lutPixels);
+        // gamutMap.CalculateTransferTransform(ref lutPixels);
         // Store data in LUT
 
         return lut3DTexture;

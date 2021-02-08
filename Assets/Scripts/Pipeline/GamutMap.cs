@@ -98,13 +98,16 @@ public class GamutMap
     public float MaxDisplayExposure => maxDisplayExposure;
 
     private float maxRadiometricLatitude;
-    private float maxLatitudeLimit;
+    private float curveCurveMaxLatitude;
 
-    public float MaxLatitudeLimit
+    public float CurveMaxLatitude
     {
-        get => maxLatitudeLimit;
-        set => maxLatitudeLimit = value;
+        get => curveCurveMaxLatitude;
+        set => curveCurveMaxLatitude = value;
     }
+
+    private float chromaticityMaxLatitude;
+    public float ChromaticityMaxLatitude => chromaticityMaxLatitude;
 
     private float maxRadiometricLatitudeExposure;
 
@@ -181,10 +184,11 @@ public class GamutMap
 
         minRadiometricValue = Mathf.Pow(2.0f, minRadiometricExposure) * midGreySDR.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxRadiometricExposure) * midGreySDR.x;
-        
-        maxLatitudeLimit = 0.85f;                                // value in camera encoded log2/EV
-        maxRadiometricLatitudeExposure = totalRadiometricExposure * maxLatitudeLimit;
-        maxRadiometricLatitude = Shaper.calculateLog2ToLinear(maxLatitudeLimit, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+
+        chromaticityMaxLatitude = 0.85f;
+        curveCurveMaxLatitude = 0.85f;                                // value in camera encoded log2/EV
+        maxRadiometricLatitudeExposure = totalRadiometricExposure * curveCurveMaxLatitude;
+        maxRadiometricLatitude = Shaper.calculateLog2ToLinear(curveCurveMaxLatitude, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
 
         origin = new Vector2(minRadiometricValue, minDisplayValue);
         createParametricCurve(midGreySDR, origin);
@@ -222,12 +226,12 @@ public class GamutMap
 
     public void createParametricCurve(Vector2 greyPoint, Vector2 origin)
     {
-        maxRadiometricLatitudeExposure = totalRadiometricExposure * maxLatitudeLimit;
-        maxRadiometricLatitude = Shaper.calculateLog2ToLinear(maxLatitudeLimit, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+        maxRadiometricLatitudeExposure = totalRadiometricExposure * curveCurveMaxLatitude;
+        maxRadiometricLatitude = Shaper.calculateLog2ToLinear(curveCurveMaxLatitude, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
 
         if (parametricGamutCurve == null)
             parametricGamutCurve = new GamutCurve(minRadiometricExposure, maxRadiometricExposure, maxRadiometricValue, maxDisplayValue, 
-                minDisplayExposure, maxDisplayExposure, maxRadiometricLatitude, maxRadiometricLatitudeExposure, maxLatitudeLimit);
+                minDisplayExposure, maxDisplayExposure, maxRadiometricLatitude, maxRadiometricLatitudeExposure, curveCurveMaxLatitude);
 
         controlPoints = parametricGamutCurve.createControlPoints(origin, this.midGreySDR, slope);
         xCameraIntrinsicValues = initialiseXCoordsInRange(curveLutLength);
@@ -454,7 +458,7 @@ public class GamutMap
         gamutCompressionXCoordLinear = 0.0f; // Intersect of x on Y = 1
 
         // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-        gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(maxLatitudeLimit, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+        gamutCompressionXCoordLinear = Shaper.calculateLog2ToLinear(chromaticityMaxLatitude, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
 
         if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
             linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
@@ -813,9 +817,9 @@ public class GamutMap
         SetCurveDataState(CurveDataState.Dirty);
     }
 
-    public void setMaxLatitudeLimit(float latitudeLimit)
+    public void setChromaticityMaxLatitude(float latitudeLimit)
     {
-        maxLatitudeLimit = latitudeLimit;
+        chromaticityMaxLatitude = latitudeLimit;
     }
 
     // public void setHDRIIndex(int index)
@@ -861,7 +865,7 @@ public class GamutMap
         origin.x = curveParams.originX;
         origin.y = curveParams.originY;
         activeGamutMappingMode = curveParams.ActiveGamutMappingMode;
-        maxLatitudeLimit = curveParams.maxLatitude;
+        curveCurveMaxLatitude = curveParams.maxLatitude;
         createParametricCurve(midGreySDR, origin);
     }
 
