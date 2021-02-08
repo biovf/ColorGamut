@@ -294,8 +294,12 @@ public class GamutMap
         float[] yCoordsArray;
         float[] tValuesArray;
 
-        hdriPixelArray = HDRIList[0].GetPixels();
-        saveDebugImageToDisk(HDRIList[0], "PreGamutMap_LinearData.exr");
+
+        Texture2D inputTexture = toTexture2D(inputRenderTexture);
+        hdriPixelArray = inputTexture.GetPixels();
+        // hdriPixelArray = HDRIList[0].GetPixels();
+
+        saveDebugImageToDisk(inputTexture, "PreGamutMap_LinearData.exr");
 
         hdriPixelArrayLen = hdriPixelArray.Length;
         int quarterSize = hdriPixelArrayLen / 4;
