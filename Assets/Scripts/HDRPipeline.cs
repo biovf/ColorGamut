@@ -144,9 +144,10 @@ public class HDRPipeline : MonoBehaviour
         {
             // Chromaticity compression
             Texture2D hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
-            Color[] hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels(), false);
+            Color[] hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels(), true);
             hdriTexture2D.SetPixels(hdriTexturePixels);
-            colorGamut.SaveToDisk(hdriTexture2D.GetPixels(), "DebugData/ColorGradingInput.exr", hdriTexture2D.width, hdriTexture2D.height);
+            hdriTexture2D.Apply();
+            colorGamut.SaveToDisk(hdriTexture2D.GetPixels(), "DebugData/Image_ChromaticityCompression.exr", hdriTexture2D.width, hdriTexture2D.height);
             // Color grade
             if (useCpuMode)
             {

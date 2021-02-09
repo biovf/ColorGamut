@@ -1,4 +1,4 @@
-﻿//#define DEBUG_IMAGES
+﻿#define DEBUG_IMAGES
 //#define DEBUG_CURVE_DATA
 using System;
 using System.Collections;
@@ -340,6 +340,16 @@ public class GamutMap
             hdriPixelArray[i].g = Math.Max(0.0f, hdriPixelArray[i].g);
             hdriPixelArray[i].b = Math.Max(0.0f, hdriPixelArray[i].b);
 
+            // Debug
+            temp = hdriPixelArray[i];
+            temp.a = 1.0f;
+            logPixelData.Add(temp);
+
+            hdriPixelArray[i] = new Color(
+                Shaper.calculateLog2ToLinear(hdriPixelArray[i].r, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
+                Shaper.calculateLog2ToLinear(hdriPixelArray[i].g, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
+                Shaper.calculateLog2ToLinear(hdriPixelArray[i].b, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure));
+
             // Apply exposure
             hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);
 
@@ -349,18 +359,12 @@ public class GamutMap
             log2HdriPixelArray.g = Shaper.calculateLinearToLog2(hdriPixelArray[i].g, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
             log2HdriPixelArray.b = Shaper.calculateLinearToLog2(hdriPixelArray[i].b, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
 
-            // Debug
-            temp = log2HdriPixelArray;
-            temp.a = 1.0f;
-            logPixelData.Add(temp);
-
             // Calculate Pixel max color and ratio
             logHdriMaxRGBChannel = log2HdriPixelArray.maxColorComponent;
             Color linearHdriPixelColor = new Color(
                 Shaper.calculateLog2ToLinear(log2HdriPixelArray.r, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
                 Shaper.calculateLog2ToLinear(log2HdriPixelArray.g, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
                 Shaper.calculateLog2ToLinear(log2HdriPixelArray.b, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure));
-
 
             if (activeGamutMappingMode == GamutMappingMode.Max_RGB)
             {
@@ -382,11 +386,6 @@ public class GamutMap
                     linearHdriPixelColor.g = maxRadiometricValue;
                     linearHdriPixelColor.b = maxRadiometricValue;
                 }
-
-                //if (isGamutCompressionActive)
-                //{
-                //    ratio = calculateGamutCompression(linearHdriPixelColor, ratio, xCoordsArray, yCoordsArray, tValuesArray);
-                //}
 
                 // Get Y value from curve by retrieving the respective value from the x coordinate array
                 float yValue = parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
@@ -417,9 +416,10 @@ public class GamutMap
             hdriPixelArray[i].a = 1.0f;
 
             Color finalImageColour = new Color();
-            finalImageColour.r = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].r, TransferFunction.TransferFunctionType.sRGB);
-            finalImageColour.g = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].g, TransferFunction.TransferFunctionType.sRGB);
-            finalImageColour.b = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].b, TransferFunction.TransferFunctionType.sRGB);
+            finalImageColour.r = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].r, TransferFunction.TransferFunctionType.sRGB_2PartFunction);
+            finalImageColour.g = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].g, TransferFunction.TransferFunctionType.sRGB_2PartFunction);
+            finalImageColour.b = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].b, TransferFunction.TransferFunctionType.sRGB_2PartFunction);
+            finalImageColour.a = 1.0f;
             finalImage.Add(finalImageColour);
         }
 
@@ -444,7 +444,7 @@ public class GamutMap
         Texture2D logImageToSave = new Texture2D(inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height, TextureFormat.RGBAHalf, false, true);
         logImageToSave.SetPixels(logPixelData.ToArray());
         logImageToSave.Apply();
-        saveDebugImageToDisk(logImageToSave, "PreGamutMap_CameraIntrinsic.exr");
+        saveDebugImageToDisk(logImageToSave, "ColorGradeResult_CameraIntrinsicResult.exr");
 
         curveDataState = CurveDataState.Calculated;
         mainCamera.clearFlags = CameraClearFlags.Nothing;
