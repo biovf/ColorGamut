@@ -75,12 +75,14 @@ Material:
     - _ZWrite: 1
     - exposure: 0
     - inputArraySize: 1023
-    - maxDisplayValue: 2.473931
+    - maxDisplayExposure: 2.473931
+    - maxDisplayValue: 1
     - maxExposure: 6
     - maxLatitudeLimit: 0.85
     - maxRadiometricExposure: 6
     - maxRadiometricValue: 11.52
-    - minDisplayValue: -8.491853
+    - minDisplayExposure: -8.491853
+    - minDisplayValue: 0.0005
     - minExposure: -6
     - minRadiometricExposure: -6
     - minRadiometricValue: 0.0028125

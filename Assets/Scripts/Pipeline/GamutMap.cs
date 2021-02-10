@@ -145,7 +145,13 @@ public class GamutMap
     };
 
     private CurveDataState curveDataState = CurveDataState.NotCalculated;
-    public CurveDataState CurveState => curveDataState;
+
+    public CurveDataState CurveState
+    {
+        get => curveDataState;
+        set => curveDataState = value;
+    }
+
     private Camera mainCamera;
 
     public GamutMap( Material fullscreenTexMat, List<Texture2D> hdriList)

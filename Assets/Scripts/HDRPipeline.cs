@@ -75,6 +75,8 @@ public class HDRPipeline : MonoBehaviour
     private ComputeBuffer xCurveCoordsCBuffer;
     private ComputeBuffer yCurveCoordsCBuffer;
 
+    private Texture2D hdriTexture2D;
+    private bool isLutWithBakedTF = false;
 
     void Start()
     {
@@ -139,26 +141,35 @@ public class HDRPipeline : MonoBehaviour
 
         Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
 
+
         if (useCpuMode && (colorGamut.CurveState == GamutMap.CurveDataState.NotCalculated ||
             colorGamut.CurveState == GamutMap.CurveDataState.Dirty))
         {
             // Chromaticity compression
-            Texture2D hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
+            hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
             Color[] hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels(), true);
             hdriTexture2D.SetPixels(hdriTexturePixels);
             hdriTexture2D.Apply();
-            colorGamut.SaveToDisk(hdriTexture2D.GetPixels(), "DebugData/Image_ChromaticityCompression.exr", hdriTexture2D.width, hdriTexture2D.height);
+           // colorGamut.SaveToDisk(hdriTexture2D.GetPixels(), "DebugData/Image_ChromaticityCompression.exr", hdriTexture2D.width, hdriTexture2D.height);
             // Color grade
             if (useCpuMode)
             {
                 RenderColorGrade(hdriTexture2D, renderBuffer, colorGradeLUT);
+                if (isLutWithBakedTF)
+                {
+                    hdriTexture2D = colorGamut.toTexture2D(renderBuffer);
+                    colorGamut.CurveState = GamutMap.CurveDataState.Calculated;
+                }
             }
             else
             {
                 RenderColorGrade(hdriRenderTexture, renderBuffer, colorGradeLUT);
             }
             // Aesthetic curve
-            ApplyGamutMap(renderBuffer);
+            if (!isLutWithBakedTF)
+            {
+                ApplyGamutMap(renderBuffer);
+            }
 
         }
         else if (!useCpuMode)
@@ -192,10 +203,21 @@ public class HDRPipeline : MonoBehaviour
 
         if (colorGamut.CurveState == GamutMap.CurveDataState.Calculated)
         {
-            Graphics.Blit(colorGamut.HdriTextureTransformed, renderBuffer, fullScreenTextureMat);
+            // New Approach
+            if (isLutWithBakedTF)
+            {
+                fullScreenTextureMat.SetTexture("_MainTex", hdriTexture2D);
+                Graphics.Blit(hdriTexture2D, dest, fullScreenTextureMat);
+            }
+            else
+            {
+                 Graphics.Blit(colorGamut.HdriTextureTransformed, renderBuffer, fullScreenTextureMat);
 
-            fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
-            Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
+                fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
+                Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
+            }
+
+
         }
     }
 
