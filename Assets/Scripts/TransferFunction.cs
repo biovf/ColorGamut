@@ -17,11 +17,11 @@ public static class TransferFunction
         {
             case TransferFunctionType.sRGB:
             {
-                outValue = srgbEOTF(inputValue);
+                outValue = forwardSrgbEOTF(inputValue);
             } break;
             case TransferFunctionType.sRGB_2PartFunction:
             {
-                outValue = srgb2PartEOTF(inputValue);
+                outValue = forwardSrgb2PartEOTF(inputValue);
             } break;
         }
 
@@ -52,11 +52,9 @@ public static class TransferFunction
         return  (inputValue <= 0.0031308) ? inputValue * 12.92f : 1.055f * Mathf.Pow(inputValue, 1.0f / 2.4f) - 0.055f;
     }
 
-    public static float srgb2PartEOTF(float inputValue)
+    public static float forwardSrgb2PartEOTF(float inputValue)
     {
-        Debug.LogError("NOT IMPLEMENTED");
-        
-        return inputValue;
+        return inputValue <= 0.04045f ? inputValue / 12.92f : Mathf.Pow((inputValue + 0.055f) / 1.055f, 2.4f);
     }
 
     public static float inverseSrgbEOTF(float inputValue) 
@@ -64,7 +62,7 @@ public static class TransferFunction
         return Mathf.Pow(inputValue, 1.0f / 2.2f);
     }
     
-    public static float srgbEOTF(float inputValue) 
+    public static float forwardSrgbEOTF(float inputValue)
     {
         return Mathf.Pow(inputValue, 2.2f);
     }
