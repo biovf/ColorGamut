@@ -14,11 +14,14 @@ public struct CurveParams
     public float slope;
     public float originX;
     public float originY;
-    public float maxLatitude;
+    public float curveCoordMaxLatitude;
+    public float chromaticitydMaxLatitude;
+
     public GamutMappingMode ActiveGamutMappingMode;
 
     public CurveParams(float inExposure, float inSlope, float inOriginX,
-        float inOriginY, GamutMappingMode inActiveGamutMappingMode, bool inIsGamutCompressionActive, float inMaxLatitude)
+        float inOriginY, GamutMappingMode inActiveGamutMappingMode, bool inIsGamutCompressionActive,
+        float inCurveCoordMaxLatitude, float inChromaticitydMaxLatitude)
     {
         exposure = inExposure;
         slope = inSlope;
@@ -26,7 +29,8 @@ public struct CurveParams
         originY = inOriginY;
         ActiveGamutMappingMode = inActiveGamutMappingMode;
         isGamutCompressionActive = inIsGamutCompressionActive;
-        maxLatitude = inMaxLatitude;
+        curveCoordMaxLatitude = inCurveCoordMaxLatitude;
+        chromaticitydMaxLatitude = inChromaticitydMaxLatitude;
     }
 }
 
@@ -43,9 +47,11 @@ public class HDRPipeline : MonoBehaviour
     public Material colorGradingMat;
     public Material colorGradingBakerMat;
     public Texture3D colorGradeLUT;
+    public ComputeShader lutBakerShader;
+    public ComputeShader slicerShader;
+
 
     private GamutMap colorGamut;
-
     private RenderTexture renderBuffer;
     private RenderTexture hdriRenderTexture;
     private RenderTexture gamutMapRT;
@@ -71,12 +77,18 @@ public class HDRPipeline : MonoBehaviour
         set => scaleFactor = value;
     }
 
+    public Vector4[] ControlPointsUniform => controlPointsUniform;
     private Vector4[] controlPointsUniform;
+
+    public ComputeBuffer XCurveCoordsCBuffer => xCurveCoordsCBuffer;
     private ComputeBuffer xCurveCoordsCBuffer;
+
+    public ComputeBuffer YCurveCoordsCBuffer => yCurveCoordsCBuffer;
     private ComputeBuffer yCurveCoordsCBuffer;
 
     private Texture2D hdriTexture2D;
     private bool isLutWithBakedTF = false;
+
 
     void Start()
     {
@@ -98,6 +110,9 @@ public class HDRPipeline : MonoBehaviour
 
         xCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
         yCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
+        // LutBaker lutbaker = new LutBaker(this, lutBakerShader, slicerShader);
+        // Texture3D bakedLUT = lutbaker.BakeLUT(33);
+        // colorGradeLUT = bakedLUT;
     }
 
     [Conditional("DEBUG_CHECKS")]
@@ -155,21 +170,14 @@ public class HDRPipeline : MonoBehaviour
             if (useCpuMode)
             {
                 RenderColorGrade(hdriTexture2D, renderBuffer, colorGradeLUT);
-                if (isLutWithBakedTF)
-                {
-                    hdriTexture2D = colorGamut.toTexture2D(renderBuffer);
-                    colorGamut.CurveState = GamutMap.CurveDataState.Calculated;
-                }
             }
             else
             {
                 RenderColorGrade(hdriRenderTexture, renderBuffer, colorGradeLUT);
             }
             // Aesthetic curve
-            if (!isLutWithBakedTF)
-            {
-                ApplyGamutMap(renderBuffer);
-            }
+            ApplyGamutMap(renderBuffer);
+
 
         }
         else if (!useCpuMode)
@@ -185,7 +193,7 @@ public class HDRPipeline : MonoBehaviour
             gamutMapMat.SetFloat("maxDisplayExposure", colorGamut.MaxDisplayExposure);
             gamutMapMat.SetFloat("minDisplayValue", colorGamut.MinDisplayValue);
             gamutMapMat.SetFloat("maxDisplayValue", colorGamut.MaxDisplayValue);
-            gamutMapMat.SetFloat("maxLatitudeLimit", colorGamut.CurveMaxLatitude);
+            gamutMapMat.SetFloat("maxLatitudeLimit", colorGamut.CurveCoordMaxLatitude);
             gamutMapMat.SetInt("inputArraySize", colorGamut.getXValues().Count - 1);
             gamutMapMat.SetInt("usePerChannel", activeTransferFunction);
 
@@ -203,21 +211,10 @@ public class HDRPipeline : MonoBehaviour
 
         if (colorGamut.CurveState == GamutMap.CurveDataState.Calculated)
         {
-            // New Approach
-            if (isLutWithBakedTF)
-            {
-                fullScreenTextureMat.SetTexture("_MainTex", hdriTexture2D);
-                Graphics.Blit(hdriTexture2D, dest, fullScreenTextureMat);
-            }
-            else
-            {
-                 Graphics.Blit(colorGamut.HdriTextureTransformed, renderBuffer, fullScreenTextureMat);
+            Graphics.Blit(colorGamut.HdriTextureTransformed, renderBuffer, fullScreenTextureMat);
 
-                fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
-                Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
-            }
-
-
+            fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
+            Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
         }
     }
 

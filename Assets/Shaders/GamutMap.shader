@@ -259,7 +259,7 @@
                          linearHdriPixelColor.b = maxRadiometricValue;
                      }
 
-                    ratio = calculateGamutCompression(linearHdriPixelColor, ratio, linearHdriMaxRGBChannel);
+                    //ratio = calculateGamutCompression(linearHdriPixelColor, ratio, linearHdriMaxRGBChannel);
 
                     half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
                     yValue = calculateLog2ToLinear(yValue, greyPoint.y, minDisplayExposure, maxDisplayExposure);

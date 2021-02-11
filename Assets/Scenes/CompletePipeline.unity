@@ -217,5 +217,7 @@ MonoBehaviour:
   colorGradingMat: {fileID: 2100000, guid: 83cef61a096da4d9d86919f05dca8030, type: 2}
   colorGradingBakerMat: {fileID: 2100000, guid: 5583dda66845b4d668b578e99adb7010,
     type: 2}
-  colorGradeLUT: {fileID: 8534537815417165676, guid: 1e02325a29ef347fa94bc73fd6a3cbfc,
+  colorGradeLUT: {fileID: 8534537815417165676, guid: 354bf9827644647ada13c6988077a252,
     type: 3}
+  lutBakerShader: {fileID: 7200000, guid: 9f298c58976a24cd7b77d380b22c989f, type: 3}
+  slicerShader: {fileID: 0}

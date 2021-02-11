@@ -78,8 +78,8 @@ public class HDRPipelineEditor : Editor
 
     private Rect curveRect;
     private float scaleFactor = 1.0f;
-    private float maxLatitudeLimit = 0.8f;
-
+    private float curveCoordMaxLatitude = 0.85f;
+    private float curveChromaticityMaxLatitude = 0.85f;
     public void OnEnable()
     {
         hdrPipeline = (HDRPipeline) target;
@@ -120,7 +120,8 @@ public class HDRPipelineEditor : Editor
                                  "MaxRange" + maxRadiometricValue.ToString();
         
         hdrPipeline.CPUMode = enableCPUMode;
-        maxLatitudeLimit = colorGamut.CurveMaxLatitude;
+        curveCoordMaxLatitude = colorGamut.CurveCoordMaxLatitude;
+        curveChromaticityMaxLatitude = colorGamut.ChromaticityMaxLatitude;
     }
 
 
@@ -215,7 +216,10 @@ public class HDRPipelineEditor : Editor
         
         exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
-        maxLatitudeLimit = EditorGUILayout.Slider("Max Latitude", maxLatitudeLimit, 0.1f, 1.0f);
+        curveCoordMaxLatitude = EditorGUILayout.Slider("Curve Max Coordinate Latitude", curveCoordMaxLatitude, 0.1f, 1.0f);
+        curveChromaticityMaxLatitude = EditorGUILayout.Slider("Curve Max Chromaticity Latitude", curveChromaticityMaxLatitude, 0.1f, 1.0f);
+
+
         // originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
         // originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
         // greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
@@ -297,15 +301,15 @@ public class HDRPipelineEditor : Editor
     private void RecalculateCurveParameters() 
     {
         CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
-         originPointY, _activeGamutMappingMode, isGamutCompressionActive, maxLatitudeLimit);
+         originPointY, _activeGamutMappingMode, isGamutCompressionActive, curveCoordMaxLatitude, curveChromaticityMaxLatitude);
         colorGamut.setCurveParams(curveParams);
     }
 
     private void RecalculateImageInCpuMode()
     {
-        colorGamut.setChromaticityMaxLatitude(maxLatitudeLimit);
+        colorGamut.setChromaticityMaxLatitude(curveCoordMaxLatitude);
         CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
-            originPointY, _activeGamutMappingMode, isGamutCompressionActive, maxLatitudeLimit);
+            originPointY, _activeGamutMappingMode, isGamutCompressionActive, curveCoordMaxLatitude, curveChromaticityMaxLatitude);
         colorGamut.setCurveParams(curveParams);
         hdrPipeline.ApplyGamutMap();
         guiWidgetsState = GamutMap.CurveDataState.Calculating;
