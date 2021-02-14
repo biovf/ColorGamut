@@ -1,4 +1,4 @@
-﻿#define DEBUG_IMAGES
+﻿//#define DEBUG_IMAGES
 //#define DEBUG_CURVE_DATA
 using System;
 using System.Collections;
@@ -192,7 +192,7 @@ public class GamutMap
         maxRadiometricValue = Mathf.Pow(2.0f, maxRadiometricExposure) * midGreySDR.x;
 
         chromaticityMaxLatitude = 0.85f;
-        curveCoordCoordinateMaxLatitude = 0.85f;                                // value in camera encoded log2/EV
+        curveCoordCoordinateMaxLatitude = 0.85f;                                 // value in camera encoded log2/EV
         maxRadiometricLatitudeExposure = totalRadiometricExposure * curveCoordCoordinateMaxLatitude;
         maxRadiometricLatitude = Shaper.calculateLog2ToLinear(curveCoordCoordinateMaxLatitude, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
 
@@ -456,6 +456,9 @@ public class GamutMap
         Debug.Log("Image Processing has finished");
     }
 
+
+    // TODO: Rename this method to become gamutPrismCompression
+    // 
     private Color calculateGamutCompression(Color linearHdriPixelColor, Color inRatio ,
         float[] xCoordsArray, float[] yCoordsArray, float[] tValuesArray)
     {
@@ -848,6 +851,11 @@ public class GamutMap
     {
         isGamutCompressionActive = inIsGamutCompressionActive;
         SetCurveDataState(CurveDataState.Dirty);
+    }
+
+    public bool getIsGamutCompressionActive() 
+    {
+        return isGamutCompressionActive;
     }
 
     float remap(float value, float min0, float max0, float min1, float max1)

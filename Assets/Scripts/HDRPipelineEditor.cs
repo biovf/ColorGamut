@@ -172,8 +172,12 @@ public class HDRPipelineEditor : Editor
             Handles.DrawDottedLine(new Vector3(p4.x, 0.0f), new Vector3(p4.x, p4.y), 2.0f); // Draw vertical line from 0.18f
             Handles.DrawDottedLine(new Vector3(0.0f, p4.y), new Vector3(p4.x, p4.y), 2.0f); // Draw vertical line from 0.18f
             //Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
-            Handles.DrawDottedLine(new Vector3(0.85f, 0.0f), new Vector3(0.85f, 1.0f), 4.0f); // Draw vertical line from 0.18f
-            
+            Handles.DrawDottedLine(new Vector3(curveCoordMaxLatitude, 0.0f), new Vector3(curveCoordMaxLatitude, 1.0f), 4.0f); // Draw vertical line for gamut compression start
+
+            Handles.DrawDottedLine(new Vector3(curveChromaticityMaxLatitude, 0.0f), new Vector3(curveChromaticityMaxLatitude, 1.0f), 8.0f); // Draw vertical line for gamut compression start
+
+
+
             if (guiWidgetsState ==  GamutMap.CurveDataState.Dirty ||
                 guiWidgetsState ==  GamutMap.CurveDataState.NotCalculated)
             {
@@ -311,7 +315,8 @@ public class HDRPipelineEditor : Editor
         CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
             originPointY, _activeGamutMappingMode, isGamutCompressionActive, curveCoordMaxLatitude, curveChromaticityMaxLatitude);
         colorGamut.setCurveParams(curveParams);
-        hdrPipeline.ApplyGamutMap();
+        //hdrPipeline.ApplyGamutMap();
+        hdrPipeline.getGamutMap().CurveState = GamutMap.CurveDataState.NotCalculated;
         guiWidgetsState = GamutMap.CurveDataState.Calculating;
     }
 

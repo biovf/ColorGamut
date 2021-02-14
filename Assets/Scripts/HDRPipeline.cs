@@ -50,7 +50,6 @@ public class HDRPipeline : MonoBehaviour
     public ComputeShader lutBakerShader;
     public ComputeShader slicerShader;
 
-
     private GamutMap colorGamut;
     private RenderTexture renderBuffer;
     private RenderTexture hdriRenderTexture;
@@ -162,9 +161,14 @@ public class HDRPipeline : MonoBehaviour
         {
             // Chromaticity compression
             hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
-            Color[] hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels(), true);
-            hdriTexture2D.SetPixels(hdriTexturePixels);
-            hdriTexture2D.Apply();
+            Color[] hdriTexturePixels = hdriTexture2D.GetPixels();
+            if (colorGamut.getIsGamutCompressionActive()) 
+            {
+                hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels(), true);
+                hdriTexture2D.SetPixels(hdriTexturePixels);
+                hdriTexture2D.Apply();
+            }
+          
            // colorGamut.SaveToDisk(hdriTexture2D.GetPixels(), "DebugData/Image_ChromaticityCompression.exr", hdriTexture2D.width, hdriTexture2D.height);
             // Color grade
             if (useCpuMode)
