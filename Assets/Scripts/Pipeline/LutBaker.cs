@@ -69,6 +69,23 @@ public class LutBaker
             sliceFrom3DLut.Apply();
 
             // Render the 2D slice with color grade LUT
+            Color[] hdriTexturePixels = sliceFrom3DLut.GetPixels();
+            for (int i = 0; i < hdriTexturePixels.Length; i++)
+            {
+                hdriTexturePixels[i].r = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].r,
+                    hdrPipeline.getGamutMap().MidGreySdr.x,
+                    hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
+                hdriTexturePixels[i].g = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].g,
+                    hdrPipeline.getGamutMap().MidGreySdr.x,
+                    hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
+                hdriTexturePixels[i].b = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].b,
+                    hdrPipeline.getGamutMap().MidGreySdr.x,
+                    hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
+            }
+            hdriTexturePixels = hdrPipeline.getGamutMap().ApplyChromaticityCompression(hdriTexturePixels, true);
+            sliceFrom3DLut.SetPixels(hdriTexturePixels);
+            sliceFrom3DLut.Apply();
+
             hdrPipeline.colorGradingMat.SetTexture("_MainTex", sliceFrom3DLut);
             hdrPipeline.colorGradingMat.SetTexture("_LUT", hdrPipeline.colorGradeLUT);
             Graphics.Blit(sliceFrom3DLut, renderTexture2DSlice, hdrPipeline.colorGradingMat);

@@ -459,40 +459,24 @@ public class GamutMap
 
      public Texture2D ApplyTransferFunctionTo2DSlice(RenderTexture inputRenderTexture)
     {
-        int counter = maxIterationsPerFrame;
-        int hdriPixelArrayLen = 0;
-
         float logHdriMaxRGBChannel = 0.0f;
         float hdriYMaxValue = 0.0f;
 
         Color ratio = Color.black;
         Color hdriPixelColor = Color.black;
 
-        Vector3 hdriPixelColorVec = Vector3.zero;
-        Vector3 maxDynamicRangeVec = Vector3.zero;
-
-        float[] xCoordsArray;
-        float[] yCoordsArray;
-        float[] tValuesArray;
+        float[] xCoordsArray = xCameraIntrinsicValues.ToArray();
+        float[] yCoordsArray= yDisplayIntrinsicValues.ToArray();
+        float[] tValuesArray = tValues.ToArray();
 
         Texture2D inputTexture = toTexture2D(inputRenderTexture);
         hdriPixelArray = inputTexture.GetPixels();
-
-        hdriPixelArrayLen = hdriPixelArray.Length;
-        logInputColorPixelValues = new List<float>(hdriPixelArrayLen);
-        logOutputColorPixelValues= new List<float>(hdriPixelArrayLen);
-        logPixelData = new List<Color>(hdriPixelArrayLen);
-        finalImage = new List<Color>(hdriPixelArrayLen);
+        int hdriPixelArrayLen = hdriPixelArray.Length;
 
         Texture2D finalImageTexture = new Texture2D(inputTexture.width, inputTexture.height, TextureFormat.RGBAHalf, false, true);
-        xCoordsArray = xCameraIntrinsicValues.ToArray();
-        yCoordsArray = yDisplayIntrinsicValues.ToArray();
-        tValuesArray = tValues.ToArray();
-
-        counter = maxIterationsPerFrame;
         mainCamera.clearFlags = CameraClearFlags.Skybox;
-        Color temp;
-        for (int i = 0; i < hdriPixelArrayLen; i++, counter--)
+
+        for (int i = 0; i < hdriPixelArrayLen; i++)
         {
             ratio = Color.blue;
 
@@ -506,7 +490,6 @@ public class GamutMap
                 Shaper.calculateLog2ToLinear(hdriPixelArray[i].r, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
                 Shaper.calculateLog2ToLinear(hdriPixelArray[i].g, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
                 Shaper.calculateLog2ToLinear(hdriPixelArray[i].b, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure));
-
 
             // Apply exposure
             hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);
@@ -524,32 +507,29 @@ public class GamutMap
                 Shaper.calculateLog2ToLinear(log2HdriPixelArray.g, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
                 Shaper.calculateLog2ToLinear(log2HdriPixelArray.b, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure));
 
-                // Retrieve the maximum RGB value but in linear space
-                float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+            // Retrieve the maximum RGB value but in linear space
+            float linearHdriMaxRGBChannel = Shaper.calculateLog2ToLinear(logHdriMaxRGBChannel, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
 
-                // Calculate the ratio in linear space
-                ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
+            // Calculate the ratio in linear space
+            ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
 
-                // Secondary Nuance Grade, guardrails
-                if (linearHdriPixelColor.r > maxRadiometricValue ||
-                    linearHdriPixelColor.g > maxRadiometricValue ||
-                    linearHdriPixelColor.b > maxRadiometricValue)
-                {
-                    linearHdriPixelColor.r = maxRadiometricValue;
-                    linearHdriPixelColor.g = maxRadiometricValue;
-                    linearHdriPixelColor.b = maxRadiometricValue;
-                }
+            // Secondary Nuance Grade, guardrails
+            if (linearHdriPixelColor.r > maxRadiometricValue ||
+                linearHdriPixelColor.g > maxRadiometricValue ||
+                linearHdriPixelColor.b > maxRadiometricValue)
+            {
+                linearHdriPixelColor.r = maxRadiometricValue;
+                linearHdriPixelColor.g = maxRadiometricValue;
+                linearHdriPixelColor.b = maxRadiometricValue;
+            }
 
-                // Get Y value from curve by retrieving the respective value from the x coordinate array
-                float yValue = parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
-                yValue = Shaper.calculateLog2ToLinear(yValue, midGreySDR.y, minDisplayExposure, maxDisplayExposure);
-                logOutputColorPixelValues.Add(yValue);
-                hdriYMaxValue = Mathf.Min(yValue, 1.0f);
-                ratio.a = 1.0f;
-                hdriPixelColor = hdriYMaxValue * ratio;
+            // Get Y value from curve by retrieving the respective value from the x coordinate array
+            float yValue = parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
+            yValue = Shaper.calculateLog2ToLinear(yValue, midGreySDR.y, minDisplayExposure, maxDisplayExposure);
+            hdriYMaxValue = Mathf.Min(yValue, 1.0f);
+            ratio.a = 1.0f;
+            hdriPixelColor = hdriYMaxValue * ratio;
 
-
-            // TODO Should this be updated/removed?
             hdriPixelColor.r = remap(hdriPixelColor.r, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
             hdriPixelColor.g = remap(hdriPixelColor.g, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
             hdriPixelColor.b = remap(hdriPixelColor.b, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);

@@ -88,6 +88,7 @@ public class HDRPipeline : MonoBehaviour
     private Texture2D hdriTexture2D;
     private bool isLutWithBakedTF = false;
     private bool useBakedLUT = true;
+    private bool debug = true;
 
     void Start()
     {
@@ -115,7 +116,7 @@ public class HDRPipeline : MonoBehaviour
 
         float curTime = Time.realtimeSinceStartup;
         Texture3D bakedLUT = lutbaker.BakeLUT(33);
-        Debug.Log("Took " + (Time.realtimeSinceStartup - curTime).ToString());
+        Debug.Log("Took " + (Time.realtimeSinceStartup - curTime).ToString() + "s");
         if (useBakedLUT)
         {
             colorGradeLUT = bakedLUT;
@@ -227,23 +228,20 @@ public class HDRPipeline : MonoBehaviour
 
             if (useBakedLUT)
             {
-                Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
-                hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
-                Color[] hdriTexturePixels = hdriTexture2D.GetPixels();
-
-                if (colorGamut.getIsGamutCompressionActive())
-                {
-                    hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels(), true);
-                    hdriTexture2D.SetPixels(hdriTexturePixels);
-                    hdriTexture2D.Apply();
-                }
                 RenderColorGrade(hdriTexture2D, renderBuffer, colorGradeLUT);
-
             }
             else
             {
                 Graphics.Blit(colorGamut.HdriTextureTransformed, renderBuffer, fullScreenTextureMat);
+
             }
+
+            // if (debug)
+            // {
+            //     colorGamut.SaveToDisk(colorGamut.toTexture2D(renderBuffer).GetPixels(), "Spiaggia_Chromaticity_Plus_LUT_Baked.exr",
+            //         renderBuffer.width, renderBuffer.height);
+            //     debug = false;
+            // }
 
             fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
             Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
