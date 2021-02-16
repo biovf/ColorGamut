@@ -163,28 +163,6 @@
                 return xCurveCoordsCBuffer[idx].curveCoord;
             }
 
-            half3 calculateGamutCompression(half3 linearHdriPixelColor, half3 ratio, half linearHdriMaxRGBChannel)
-            {
-                half3 newRatio = ratio;
-
-                // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-                float gamutCompressionXCoordLinear = calculateLog2ToLinear(
-                    getXCoordinate(maxLatitudeLimit), greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
-
-                if (linearHdriPixelColor.r > gamutCompressionXCoordLinear ||
-                    linearHdriPixelColor.g > gamutCompressionXCoordLinear ||
-                    linearHdriPixelColor.b > gamutCompressionXCoordLinear)
-                {
-                    half gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
-                    half gamutCompressionRatio = (max(linearHdriPixelColor.r,
-                                                  max(linearHdriPixelColor.g, linearHdriPixelColor.b)) -
-                            gamutCompressionXCoordLinear) / gamutCompressionRange;
-
-                   newRatio = lerp(ratio, half3(1.0, 1.0, 1.0), gamutCompressionRatio);
-                }
-                return newRatio;
-            }
-
             half getYCoordinateLogXInput(float inputXCoord)
             {
                 float logInputXCoord = inputXCoord;
@@ -258,8 +236,6 @@
                          linearHdriPixelColor.g = maxRadiometricValue;
                          linearHdriPixelColor.b = maxRadiometricValue;
                      }
-
-                    //ratio = calculateGamutCompression(linearHdriPixelColor, ratio, linearHdriMaxRGBChannel);
 
                     half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
                     yValue = calculateLog2ToLinear(yValue, greyPoint.y, minDisplayExposure, maxDisplayExposure);

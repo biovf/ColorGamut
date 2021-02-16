@@ -383,16 +383,6 @@ public class GamutMap
                 // Calculate the ratio in linear space
                 ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
 
-                // Secondary Nuance Grade, guardrails
-                if (linearHdriPixelColor.r > maxRadiometricValue ||
-                    linearHdriPixelColor.g > maxRadiometricValue ||
-                    linearHdriPixelColor.b > maxRadiometricValue)
-                {
-                    linearHdriPixelColor.r = maxRadiometricValue;
-                    linearHdriPixelColor.g = maxRadiometricValue;
-                    linearHdriPixelColor.b = maxRadiometricValue;
-                }
-
                 // Get Y value from curve by retrieving the respective value from the x coordinate array
                 float yValue = parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
                 yValue = Shaper.calculateLog2ToLinear(yValue, midGreySDR.y, minDisplayExposure, maxDisplayExposure);
@@ -513,16 +503,6 @@ public class GamutMap
             // Calculate the ratio in linear space
             ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
 
-            // Secondary Nuance Grade, guardrails
-            if (linearHdriPixelColor.r > maxRadiometricValue ||
-                linearHdriPixelColor.g > maxRadiometricValue ||
-                linearHdriPixelColor.b > maxRadiometricValue)
-            {
-                linearHdriPixelColor.r = maxRadiometricValue;
-                linearHdriPixelColor.g = maxRadiometricValue;
-                linearHdriPixelColor.b = maxRadiometricValue;
-            }
-
             // Get Y value from curve by retrieving the respective value from the x coordinate array
             float yValue = parametricGamutCurve.getYCoordinateLogXInput(logHdriMaxRGBChannel, xCoordsArray, yCoordsArray, tValuesArray, controlPoints);
             yValue = Shaper.calculateLog2ToLinear(yValue, midGreySDR.y, minDisplayExposure, maxDisplayExposure);
@@ -595,7 +575,7 @@ public class GamutMap
         return ratio;
     }
 
-    public Color[] ApplyChromaticityCompression(Color[] linearRadiometricInputPixels, bool outputInCameraIntrinsic)
+    public Color[] ApplyChromaticityCompression(Color[] linearRadiometricInputPixels)
     {
         Vector3 colorVec = Vector3.zero;
         Color[] outputColorBuffer = new Color[linearRadiometricInputPixels.Length];
@@ -608,9 +588,22 @@ public class GamutMap
         Color ratio = Color.white;
         for (int index = 0; index < linearRadiometricInputPixels.Length; index++)
         {
+
+            // Secondary bottom nuance grade, lower end guardrails
             linearPixelColor.r = Math.Max(0.0f, linearRadiometricInputPixels[index].r);
             linearPixelColor.g = Math.Max(0.0f, linearRadiometricInputPixels[index].g);
             linearPixelColor.b = Math.Max(0.0f, linearRadiometricInputPixels[index].b);
+
+            // Secondary top nuance Grade, high end guardrails
+            if (linearPixelColor.r > maxRadiometricValue ||
+                linearPixelColor.g > maxRadiometricValue ||
+                linearPixelColor.b > maxRadiometricValue)
+            {
+                linearPixelColor.r = maxRadiometricValue;
+                linearPixelColor.g = maxRadiometricValue;
+                linearPixelColor.b = maxRadiometricValue;
+            }
+
             float maxLinearPixelColor = linearPixelColor.maxColorComponent;
             ratio = linearPixelColor / maxLinearPixelColor;
 
@@ -620,20 +613,14 @@ public class GamutMap
                 linearPixelColor = maxLinearPixelColor * ratio;
             }
 
-            if (outputInCameraIntrinsic == true)
-            {
-                outputColorBuffer[index].r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x,
-                    MinRadiometricExposure, MaxRadiometricExposure);
-                outputColorBuffer[index].g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x,
-                    MinRadiometricExposure, MaxRadiometricExposure);
-                outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
-                    MinRadiometricExposure, MaxRadiometricExposure);
-            } else 
-            {
-                outputColorBuffer[index].r = linearPixelColor.r;
-                outputColorBuffer[index].g = linearPixelColor.g;
-                outputColorBuffer[index].b = linearPixelColor.b;
-            }
+
+            outputColorBuffer[index].r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x,
+                MinRadiometricExposure, MaxRadiometricExposure);
+            outputColorBuffer[index].g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x,
+                MinRadiometricExposure, MaxRadiometricExposure);
+            outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
+                MinRadiometricExposure, MaxRadiometricExposure);
+
             outputColorBuffer[index].a = 1.0f;
         }
 
@@ -643,7 +630,7 @@ public class GamutMap
     public void saveInGameCapture(string saveFilePath)
     {
         Vector3 colorVec = Vector3.zero;
-        Color[] outputColorBuffer = ApplyChromaticityCompression(inputRadiometricLinearTexture.GetPixels(), true);
+        Color[] outputColorBuffer = ApplyChromaticityCompression(inputRadiometricLinearTexture.GetPixels());
         SaveToDisk(outputColorBuffer, saveFilePath, inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height);
     }
 
