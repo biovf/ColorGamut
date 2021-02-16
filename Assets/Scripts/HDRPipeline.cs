@@ -87,7 +87,7 @@ public class HDRPipeline : MonoBehaviour
 
     private Texture2D hdriTexture2D;
     private bool isLutWithBakedTF = false;
-
+    private bool useBakedLUT = true;
 
     void Start()
     {
@@ -109,9 +109,17 @@ public class HDRPipeline : MonoBehaviour
 
         xCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
         yCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
-        // LutBaker lutbaker = new LutBaker(this, lutBakerShader, slicerShader);
-        // Texture3D bakedLUT = lutbaker.BakeLUT(33);
-        // colorGradeLUT = bakedLUT;
+
+        // LutBaker test
+        LutBaker lutbaker = new LutBaker(this, lutBakerShader, slicerShader);
+
+        float curTime = Time.realtimeSinceStartup;
+        Texture3D bakedLUT = lutbaker.BakeLUT(33);
+        Debug.Log("Took " + (Time.realtimeSinceStartup - curTime).ToString());
+        if (useBakedLUT)
+        {
+            colorGradeLUT = bakedLUT;
+        }
     }
 
     [Conditional("DEBUG_CHECKS")]
@@ -162,13 +170,14 @@ public class HDRPipeline : MonoBehaviour
             // Chromaticity compression
             hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
             Color[] hdriTexturePixels = hdriTexture2D.GetPixels();
-            if (colorGamut.getIsGamutCompressionActive()) 
+
+            if (colorGamut.getIsGamutCompressionActive())
             {
                 hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels(), true);
                 hdriTexture2D.SetPixels(hdriTexturePixels);
                 hdriTexture2D.Apply();
             }
-          
+
            // colorGamut.SaveToDisk(hdriTexture2D.GetPixels(), "DebugData/Image_ChromaticityCompression.exr", hdriTexture2D.width, hdriTexture2D.height);
             // Color grade
             if (useCpuMode)
@@ -215,7 +224,26 @@ public class HDRPipeline : MonoBehaviour
 
         if (colorGamut.CurveState == GamutMap.CurveDataState.Calculated)
         {
-            Graphics.Blit(colorGamut.HdriTextureTransformed, renderBuffer, fullScreenTextureMat);
+
+            if (useBakedLUT)
+            {
+                Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
+                hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
+                Color[] hdriTexturePixels = hdriTexture2D.GetPixels();
+
+                if (colorGamut.getIsGamutCompressionActive())
+                {
+                    hdriTexturePixels = colorGamut.ApplyChromaticityCompression(hdriTexture2D.GetPixels(), true);
+                    hdriTexture2D.SetPixels(hdriTexturePixels);
+                    hdriTexture2D.Apply();
+                }
+                RenderColorGrade(hdriTexture2D, renderBuffer, colorGradeLUT);
+
+            }
+            else
+            {
+                Graphics.Blit(colorGamut.HdriTextureTransformed, renderBuffer, fullScreenTextureMat);
+            }
 
             fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
             Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
