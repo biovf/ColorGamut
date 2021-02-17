@@ -119,7 +119,7 @@ public class HDRPipelineEditor : Editor
                                  (useDisplayP3 == true ? "DisplayP3" : "sRGB") +
                                  "MaxRange" + maxRadiometricValue.ToString();
         
-        hdrPipeline.CPUMode = enableCPUMode;
+        enableCPUMode = hdrPipeline.CPUMode;
         curveCoordMaxLatitude = colorGamut.CurveCoordMaxLatitude;
         curveChromaticityMaxLatitude = colorGamut.ChromaticityMaxLatitude;
     }
@@ -304,6 +304,7 @@ public class HDRPipelineEditor : Editor
 
     private void RecalculateCurveParameters() 
     {
+        colorGamut.setChromaticityMaxLatitude(curveCoordMaxLatitude);
         CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
          originPointY, _activeGamutMappingMode, isGamutCompressionActive, curveCoordMaxLatitude, curveChromaticityMaxLatitude);
         colorGamut.setCurveParams(curveParams);

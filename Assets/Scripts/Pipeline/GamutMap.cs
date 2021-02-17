@@ -191,7 +191,7 @@ public class GamutMap
         minRadiometricValue = Mathf.Pow(2.0f, minRadiometricExposure) * midGreySDR.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxRadiometricExposure) * midGreySDR.x;
 
-        chromaticityMaxLatitude = 0.85f;
+        chromaticityMaxLatitude = 0.45f;
         curveCoordCoordinateMaxLatitude = 0.85f;                                 // value in camera encoded log2/EV
         maxRadiometricLatitudeExposure = totalRadiometricExposure * curveCoordCoordinateMaxLatitude;
         maxRadiometricLatitude = Shaper.calculateLog2ToLinear(curveCoordCoordinateMaxLatitude, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
@@ -243,6 +243,8 @@ public class GamutMap
         xCameraIntrinsicValues = initialiseXCoordsInRange(curveLutLength);
         tValues = parametricGamutCurve.calcTfromXquadratic(xCameraIntrinsicValues.ToArray(), controlPoints);
         yDisplayIntrinsicValues = parametricGamutCurve.calcYfromXQuadratic(xCameraIntrinsicValues, tValues, new List<Vector2>(controlPoints));
+
+        // Debug
         exportDualColumnDataToCSV(xCameraIntrinsicValues.ToArray(), yDisplayIntrinsicValues.ToArray(), "DebugData/CurveData.csv");
     }
 
@@ -575,7 +577,7 @@ public class GamutMap
         return ratio;
     }
 
-    public Color[] ApplyChromaticityCompression(Color[] linearRadiometricInputPixels)
+    public Color[] ApplyChromaticityCompressionCPU(Color[] linearRadiometricInputPixels)
     {
         Vector3 colorVec = Vector3.zero;
         Color[] outputColorBuffer = new Color[linearRadiometricInputPixels.Length];
@@ -588,7 +590,6 @@ public class GamutMap
         Color ratio = Color.white;
         for (int index = 0; index < linearRadiometricInputPixels.Length; index++)
         {
-
             // Secondary bottom nuance grade, lower end guardrails
             linearPixelColor.r = Math.Max(0.0f, linearRadiometricInputPixels[index].r);
             linearPixelColor.g = Math.Max(0.0f, linearRadiometricInputPixels[index].g);
@@ -630,7 +631,7 @@ public class GamutMap
     public void saveInGameCapture(string saveFilePath)
     {
         Vector3 colorVec = Vector3.zero;
-        Color[] outputColorBuffer = ApplyChromaticityCompression(inputRadiometricLinearTexture.GetPixels());
+        Color[] outputColorBuffer = ApplyChromaticityCompressionCPU(inputRadiometricLinearTexture.GetPixels());
         SaveToDisk(outputColorBuffer, saveFilePath, inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height);
     }
 

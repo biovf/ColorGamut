@@ -12,7 +12,6 @@
         minDisplayValue("Min Display Value (unit agnostic)", Float) = 0.0005
         maxDisplayValue("Max Display Value (unit agnostic)", Float) = 1.0
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
-        maxLatitudeLimit ("Start value for Gamut compression", Float) = 0.8
         inputArraySize ("Number of curve array elements", Int) = 1024
         usePerChannel ("Use per channel gamut mapping", Int) = 0
     }
@@ -52,7 +51,6 @@
             half minDisplayValue;
             half maxDisplayValue;
             half maxRadiometricValue;
-            half maxLatitudeLimit;
 
             int inputArraySize;
             int usePerChannel;
@@ -106,11 +104,6 @@
 
             void BilinearClosestTo(float target, out int arrayIndex, out int arrayIndex2)
             {
-                // Terrible horrible hack since there is not MaxValue for a float variable
-                float closest = 9999999.0;
-                float minDifference = 9999999.0;
-                float prevDifference = 9999999.0;
-
                 int outIndex = 0;
                 int outIndex2 = 0;
 
@@ -202,9 +195,16 @@
             float4 gamutMap(half4 inRadiometricLinearColor)
             {
                 half4 hdriPixelColor = half4(0.0, 0.0, 0.0, 1.0);
-                half4 colorExposed = inRadiometricLinearColor * pow(2.0, exposure);
+
+                float3 linearHdriPixelColor = float3(
+                calculateLog2ToLinear(inRadiometricLinearColor.r, greyPoint.x, minRadiometricExposure, maxRadiometricExposure),
+                calculateLog2ToLinear(inRadiometricLinearColor.g, greyPoint.x, minRadiometricExposure, maxRadiometricExposure),
+                calculateLog2ToLinear(inRadiometricLinearColor.b, greyPoint.x, minRadiometricExposure, maxRadiometricExposure));
+
+                float3 colorExposed = linearHdriPixelColor * pow(2.0, exposure);
+
                 // Shape image
-                half3 log2HdriPixelArray = half3(0.0, 0.0, 0.0);
+                float3 log2HdriPixelArray = half3(0.0, 0.0, 0.0);
                 log2HdriPixelArray.r = calculateLinearToLog2(max(0.0f, colorExposed.r), greyPoint.x, minRadiometricExposure,
                                                              maxRadiometricExposure);
                 log2HdriPixelArray.g = calculateLinearToLog2(max(0.0f, colorExposed.g), greyPoint.x, minRadiometricExposure,
@@ -214,7 +214,7 @@
 
                 // Calculate Pixel max color and ratio
                 half logHdriMaxRGBChannel = max(max(log2HdriPixelArray.r, log2HdriPixelArray.g), log2HdriPixelArray.b);
-                half3 linearHdriPixelColor = half3(
+                linearHdriPixelColor = half3(
                     calculateLog2ToLinear(log2HdriPixelArray.r, greyPoint.x, minRadiometricExposure, maxRadiometricExposure),
                     calculateLog2ToLinear(log2HdriPixelArray.g, greyPoint.x, minRadiometricExposure, maxRadiometricExposure),
                     calculateLog2ToLinear(log2HdriPixelArray.b, greyPoint.x, minRadiometricExposure, maxRadiometricExposure));
@@ -227,15 +227,15 @@
                     // Calculate the ratio in linear space
                     half3 ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
 
-                    // Secondary Nuance Grade, guardrails
-                     if (linearHdriPixelColor.r > maxRadiometricValue ||
-                         linearHdriPixelColor.g > maxRadiometricValue ||
-                         linearHdriPixelColor.b > maxRadiometricValue)
-                     {
-                         linearHdriPixelColor.r = maxRadiometricValue;
-                         linearHdriPixelColor.g = maxRadiometricValue;
-                         linearHdriPixelColor.b = maxRadiometricValue;
-                     }
+                    // // Secondary Nuance Grade, guardrails
+                    //  if (linearHdriPixelColor.r > maxRadiometricValue ||
+                    //      linearHdriPixelColor.g > maxRadiometricValue ||
+                    //      linearHdriPixelColor.b > maxRadiometricValue)
+                    //  {
+                    //      linearHdriPixelColor.r = maxRadiometricValue;
+                    //      linearHdriPixelColor.g = maxRadiometricValue;
+                    //      linearHdriPixelColor.b = maxRadiometricValue;
+                    //  }
 
                     half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
                     yValue = calculateLog2ToLinear(yValue, greyPoint.y, minDisplayExposure, maxDisplayExposure);
@@ -249,9 +249,9 @@
                     hdriPixelColor.b = getYCoordinateLogXInput(log2HdriPixelArray.b);
                 }
 
-                 hdriPixelColor.r = remap(hdriPixelColor.r, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
-                 hdriPixelColor.g = remap(hdriPixelColor.g, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
-                 hdriPixelColor.b = remap(hdriPixelColor.b, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                hdriPixelColor.r = remap(hdriPixelColor.r, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                hdriPixelColor.g = remap(hdriPixelColor.g, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
+                hdriPixelColor.b = remap(hdriPixelColor.b, minDisplayValue, maxDisplayValue, 0.0f, 1.0f);
                 hdriPixelColor.a = 1.0f;
 
                 return hdriPixelColor;

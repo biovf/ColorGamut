@@ -98,7 +98,7 @@ public class LutBaker
                     hdrPipeline.getGamutMap().MidGreySdr.x,
                     hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
             }
-            hdriTexturePixels = hdrPipeline.getGamutMap().ApplyChromaticityCompression(hdriTexturePixels);
+            hdriTexturePixels = hdrPipeline.getGamutMap().ApplyChromaticityCompressionCPU(hdriTexturePixels);
             sliceFrom3DLut.SetPixels(hdriTexturePixels);
             sliceFrom3DLut.Apply();
 
@@ -191,7 +191,7 @@ public class LutBaker
 
 
         // Apply Chromaticity compression
-        //Color[] lutPixels = gamutMap.ApplyChromaticityCompression(identity3DLut);
+        //Color[] lutPixels = gamutMap.ApplyChromaticityCompressionCPU(identity3DLut);
         // ColorGrade blit
         // hdrPipeline.RenderColorGrade();
         // dest.ReadPixels(new Rect(0, 0, dest.width, dest.height), 0, 0, false);
