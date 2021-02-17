@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,35 +9,29 @@ public class LutBaker
 
     private HDRPipeline hdrPipeline;
     private GamutMap gamutMap;
-    private int kernelHandle;
     private Material lutBakerMat;
     private bool useCPUBaker = true;
 
-    public LutBaker(HDRPipeline inHdrPipeline, ComputeShader inLutBakeShader, ComputeShader inSlicerShader)
+    public LutBaker(HDRPipeline inHdrPipeline)
     {
         hdrPipeline = inHdrPipeline;
         gamutMap = hdrPipeline.getGamutMap();
-        lutBakerShader = inLutBakeShader;
-        kernelHandle = lutBakerShader.FindKernel("CSMain");
-        slicerShader = inSlicerShader;
-        // lutBakerMat = new Material(Shader.Find("Custom/LutBaker"));
     }
 
 
     public Texture3D BakeLUT(int lutDimension)
     {
-        // Initialise buffer to retrieve 3D texture
+        // Initialise buffer to retrieve 3D texture into
         Color[][] slicesOf3DColorBuffers = new Color[lutDimension][];
         for (int i = 0; i < slicesOf3DColorBuffers.Length; i++)
         {
             slicesOf3DColorBuffers[i] = new Color[lutDimension * lutDimension];
         }
 
-        // Create identity cube LUT
+        // Create an identity cube LUT
         Color[] identity3DLutPixels = LutGenerator.generateIdentityCubeLUT(lutDimension);
         var input3DLutTex = new Texture3D(lutDimension, lutDimension, lutDimension, TextureFormat.RGBAHalf, false)
         {
-            // @TODO enable trilinear?
             filterMode = FilterMode.Bilinear,
             wrapMode = TextureWrapMode.Clamp,
             anisoLevel = 0
@@ -53,17 +44,22 @@ public class LutBaker
         RenderTexture renderTexture2DSlice = new RenderTexture(lutDimension, lutDimension, 1,
             RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
 
-        // Apply color grading and the aesthetic transfer function on each slice of the 3D texture
+        // This loop bakes into a 2D slice from a 3D texture the following operations:
+        // - Chromaticity Compression
+        // - Color Grading
+        // - Aesthetic Transfer Function
+        // The result will be stored into an array of 2D slices that will be later used to create a 3D texture
         for (int layerIndex = 0; layerIndex < lutDimension; layerIndex++)
         {
             // Create a texture 2D from every layer of a 3D texture
-            Texture2D sliceFrom3DLut = new Texture2D(lutDimension, lutDimension, TextureFormat.RGBAHalf, false, true);
+            Texture2D slice2DFrom3DLut = new Texture2D(lutDimension, lutDimension, TextureFormat.RGBAHalf, false, true);
+            // Create a colour array so that we're able to change the 2D texture slice data
             Color[] temp2DSlice = new Color[lutDimension * lutDimension];
+            // Iterate over the y coordinates and x columns and convert the data from Log2 to linear
             for (int yCoord = 0; yCoord < lutDimension; yCoord++)
             {
                 for (int xCoord = 0; xCoord < lutDimension; xCoord++)
                 {
-                    // temp2DSlice[xCoord + yCoord * lutDimension] = buffer3DPixels[xCoord + yCoord * lutDimension + layerIndex * lutDimension * lutDimension];
                     Color buffer3DColor = buffer3DPixels[xCoord + yCoord * lutDimension + layerIndex * lutDimension * lutDimension];
                     buffer3DColor.r = Shaper.calculateLog2ToLinear(buffer3DColor.r, gamutMap.MidGreySdr.x, gamutMap.MinRadiometricExposure,
                         gamutMap.MaxRadiometricExposure);
@@ -72,59 +68,28 @@ public class LutBaker
                     buffer3DColor.b = Shaper.calculateLog2ToLinear(buffer3DColor.b, gamutMap.MidGreySdr.x, gamutMap.MinRadiometricExposure,
                         gamutMap.MaxRadiometricExposure);
                     temp2DSlice[xCoord + yCoord * lutDimension] = buffer3DColor;
-
-                    // temp2DSlice[xCoord + yCoord * lutDimension].r = Shaper.calculateLog2ToLinear(
-                    //     buffer3DPixels[xCoord + yCoord * lutDimension + layerIndex * lutDimension * lutDimension].r,
-                    //     hdrPipeline.getGamutMap().MidGreySdr.x, hdrPipeline.getGamutMap().MinRadiometricExposure,
-                    //     hdrPipeline.getGamutMap().MaxRadiometricExposure);
-                    //
-                    // temp2DSlice[xCoord + yCoord * lutDimension].g = Shaper.calculateLog2ToLinear(
-                    //     buffer3DPixels[xCoord + yCoord * lutDimension + layerIndex * lutDimension * lutDimension].g,
-                    //     hdrPipeline.getGamutMap().MidGreySdr.x, hdrPipeline.getGamutMap().MinRadiometricExposure,
-                    //     hdrPipeline.getGamutMap().MaxRadiometricExposure);
-                    //
-                    // temp2DSlice[xCoord + yCoord * lutDimension].b = Shaper.calculateLog2ToLinear(
-                    //     buffer3DPixels[xCoord + yCoord * lutDimension + layerIndex * lutDimension * lutDimension].b,
-                    //     hdrPipeline.getGamutMap().MidGreySdr.x, hdrPipeline.getGamutMap().MinRadiometricExposure,
-                    //     hdrPipeline.getGamutMap().MaxRadiometricExposure);
                 }
             }
+            // Bake the chromaticity compression into the 2D array of colours
+            // Input Data Format: Radiometric linear
+            // Output Data Format: Log2 camera intrinsic
             temp2DSlice = gamutMap.ApplyChromaticityCompressionCPU(temp2DSlice);
+            // Write this array of colours back into the 2D texture
+            slice2DFrom3DLut.SetPixels(temp2DSlice);
+            slice2DFrom3DLut.Apply();
 
-            sliceFrom3DLut.SetPixels(temp2DSlice);
-            sliceFrom3DLut.Apply();
-
-            // Render the 2D slice with color grade LUT
-            // Color[] hdriTexturePixels = sliceFrom3DLut.GetPixels();
-            // for (int i = 0; i < hdriTexturePixels.Length; i++)
-            // {
-            //     // TODO: optimize the code by doing this in the loop above
-            //     hdriTexturePixels[i].r = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].r,
-            //         hdrPipeline.getGamutMap().MidGreySdr.x,
-            //         hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
-            //     hdriTexturePixels[i].g = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].g,
-            //         hdrPipeline.getGamutMap().MidGreySdr.x,
-            //         hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
-            //     hdriTexturePixels[i].b = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].b,
-            //         hdrPipeline.getGamutMap().MidGreySdr.x,
-            //         hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
-            // }
-            // hdriTexturePixels = hdrPipeline.getGamutMap().ApplyChromaticityCompressionCPU(hdriTexturePixels);
-            // sliceFrom3DLut.SetPixels(hdriTexturePixels);
-            // sliceFrom3DLut.Apply();
-
-            hdrPipeline.colorGradingMat.SetTexture("_MainTex", sliceFrom3DLut);
+            // Bake the colour grading step
+            hdrPipeline.colorGradingMat.SetTexture("_MainTex", slice2DFrom3DLut);
             hdrPipeline.colorGradingMat.SetTexture("_LUT", hdrPipeline.colorGradeLUT);
-            Graphics.Blit(sliceFrom3DLut, renderTexture2DSlice, hdrPipeline.colorGradingMat);
+            Graphics.Blit(slice2DFrom3DLut, renderTexture2DSlice, hdrPipeline.colorGradingMat);
 
-
-            sliceFrom3DLut = gamutMap.ApplyTransferFunctionTo2DSlice(renderTexture2DSlice);
-            Color[] colorSlice = sliceFrom3DLut.GetPixels();
+            // Bake the Aesthetic Transfer function to the 2D array of colours
+            slice2DFrom3DLut = gamutMap.ApplyTransferFunctionTo2DSlice(renderTexture2DSlice);
+            Color[] colorSlice = slice2DFrom3DLut.GetPixels();
             for (int i = 0; i < colorSlice.Length; i++)
             {
                 slicesOf3DColorBuffers[layerIndex][i] = colorSlice[i];
             }
-
         }
 
         // Concatenate every 2D slice into a single array
@@ -135,42 +100,10 @@ public class LutBaker
         {
             Array.Copy(slicesOf3DColorBuffers[l], 0, final3DTexturePixels, index, slicesOf3DColorBuffers[l].Length);
             index += slicesOf3DColorBuffers[l].Length;
-            // for (int i = 0; i < slicesOf3DColorBuffers[l].Length; i++)
-            // {
-            //     final3DTexturePixels[index] = slicesOf3DColorBuffers[l][i];
-            //     index++;
-            // }
         }
         // Write the single array color information into the 3D texture
         input3DLutTex.SetPixels(final3DTexturePixels);
         input3DLutTex.Apply();
-
-
-        // // Debug: Write every slice to disk to save it
-        // for (int i = 0; i < slicesOf3DColorBuffers.Length; i++)
-        // {
-        //     hdrPipeline.getGamutMap().SaveToDisk(slicesOf3DColorBuffers[i], "Layer" + i + ".exr", lutDimension, lutDimension);
-        //
-        // }
-        // RenderTexture output3DLutTex = new RenderTexture(lutDimension, lutDimension, lutDimension, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
-        // output3DLutTex.enableRandomWrite = true;
-        // output3DLutTex.Create();
-        //
-        // // Setup the compute lutBakerShader
-        // lutBakerShader.SetTexture(kernelHandle, "inputLut", input3DLutTex);
-        // lutBakerShader.SetTexture(kernelHandle, "outputLut", output3DLutTex);
-        // lutBakerShader.Dispatch(kernelHandle, 17, 17, 17);
-        // Save(lutDimension, output3DLutTex);
-
-
-        // Apply Chromaticity compression
-        //Color[] lutPixels = gamutMap.ApplyChromaticityCompressionCPU(identity3DLut);
-        // ColorGrade blit
-        // hdrPipeline.RenderColorGrade();
-        // dest.ReadPixels(new Rect(0, 0, dest.width, dest.height), 0, 0, false);
-        // Aesthetic TF baking
-        // gamutMap.CalculateTransferTransform(ref lutPixels);
-        // Store data in LUT
 
         return input3DLutTex;
     }
