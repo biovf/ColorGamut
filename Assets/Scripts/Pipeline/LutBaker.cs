@@ -63,7 +63,16 @@ public class LutBaker
             {
                 for (int xCoord = 0; xCoord < lutDimension; xCoord++)
                 {
-                    temp2DSlice[xCoord + yCoord * lutDimension] = buffer3DPixels[xCoord + yCoord * lutDimension + layerIndex * lutDimension * lutDimension];
+                    // temp2DSlice[xCoord + yCoord * lutDimension] = buffer3DPixels[xCoord + yCoord * lutDimension + layerIndex * lutDimension * lutDimension];
+                    Color buffer3DColor = buffer3DPixels[xCoord + yCoord * lutDimension + layerIndex * lutDimension * lutDimension];
+                    buffer3DColor.r = Shaper.calculateLog2ToLinear(buffer3DColor.r, gamutMap.MidGreySdr.x, gamutMap.MinRadiometricExposure,
+                        gamutMap.MaxRadiometricExposure);
+                    buffer3DColor.g = Shaper.calculateLog2ToLinear(buffer3DColor.g, gamutMap.MidGreySdr.x, gamutMap.MinRadiometricExposure,
+                        gamutMap.MaxRadiometricExposure);
+                    buffer3DColor.b = Shaper.calculateLog2ToLinear(buffer3DColor.b, gamutMap.MidGreySdr.x, gamutMap.MinRadiometricExposure,
+                        gamutMap.MaxRadiometricExposure);
+                    temp2DSlice[xCoord + yCoord * lutDimension] = buffer3DColor;
+
                     // temp2DSlice[xCoord + yCoord * lutDimension].r = Shaper.calculateLog2ToLinear(
                     //     buffer3DPixels[xCoord + yCoord * lutDimension + layerIndex * lutDimension * lutDimension].r,
                     //     hdrPipeline.getGamutMap().MidGreySdr.x, hdrPipeline.getGamutMap().MinRadiometricExposure,
@@ -80,75 +89,42 @@ public class LutBaker
                     //     hdrPipeline.getGamutMap().MaxRadiometricExposure);
                 }
             }
+            temp2DSlice = gamutMap.ApplyChromaticityCompressionCPU(temp2DSlice);
+
             sliceFrom3DLut.SetPixels(temp2DSlice);
             sliceFrom3DLut.Apply();
 
             // Render the 2D slice with color grade LUT
-            Color[] hdriTexturePixels = sliceFrom3DLut.GetPixels();
-            for (int i = 0; i < hdriTexturePixels.Length; i++)
-            {
-                // TODO: optimize the code by doing this in the loop above
-                hdriTexturePixels[i].r = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].r,
-                    hdrPipeline.getGamutMap().MidGreySdr.x,
-                    hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
-                hdriTexturePixels[i].g = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].g,
-                    hdrPipeline.getGamutMap().MidGreySdr.x,
-                    hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
-                hdriTexturePixels[i].b = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].b,
-                    hdrPipeline.getGamutMap().MidGreySdr.x,
-                    hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
-            }
-            hdriTexturePixels = hdrPipeline.getGamutMap().ApplyChromaticityCompressionCPU(hdriTexturePixels);
-            sliceFrom3DLut.SetPixels(hdriTexturePixels);
-            sliceFrom3DLut.Apply();
+            // Color[] hdriTexturePixels = sliceFrom3DLut.GetPixels();
+            // for (int i = 0; i < hdriTexturePixels.Length; i++)
+            // {
+            //     // TODO: optimize the code by doing this in the loop above
+            //     hdriTexturePixels[i].r = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].r,
+            //         hdrPipeline.getGamutMap().MidGreySdr.x,
+            //         hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
+            //     hdriTexturePixels[i].g = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].g,
+            //         hdrPipeline.getGamutMap().MidGreySdr.x,
+            //         hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
+            //     hdriTexturePixels[i].b = Shaper.calculateLog2ToLinear(hdriTexturePixels[i].b,
+            //         hdrPipeline.getGamutMap().MidGreySdr.x,
+            //         hdrPipeline.getGamutMap().MinRadiometricExposure, hdrPipeline.getGamutMap().MaxRadiometricExposure);
+            // }
+            // hdriTexturePixels = hdrPipeline.getGamutMap().ApplyChromaticityCompressionCPU(hdriTexturePixels);
+            // sliceFrom3DLut.SetPixels(hdriTexturePixels);
+            // sliceFrom3DLut.Apply();
 
             hdrPipeline.colorGradingMat.SetTexture("_MainTex", sliceFrom3DLut);
             hdrPipeline.colorGradingMat.SetTexture("_LUT", hdrPipeline.colorGradeLUT);
             Graphics.Blit(sliceFrom3DLut, renderTexture2DSlice, hdrPipeline.colorGradingMat);
 
-            // if (useCPUBaker)
-            // {
-                sliceFrom3DLut = gamutMap.ApplyTransferFunctionTo2DSlice(renderTexture2DSlice);
-                Color[] colorSlice = sliceFrom3DLut.GetPixels();
-                for (int i = 0; i < colorSlice.Length; i++)
-                {
-                    slicesOf3DColorBuffers[layerIndex][i] = colorSlice[i];
-                }
-            // }
-            // else
-            // {
-            //     Texture2D inputSlice2DTexture = hdrPipeline.getGamutMap().toTexture2D(renderTexture2DSlice);
-            //
-            //     hdrPipeline.gamutMapMat.SetTexture("_MainTex", inputSlice2DTexture);
-            //     hdrPipeline.gamutMapMat.SetFloat("exposure", hdrPipeline.getGamutMap().Exposure);
-            //     hdrPipeline.gamutMapMat.SetVector("greyPoint", new Vector4(hdrPipeline.getGamutMap().MidGreySdr.x,
-            //         hdrPipeline.getGamutMap().MidGreySdr.y, 0.0f));
-            //     hdrPipeline.gamutMapMat.SetFloat("minExposure", hdrPipeline.getGamutMap().MinRadiometricExposure);
-            //     hdrPipeline.gamutMapMat.SetFloat("maxExposure", hdrPipeline.getGamutMap().MaxRadiometricExposure);
-            //     hdrPipeline.gamutMapMat.SetFloat("maxRadiometricValue", hdrPipeline.getGamutMap().MaxRadiometricDynamicRange);
-            //     hdrPipeline.gamutMapMat.SetFloat("minDisplayExposure", hdrPipeline.getGamutMap().MinDisplayExposure);
-            //     hdrPipeline.gamutMapMat.SetFloat("maxDisplayExposure", hdrPipeline.getGamutMap().MaxDisplayExposure);
-            //     hdrPipeline.gamutMapMat.SetFloat("minDisplayValue", hdrPipeline.getGamutMap().MinDisplayValue);
-            //     hdrPipeline.gamutMapMat.SetFloat("maxDisplayValue", hdrPipeline.getGamutMap().MaxDisplayValue);
-            //     hdrPipeline.gamutMapMat.SetFloat("maxLatitudeLimit", hdrPipeline.getGamutMap().CurveCoordMaxLatitude);
-            //     hdrPipeline.gamutMapMat.SetInt("inputArraySize", hdrPipeline.getGamutMap().getXValues().Count - 1);
-            //     hdrPipeline.gamutMapMat.SetInt("usePerChannel", 0);
-            //
-            //     hdrPipeline.XCurveCoordsCBuffer.SetData(hdrPipeline.getGamutMap().getXValues().ToArray());
-            //     hdrPipeline.YCurveCoordsCBuffer.SetData(hdrPipeline.getGamutMap().getYValues().ToArray());
-            //     hdrPipeline.gamutMapMat.SetBuffer(Shader.PropertyToID("xCurveCoordsCBuffer"), hdrPipeline.XCurveCoordsCBuffer);
-            //     hdrPipeline.gamutMapMat.SetBuffer(Shader.PropertyToID("yCurveCoordsCBuffer"), hdrPipeline.YCurveCoordsCBuffer);
-            //     hdrPipeline.gamutMapMat.SetVectorArray("controlPoints", hdrPipeline.ControlPointsUniform);
-            //
-            //     Graphics.Blit(inputSlice2DTexture, renderTexture2DSlice, hdrPipeline.gamutMapMat);
-            //
-            //     // Retrieve the 2D slice rendered and store it back into a 2D array of slices
-            //     Color[] colorSlice = hdrPipeline.getGamutMap().toTexture2D(renderTexture2DSlice).GetPixels();//sliceFrom3DLut.GetPixels();
-            //     for (int i = 0; i < colorSlice.Length; i++)
-            //     {
-            //         slicesOf3DColorBuffers[layerIndex][i] = colorSlice[i];
-            //     }
-            // }
+
+            sliceFrom3DLut = gamutMap.ApplyTransferFunctionTo2DSlice(renderTexture2DSlice);
+            Color[] colorSlice = sliceFrom3DLut.GetPixels();
+            for (int i = 0; i < colorSlice.Length; i++)
+            {
+                slicesOf3DColorBuffers[layerIndex][i] = colorSlice[i];
+            }
+
         }
 
         // Concatenate every 2D slice into a single array
@@ -157,16 +133,13 @@ public class LutBaker
         int index = 0;
         for (int l = 0; l < slicesOf3DColorBuffersLen; l++)
         {
-            // Array.Copy(slicesOf3DColorBuffers[l], 0, final3DTexturePixels, index, slicesOf3DColorBuffersLen);
-            // index += slicesOf3DColorBuffersLen;
-            // final3DTexturePixels = final3DTexturePixels.Concat(slicesOf3DColorBuffers[l]).ToArray();
-            // TODO: Optimize this loop by doing a memset of the slicesOf3DColorBuffers array into the end of final3DTexturePixels
-            for (int i = 0; i < slicesOf3DColorBuffers[l].Length; i++)
-            {
-                final3DTexturePixels[index] = slicesOf3DColorBuffers[l][i];
-                index++;
-            }
-
+            Array.Copy(slicesOf3DColorBuffers[l], 0, final3DTexturePixels, index, slicesOf3DColorBuffers[l].Length);
+            index += slicesOf3DColorBuffers[l].Length;
+            // for (int i = 0; i < slicesOf3DColorBuffers[l].Length; i++)
+            // {
+            //     final3DTexturePixels[index] = slicesOf3DColorBuffers[l][i];
+            //     index++;
+            // }
         }
         // Write the single array color information into the 3D texture
         input3DLutTex.SetPixels(final3DTexturePixels);
