@@ -227,16 +227,6 @@
                     // Calculate the ratio in linear space
                     half3 ratio = linearHdriPixelColor / linearHdriMaxRGBChannel;
 
-                    // // Secondary Nuance Grade, guardrails
-                    //  if (linearHdriPixelColor.r > maxRadiometricValue ||
-                    //      linearHdriPixelColor.g > maxRadiometricValue ||
-                    //      linearHdriPixelColor.b > maxRadiometricValue)
-                    //  {
-                    //      linearHdriPixelColor.r = maxRadiometricValue;
-                    //      linearHdriPixelColor.g = maxRadiometricValue;
-                    //      linearHdriPixelColor.b = maxRadiometricValue;
-                    //  }
-
                     half yValue = getYCoordinateLogXInput(logHdriMaxRGBChannel);
                     yValue = calculateLog2ToLinear(yValue, greyPoint.y, minDisplayExposure, maxDisplayExposure);
                     half hdriYMaxValue = min(yValue, 1.0f);

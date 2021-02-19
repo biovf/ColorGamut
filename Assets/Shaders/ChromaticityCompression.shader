@@ -72,7 +72,7 @@
 
             float3 calculateGamutCompression(float4 inRadiometricLinearColor, float3 inputRatio)
             {
-                float3 ratio = float3(1.0, 1.0, 1.0);
+                float3 ratio = inputRatio;//float3(1.0, 1.0, 1.0);
                 // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
                 float gamutCompressionXCoordLinear = calculateLog2ToLinear(chromaticityMaxLatitude, greyPoint.x,
                     minRadiometricExposure, maxRadiometricExposure);

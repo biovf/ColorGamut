@@ -49,8 +49,6 @@ public class HDRPipeline : MonoBehaviour
     public Material colorGradingMat;
     public Material colorGradingBakerMat;
     public Texture3D colorGradeLUT;
-    public ComputeShader lutBakerShader;
-    public ComputeShader slicerShader;
 
     private GamutMap colorGamut;
     private RenderTexture renderBuffer;
@@ -114,7 +112,7 @@ public class HDRPipeline : MonoBehaviour
         yCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
 
         // LutBaker test
-        LutBaker lutbaker = new LutBaker(this, lutBakerShader, slicerShader);
+        LutBaker lutbaker = new LutBaker(this);
 
         float curTime = Time.realtimeSinceStartup;
         Texture3D bakedLUT = lutbaker.BakeLUT(33);
@@ -276,21 +274,6 @@ public class HDRPipeline : MonoBehaviour
         colorGradingMat.SetFloat("_MaxExposureValue", colorGamut.MaxRadiometricExposure);
         colorGradingMat.SetFloat("_MidGreyX", colorGamut.MidGreySdr.x);
         Graphics.Blit(src, dest, colorGradingMat);
-    }
-
-    public void BakeColorGrade(Texture src, RenderTexture dest, Texture3D LUT)
-    {
-        colorGradingBakerMat.SetTexture("_MainTex", src);
-        colorGradingBakerMat.SetTexture("_LUT", LUT);
-        colorGradingBakerMat.SetFloat("_MinExposureValue", colorGamut.MinRadiometricExposure);
-        colorGradingBakerMat.SetFloat("_MaxExposureValue", colorGamut.MaxRadiometricExposure);
-        colorGradingBakerMat.SetFloat("_MidGreyX", colorGamut.MidGreySdr.x);
-        Graphics.Blit(src, dest, colorGradingBakerMat);
-    }
-
-    public void ApplyGamutMap()
-    {
-        ApplyGamutMap(renderBuffer);
     }
 
     public void ApplyGamutMap(RenderTexture renderTexture)

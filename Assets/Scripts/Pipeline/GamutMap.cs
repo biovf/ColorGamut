@@ -358,9 +358,6 @@ public class GamutMap
                 Shaper.calculateLog2ToLinear(hdriPixelArray[i].g, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
                 Shaper.calculateLog2ToLinear(hdriPixelArray[i].b, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure));
 
-            // Apply exposure
-            hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);
-
             // Shape image using Log2
             Color log2HdriPixelArray = new Color();
             log2HdriPixelArray.r = Shaper.calculateLinearToLog2(hdriPixelArray[i].r, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
@@ -483,8 +480,6 @@ public class GamutMap
                 Shaper.calculateLog2ToLinear(hdriPixelArray[i].g, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure),
                 Shaper.calculateLog2ToLinear(hdriPixelArray[i].b, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure));
 
-            // Apply exposure
-            hdriPixelArray[i] = hdriPixelArray[i] * Mathf.Pow(2.0f, exposure);
 
             // Shape image using Log2
             Color log2HdriPixelArray = new Color();
@@ -595,6 +590,9 @@ public class GamutMap
             linearPixelColor.g = Math.Max(0.0f, linearRadiometricInputPixels[index].g);
             linearPixelColor.b = Math.Max(0.0f, linearRadiometricInputPixels[index].b);
 
+            // Apply exposure
+            linearPixelColor = linearPixelColor * Mathf.Pow(2.0f, exposure);
+
             // Secondary top nuance Grade, high end guardrails
             if (linearPixelColor.r > maxRadiometricValue ||
                 linearPixelColor.g > maxRadiometricValue ||
@@ -681,8 +679,8 @@ public class GamutMap
     public void exportTransferFunction(string filePath)
     {
         // Set the DOMAIN_MIN and DOMAIN_MAX ranges
-        Vector3 minCameraNativeVec = /*Vector3.zero;*/new Vector3(xCameraIntrinsicValues[0], xCameraIntrinsicValues[0], xCameraIntrinsicValues[0]);
-        Vector3 maxCameraNativeVec = /*Vector3.one;*/ new Vector3(xCameraIntrinsicValues[xCameraIntrinsicValues.Count - 1], xCameraIntrinsicValues[xCameraIntrinsicValues.Count - 1], xCameraIntrinsicValues[xCameraIntrinsicValues.Count - 1]);
+        Vector3 minCameraNativeVec = new Vector3(xCameraIntrinsicValues[0], xCameraIntrinsicValues[0], xCameraIntrinsicValues[0]);
+        Vector3 maxCameraNativeVec = new Vector3(xCameraIntrinsicValues[xCameraIntrinsicValues.Count - 1], xCameraIntrinsicValues[xCameraIntrinsicValues.Count - 1], xCameraIntrinsicValues[xCameraIntrinsicValues.Count - 1]);
 
         const int lutDimension = 33;
         Color[] identity3DLut = LutGenerator.generateIdentityCubeLUT(lutDimension);
