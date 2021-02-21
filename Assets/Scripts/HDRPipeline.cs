@@ -185,6 +185,8 @@ public class HDRPipeline : MonoBehaviour
                     chromaticityCompressionMat.SetFloat("maxRadiometricExposure", colorGamut.MaxRadiometricExposure);
                     chromaticityCompressionMat.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricDynamicRange);
                     chromaticityCompressionMat.SetFloat("chromaticityMaxLatitude", colorGamut.ChromaticityMaxLatitude);
+                    chromaticityCompressionMat.SetFloat("gamutCompressionRatioPower", colorGamut.GamutCompressionRatioPower);
+
                     Graphics.Blit(hdriRenderTexture, renderBuffer, chromaticityCompressionMat);
                     Graphics.Blit(renderBuffer, hdriRenderTexture, fullScreenTextureMat);
 

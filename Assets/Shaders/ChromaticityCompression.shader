@@ -8,6 +8,8 @@
         maxRadiometricExposure ("Maximum Radiometric Exposure Value(EV)", Float) = 6.0
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
         chromaticityMaxLatitude ("Max Chromaticity value", Float) = 0.85
+        gamutCompressionRatioPower("Gamut Compression Ratio", Float) = 1.0
+
     }
     SubShader
     {
@@ -41,6 +43,7 @@
             float maxRadiometricExposure;
             float maxRadiometricValue;
             float chromaticityMaxLatitude;
+            half gamutCompressionRatioPower;
 
             v2f vert(appdata v)
             {
@@ -72,7 +75,7 @@
 
             float3 calculateGamutCompression(float4 inRadiometricLinearColor, float3 inputRatio)
             {
-                float3 ratio = inputRatio;//float3(1.0, 1.0, 1.0);
+                float3 ratio = inputRatio;
                 // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
                 float gamutCompressionXCoordLinear = calculateLog2ToLinear(chromaticityMaxLatitude, greyPoint.x,
                     minRadiometricExposure, maxRadiometricExposure);
@@ -87,7 +90,7 @@
                     float gamutCompressionRatio = (maxRadiometricLinearChannel - gamutCompressionXCoordLinear) /
                                             gamutCompressionRange;
 
-                    ratio = lerp(inputRatio, float3(1.0, 1.0, 1.0), gamutCompressionRatio);
+                    ratio = lerp(inputRatio, float3(1.0, 1.0, 1.0), pow(gamutCompressionRatio, gamutCompressionRatioPower));
                 }
                 return ratio;
             }
