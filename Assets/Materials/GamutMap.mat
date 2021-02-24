@@ -73,7 +73,7 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - exposure: -0.6
+    - exposure: 0
     - inputArraySize: 1023
     - maxDisplayExposure: 2.473931
     - maxDisplayValue: 1

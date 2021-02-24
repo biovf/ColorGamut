@@ -105,39 +105,50 @@ public class LutBaker
         input3DLutTex.SetPixels(final3DTexturePixels);
         input3DLutTex.Apply();
 
+        // Debug: Write every slice to disk to save it
+        // for (int i = 0; i < slicesOf3DColorBuffers.Length; i++)
+        // {
+        //     hdrPipeline.getGamutMap().SaveToDisk(slicesOf3DColorBuffers[i], "ColorAppLayer" + i + ".exr", lutDimension, lutDimension);
+        //
+        // }
+
         return input3DLutTex;
     }
 
-    private void Save(int lutDimension, RenderTexture inputRT)
+    public static void SaveLutToDisk(Texture3D bakedLut, string fileNameAndPath)
     {
-        Texture3D export = new Texture3D(lutDimension, lutDimension, lutDimension, TextureFormat.RGBAHalf, false);
-        RenderTexture selectedRenderTexture = inputRT;
 
-        RenderTexture[] layers = new RenderTexture[lutDimension];
-        for( int i = 0; i < lutDimension; i++)
-            layers[i] = Copy3DSliceToRenderTexture(selectedRenderTexture, i, lutDimension);
+        AssetDatabase.CreateAsset(bakedLut, fileNameAndPath);
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
 
-        Texture2D[] finalSlices = new Texture2D[lutDimension];
-        for ( int i = 0; i < lutDimension; i++)
-            finalSlices[i] = ConvertFromRenderTexture(layers[i], lutDimension);
+        // Texture3D export = new Texture3D(lutDimension, lutDimension, lutDimension, TextureFormat.RGBAHalf, false);
+        // RenderTexture selectedRenderTexture = inputRT;
+        //
+        // RenderTexture[] layers = new RenderTexture[lutDimension];
+        // for( int i = 0; i < lutDimension; i++)
+        //     layers[i] = Copy3DSliceToRenderTexture(selectedRenderTexture, i, lutDimension);
+        //
+        // Texture2D[] finalSlices = new Texture2D[lutDimension];
+        // for ( int i = 0; i < lutDimension; i++)
+        //     finalSlices[i] = ConvertFromRenderTexture(layers[i], lutDimension);
 
-        Texture3D output = new Texture3D(lutDimension, lutDimension, lutDimension, TextureFormat.RGBAHalf, false);
-        output.filterMode = FilterMode.Trilinear;
-        Color[] outputPixels = output.GetPixels();
+        // Texture3D output = new Texture3D(lutDimension, lutDimension, lutDimension, TextureFormat.RGBAHalf, false);
+        // output.filterMode = FilterMode.Trilinear;
+        // Color[] outputPixels = output.GetPixels();
+        //
+        // for (int k = 0; k < lutDimension; k++) {
+        //     Color[] layerPixels = finalSlices[k].GetPixels();
+        //     for (int i = 0; i < lutDimension; i++)
+        //     for (int j = 0; j < lutDimension; j++)
+        //     {
+        //         outputPixels[i + j * lutDimension + k * lutDimension * lutDimension] = layerPixels[i + j * lutDimension];
+        //     }
+        // }
+        //
+        // output.SetPixels(outputPixels);
+        // output.Apply();
 
-        for (int k = 0; k < lutDimension; k++) {
-            Color[] layerPixels = finalSlices[k].GetPixels();
-            for (int i = 0; i < lutDimension; i++)
-            for (int j = 0; j < lutDimension; j++)
-            {
-                outputPixels[i + j * lutDimension + k * lutDimension * lutDimension] = layerPixels[i + j * lutDimension];
-            }
-        }
-
-        output.SetPixels(outputPixels);
-        output.Apply();
-
-        AssetDatabase.CreateAsset(output, "Assets/" + "nameOfTheAsset" + ".asset");
     }
 
     private RenderTexture Copy3DSliceToRenderTexture(RenderTexture source, int layer, int lutDimension)

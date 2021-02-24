@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEditor;
 
@@ -288,6 +290,27 @@ public class HDRPipelineEditor : Editor
         // DrawGradingLUTWidgets();
         // DrawCubeLUTWidgets();
 
+        EditorGUILayout.LabelField("Save Baked LUT ");
+        if (GUILayout.Button("Save baked LUT to disk"))
+        {
+            outPathCubeLut = EditorUtility.SaveFilePanel("Save 3D LUT LUT file to...", "", "BakedLUT","asset" );
+
+            if (string.IsNullOrEmpty(outPathCubeLut))
+            {
+                Debug.LogError("File path to save cube Lut file is invalid");
+                return;
+            }
+
+            // We must sanitise the path to become relative to "Assets/..."
+            string currentDirectory = Directory.GetCurrentDirectory();
+            string relativeOutPathCubeLut = GetRelativePath(currentDirectory, outPathCubeLut);
+            LutBaker lutbaker = new LutBaker(hdrPipeline);
+            Texture3D runtimeBakedLUT = lutbaker.BakeLUT(33);
+            hdrPipeline.bakedLUT = runtimeBakedLUT;
+
+            LutBaker.SaveLutToDisk(runtimeBakedLUT, relativeOutPathCubeLut);
+        }
+
         EditorGUILayout.Separator();
         EditorGUILayout.LabelField("Debug Options");
         EditorGUILayout.Space();
@@ -362,6 +385,61 @@ public class HDRPipelineEditor : Editor
 
         outPathGameCapture = EditorGUILayout.TextField("Save to", outPathGameCapture);
     }
+
+
+      /// <summary>
+        /// Creates a relative path from one file or folder to another.
+        /// Solution from https://stackoverflow.com/questions/275689/how-to-get-relative-path-from-absolute-path because we're
+        /// still using .Net Standard 2.0 and the .Net API Path.GetRelativePath(...) is not available
+        /// </summary>
+        /// <param name="fromPath">Contains the directory that defines the start of the relative path.</param>
+        /// <param name="toPath">Contains the path that defines the endpoint of the relative path.</param>
+        /// <returns>The relative path from the start directory to the end path.</returns>
+        /// <exception cref="ArgumentNullException"><paramref name="fromPath"/> or <paramref name="toPath"/> is <c>null</c>.</exception>
+        /// <exception cref="UriFormatException"></exception>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static string GetRelativePath(string fromPath, string toPath)
+        {
+            if (string.IsNullOrEmpty(fromPath))
+            {
+                throw new ArgumentNullException("fromPath");
+            }
+
+            if (string.IsNullOrEmpty(toPath))
+            {
+                throw new ArgumentNullException("toPath");
+            }
+
+            Uri fromUri = new Uri(AppendDirectorySeparatorChar(fromPath));
+            Uri toUri = new Uri(AppendDirectorySeparatorChar(toPath));
+
+            if (fromUri.Scheme != toUri.Scheme)
+            {
+                return toPath;
+            }
+
+            Uri relativeUri = fromUri.MakeRelativeUri(toUri);
+            string relativePath = Uri.UnescapeDataString(relativeUri.ToString());
+
+            if (string.Equals(toUri.Scheme, Uri.UriSchemeFile, StringComparison.OrdinalIgnoreCase))
+            {
+                relativePath = relativePath.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+            }
+
+            return relativePath;
+        }
+
+        private static string AppendDirectorySeparatorChar(string path)
+        {
+            // Append a slash only if the path is a directory and does not have a slash.
+            if (!Path.HasExtension(path) &&
+                !path.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                return path + Path.DirectorySeparatorChar;
+            }
+
+            return path;
+        }
 
     // private void DrawGradingLUTWidgets()
     // {

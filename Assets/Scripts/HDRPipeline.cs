@@ -49,6 +49,7 @@ public class HDRPipeline : MonoBehaviour
     public Material colorGradingMat;
     public Material colorGradingBakerMat;
     public Texture3D colorGradeLUT;
+    public Texture3D bakedLUT;
 
     private GamutMap colorGamut;
     private RenderTexture renderBuffer;
@@ -112,15 +113,12 @@ public class HDRPipeline : MonoBehaviour
         yCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
 
         // LutBaker test
-        LutBaker lutbaker = new LutBaker(this);
 
         float curTime = Time.realtimeSinceStartup;
-        Texture3D bakedLUT = lutbaker.BakeLUT(33);
-        Debug.Log("Took " + (Time.realtimeSinceStartup - curTime).ToString() + "s");
-        if (useBakedLUT)
-        {
-            colorGradeLUT = bakedLUT;
-        }
+        // Texture3D runtimeBakedLUT = lutbaker.BakeLUT(33);
+        // Debug.Log("Took " + (Time.realtimeSinceStartup - curTime).ToString() + "s");
+        // bakedLUT = runtimeBakedLUT;
+
     }
 
     [Conditional("DEBUG_CHECKS")]
@@ -242,6 +240,11 @@ public class HDRPipeline : MonoBehaviour
 
             if (useBakedLUT)
             {
+                Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
+                hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
+                Color[] hdriTexturePixels = hdriTexture2D.GetPixels();
+                hdriTexture2D.SetPixels(hdriTexturePixels);
+                hdriTexture2D.Apply();
                 RenderColorGrade(hdriTexture2D, renderBuffer, colorGradeLUT);
             }
             else

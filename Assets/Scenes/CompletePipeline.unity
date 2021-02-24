@@ -219,5 +219,4 @@ MonoBehaviour:
   colorGradingMat: {fileID: 2100000, guid: 83cef61a096da4d9d86919f05dca8030, type: 2}
   colorGradingBakerMat: {fileID: 2100000, guid: 5583dda66845b4d668b578e99adb7010,
     type: 2}
-  colorGradeLUT: {fileID: 8534537815417165676, guid: eff868ee6f3874007ad576ccbb6c4fff,
-    type: 3}
+  colorGradeLUT: {fileID: 11700000, guid: cc673972b620641cda81ccaf377fc200, type: 2}
