@@ -231,8 +231,8 @@ public class HDRPipelineEditor : Editor
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
         curveCoordMaxLatitude = EditorGUILayout.Slider("Curve Max Coordinate Latitude", curveCoordMaxLatitude, 0.1f, 1.0f);
         curveChromaticityMaxLatitude = EditorGUILayout.Slider("Curve Max Chromaticity Latitude", curveChromaticityMaxLatitude, 0.1f, 1.0f);
-        minRadiometricExposure = EditorGUILayout.Slider("Minimum Radiometric Exposure", (int)minRadiometricExposure, -20, 0);
-        maxRadiometricExposure = EditorGUILayout.Slider("Maximum Radiometric Exposure", (int)maxRadiometricExposure, 0, 20);
+        minRadiometricExposure = EditorGUILayout.Slider("Minimum Radiometric Exposure", minRadiometricExposure, -20.0f, 0.0f);
+        maxRadiometricExposure = EditorGUILayout.Slider("Maximum Radiometric Exposure", maxRadiometricExposure, 0.0f, 20.0f);
         gamutCompressionRatioPower = EditorGUILayout.Slider("Gamut Compression Exponent", gamutCompressionRatioPower, 0.001f, 5.0f);
 
         EditorGUILayout.Space();
@@ -241,7 +241,6 @@ public class HDRPipelineEditor : Editor
         {
             if (GUI.changed)
             {
-                //Debug.Log("GUI Changed");
                 guiWidgetsState =  GamutMap.CurveDataState.Dirty;
             }
 
@@ -322,7 +321,6 @@ public class HDRPipelineEditor : Editor
 
     private void DrawGamutCurveWidget()
     {
-        // hdrPipeline.ScaleFactor = EditorGUILayout.Slider("Curve Scale Factor", hdrPipeline.ScaleFactor, 0.0f, 10.0f);
         curveRect = GUILayoutUtility.GetRect(128, 256);
 
         if (hdrPipeline.CurveRT != null && hdrPipeline.CurveRT.IsCreated() && 
@@ -440,93 +438,5 @@ public class HDRPipelineEditor : Editor
 
             return path;
         }
-
-    // private void DrawGradingLUTWidgets()
-    // {
-    //     EditorGUILayout.Space(10.0f);
-    //     EditorGUILayout.LabelField("Color Grading LUT Texture ");
-    //     foldoutState1DLut = EditorGUILayout.Foldout(foldoutState1DLut, "Generate Texture LUT Options", true);
-    //     if (foldoutState1DLut)
-    //     {
-    //         generateHDRLut = EditorGUILayout.Toggle("HDR", generateHDRLut);
-    //         if (generateHDRLut == true)
-    //         {
-    //             useShaperFunctionTexLut = EditorGUILayout.Toggle("Use Shaper Function", useShaperFunctionTexLut);
-    //             if (useShaperFunctionTexLut)
-    //             {
-    //                 maxRadiometricValueTexLut =
-    //                     EditorGUILayout.FloatField("Max Radiometric Value", maxRadiometricValueTexLut);
-    //             }
-    //
-    //             useDisplayP3TexLut = EditorGUILayout.Toggle("Convert to Display-P3", useDisplayP3TexLut);
-    //             // TODO explore the GUILayoutOptions to show that the floating point number is actually a FP value
-    //         }
-    //
-    //         lutDimensionTexLut = EditorGUILayout.IntField("LUT Dimension", lutDimensionTexLut);
-    //     }
-    //
-    //     if (GUILayout.Button("Generate LUT Texture"))
-    //     {
-    //         if (generateHDRLut)
-    //         {
-    //             defaultTextureFileName = "HDR_Lut" + lutDimensionTexLut +
-    //                                      (useShaperFunctionTexLut == true ? "PQ" : "Linear") +
-    //                                      (useDisplayP3TexLut == true ? "DisplayP3" : "sRGB") +
-    //                                      "MaxRange" + maxRadiometricValueTexLut.ToString();
-    //         }
-    //         else
-    //         {
-    //             defaultTextureFileName = "SDR_Lut" + lutDimensionTexLut;
-    //         }
-    //
-    //         outPathTextureLut = EditorUtility.SaveFilePanel("Save LUT Texture to...", "", defaultTextureFileName,
-    //             (generateHDRLut ? "exr" : "png"));
-    //
-    //         if (string.IsNullOrEmpty(outPathTextureLut))
-    //         {
-    //             Debug.LogError("File path to save Lut texture is invalid");
-    //             return;
-    //         }
-    //
-    //         colorGradingHDR.generateTextureLut(outPathTextureLut, lutDimensionTexLut, generateHDRLut, useShaperFunctionTexLut, useDisplayP3TexLut,
-    //             maxRadiometricValueTexLut);
-    //     }
-    // }
-
-    // private void DrawCubeLUTWidgets()
-    // {
-    //     EditorGUILayout.Space(10.0f);
-    //     EditorGUILayout.LabelField("Color Grading .cube LUT File");
-    //     foldoutStateCubeLut = EditorGUILayout.Foldout(foldoutStateCubeLut, "Generate .cube LUT Options", true);
-    //     if (foldoutStateCubeLut)
-    //     {
-    //         useShaperFunction = EditorGUILayout.Toggle("Use Shaper Function", useShaperFunction);
-    //         if (useShaperFunction)
-    //         {
-    //             maxRadiometricValue = EditorGUILayout.FloatField("Max Radiometric Value", maxRadiometricValue);
-    //         }
-    //
-    //         useDisplayP3 = EditorGUILayout.Toggle("Convert to Display-P3", useDisplayP3);
-    //         lutDimension = EditorGUILayout.IntField("LUT Dimension", lutDimension);
-    //     }
-    //
-    //     if (GUILayout.Button("Generate .cube LUT File"))
-    //     {
-    //         defaultCubeLutFileName = "CubeLut" + lutDimension.ToString() +
-    //                                  (useShaperFunction == true ? "PQ" : "Linear") +
-    //                                  (useDisplayP3 == true ? "DisplayP3" : "sRGB") +
-    //                                  "MaxRange" + maxRadiometricValue.ToString();
-    //         outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName,
-    //                  "cube" );
-    //
-    //         if (string.IsNullOrEmpty(outPathCubeLut))
-    //         {
-    //             Debug.LogError("File path to save cube Lut file is invalid");
-    //             return;
-    //         }
-    //
-    //         colorGradingHDR.generateCubeLut(outPathCubeLut, lutDimension, useShaperFunction, useDisplayP3, maxRadiometricValue);
-    //     }
-    // }
     
 }

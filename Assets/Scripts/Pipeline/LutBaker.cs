@@ -11,11 +11,14 @@ public class LutBaker
     private GamutMap gamutMap;
     private Material lutBakerMat;
     private bool useCPUBaker = true;
+    private Material chromaticityCompMat;
 
     public LutBaker(HDRPipeline inHdrPipeline)
     {
         hdrPipeline = inHdrPipeline;
         gamutMap = hdrPipeline.getGamutMap();
+        Shader chromaticityCompression = Shader.Find("Custom/ChromaticityCompression");
+        chromaticityCompMat = new Material(chromaticityCompression);
     }
 
 
@@ -41,8 +44,10 @@ public class LutBaker
         Color[] buffer3DPixels = input3DLutTex.GetPixels();
 
         // Create a 2D texture to represent a 2D slice from the 3D texture so that we can render to it
-        RenderTexture renderTexture2DSlice = new RenderTexture(lutDimension, lutDimension, 1,
+        RenderTexture renderTexture2DSlicePing = new RenderTexture(lutDimension, lutDimension, 1,
             RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
+        RenderTexture renderTexture2DSlicePong = new RenderTexture(lutDimension, lutDimension, 1,
+          RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
 
         // This loop bakes into a 2D slice from a 3D texture the following operations:
         // - Chromaticity Compression
@@ -78,13 +83,22 @@ public class LutBaker
             slice2DFrom3DLut.SetPixels(temp2DSlice);
             slice2DFrom3DLut.Apply();
 
+            //chromaticityCompMat.SetTexture("_MainTex", slice2DFrom3DLut);
+            //chromaticityCompMat.SetVector("greyPoint", new Vector4(gamutMap.MidGreySdr.x, gamutMap.MidGreySdr.y, 0.0f));
+            //chromaticityCompMat.SetFloat("minRadiometricExposure", gamutMap.MinRadiometricExposure);
+            //chromaticityCompMat.SetFloat("maxRadiometricExposure", gamutMap.MaxRadiometricExposure);
+            //chromaticityCompMat.SetFloat("maxRadiometricValue", gamutMap.MaxRadiometricDynamicRange);
+            //chromaticityCompMat.SetFloat("chromaticityMaxLatitude", gamutMap.ChromaticityMaxLatitude);
+            //chromaticityCompMat.SetFloat("gamutCompressionRatioPower", gamutMap.GamutCompressionRatioPower);
+            //Graphics.Blit(slice2DFrom3DLut, renderTexture2DSlicePong, chromaticityCompMat);
+
             // Bake the colour grading step
             hdrPipeline.colorGradingMat.SetTexture("_MainTex", slice2DFrom3DLut);
             hdrPipeline.colorGradingMat.SetTexture("_LUT", hdrPipeline.colorGradeLUT);
-            Graphics.Blit(slice2DFrom3DLut, renderTexture2DSlice, hdrPipeline.colorGradingMat);
+            Graphics.Blit(slice2DFrom3DLut, renderTexture2DSlicePing, hdrPipeline.colorGradingMat);
 
             // Bake the Aesthetic Transfer function to the 2D array of colours
-            slice2DFrom3DLut = gamutMap.ApplyTransferFunctionTo2DSlice(renderTexture2DSlice);
+            slice2DFrom3DLut = gamutMap.ApplyTransferFunctionTo2DSlice(renderTexture2DSlicePing);
             Color[] colorSlice = slice2DFrom3DLut.GetPixels();
             for (int i = 0; i < colorSlice.Length; i++)
             {

@@ -3,6 +3,7 @@
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
+        exposure("Exposure Value(EV)", Float) = 0.0
         greyPoint ("Middle Grey Value(XY)", Vector) = (0.18, 0.18, 0.0, 0.0)
         minRadiometricExposure ("Minimum Radiometric Exposure Value(EV)", Float) = -6.0
         maxRadiometricExposure ("Maximum Radiometric Exposure Value(EV)", Float) = 6.0
@@ -44,6 +45,7 @@
             float maxRadiometricValue;
             float chromaticityMaxLatitude;
             half gamutCompressionRatioPower;
+            float exposure;
 
             v2f vert(appdata v)
             {
@@ -99,22 +101,17 @@
             // Output is encoded as Log2 camera intrinsic
             float4 chromaticityCompression(float4 inRadiometricLinearColor)
             {
-                float4 hdriPixelColor = float4(0.0, 0.0, 0.0, 1.0);
+                //float4 hdriPixelColor = float4(0.0, 0.0, 0.0, 1.0);
+                float4 hdriPixelColor = inRadiometricLinearColor * pow(2.0, exposure);
 
-                hdriPixelColor.r = max(0.0f, inRadiometricLinearColor.r);
-                hdriPixelColor.g = max(0.0f, inRadiometricLinearColor.g);
-                hdriPixelColor.b = max(0.0f, inRadiometricLinearColor.b);
+                hdriPixelColor.r = max(0.0f, hdriPixelColor.r);
+                hdriPixelColor.g = max(0.0f, hdriPixelColor.g);
+                hdriPixelColor.b = max(0.0f, hdriPixelColor.b);
 
-                // Secondary top nuance Grade, high end guardrails
-                if (hdriPixelColor.r > maxRadiometricValue ||
-                    hdriPixelColor.g > maxRadiometricValue ||
-                    hdriPixelColor.b > maxRadiometricValue)
-                {
-                    hdriPixelColor.r = maxRadiometricValue;
-                    hdriPixelColor.g = maxRadiometricValue;
-                    hdriPixelColor.b = maxRadiometricValue;
-                }
-
+                hdriPixelColor.r = min(maxRadiometricValue, hdriPixelColor.r);
+                hdriPixelColor.g = min(maxRadiometricValue, hdriPixelColor.g);
+                hdriPixelColor.b = min(maxRadiometricValue, hdriPixelColor.b);
+             
                 float maxLinearPixelColor = max(hdriPixelColor.r, max(hdriPixelColor.g, hdriPixelColor.b));
                 float3 ratio = hdriPixelColor / maxLinearPixelColor;
 

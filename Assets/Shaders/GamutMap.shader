@@ -201,15 +201,15 @@
                 calculateLog2ToLinear(inRadiometricLinearColor.g, greyPoint.x, minRadiometricExposure, maxRadiometricExposure),
                 calculateLog2ToLinear(inRadiometricLinearColor.b, greyPoint.x, minRadiometricExposure, maxRadiometricExposure));
 
-                float3 colorExposed = linearHdriPixelColor * pow(2.0, exposure);
+                //float3 colorExposed = linearHdriPixelColor * pow(2.0, exposure);
 
                 // Shape image
                 float3 log2HdriPixelArray = half3(0.0, 0.0, 0.0);
-                log2HdriPixelArray.r = calculateLinearToLog2(max(0.0f, colorExposed.r), greyPoint.x, minRadiometricExposure,
+                log2HdriPixelArray.r = calculateLinearToLog2(max(0.0f, linearHdriPixelColor.r), greyPoint.x, minRadiometricExposure,
                                                              maxRadiometricExposure);
-                log2HdriPixelArray.g = calculateLinearToLog2(max(0.0f, colorExposed.g), greyPoint.x, minRadiometricExposure,
+                log2HdriPixelArray.g = calculateLinearToLog2(max(0.0f, linearHdriPixelColor.g), greyPoint.x, minRadiometricExposure,
                                                              maxRadiometricExposure);
-                log2HdriPixelArray.b = calculateLinearToLog2(max(0.0f, colorExposed.b), greyPoint.x, minRadiometricExposure,
+                log2HdriPixelArray.b = calculateLinearToLog2(max(0.0f, linearHdriPixelColor.b), greyPoint.x, minRadiometricExposure,
                                                              maxRadiometricExposure);
 
                 // Calculate Pixel max color and ratio

@@ -73,6 +73,7 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     - chromaticityMaxLatitude: 0.45
+    - exposure: 0
     - gamutCompressionRatioPower: 1
     - maxRadiometricExposure: 6
     - maxRadiometricValue: 11.52

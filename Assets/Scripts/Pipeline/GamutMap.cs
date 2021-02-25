@@ -560,9 +560,6 @@ public class GamutMap
         return finalImageTexture;
     }
 
-
-
-
     // TODO: Rename this method to become gamutPrismCompression
     // 
     private Color calculateGamutCompression(Color linearHdriPixelColor, Color inRatio ,
@@ -619,23 +616,17 @@ public class GamutMap
         Color ratio = Color.white;
         for (int index = 0; index < linearRadiometricInputPixels.Length; index++)
         {
+            // Apply exposure
+            linearPixelColor = linearPixelColor * Mathf.Pow(2.0f, exposure);
+
             // Secondary bottom nuance grade, lower end guardrails
             linearPixelColor.r = Math.Max(0.0f, linearRadiometricInputPixels[index].r);
             linearPixelColor.g = Math.Max(0.0f, linearRadiometricInputPixels[index].g);
             linearPixelColor.b = Math.Max(0.0f, linearRadiometricInputPixels[index].b);
 
-            // Apply exposure
-            linearPixelColor = linearPixelColor * Mathf.Pow(2.0f, exposure);
-
-            // Secondary top nuance Grade, high end guardrails
-            if (linearPixelColor.r > maxRadiometricValue ||
-                linearPixelColor.g > maxRadiometricValue ||
-                linearPixelColor.b > maxRadiometricValue)
-            {
-                linearPixelColor.r = maxRadiometricValue;
-                linearPixelColor.g = maxRadiometricValue;
-                linearPixelColor.b = maxRadiometricValue;
-            }
+            linearPixelColor.r = Math.Min(linearPixelColor.r, maxRadiometricValue);
+            linearPixelColor.g = Math.Min(linearPixelColor.g, maxRadiometricValue);
+            linearPixelColor.b = Math.Min(linearPixelColor.b, maxRadiometricValue);
 
             float maxLinearPixelColor = linearPixelColor.maxColorComponent;
             ratio = linearPixelColor / maxLinearPixelColor;
@@ -646,14 +637,12 @@ public class GamutMap
                 linearPixelColor = maxLinearPixelColor * ratio;
             }
 
-
             outputColorBuffer[index].r = Shaper.calculateLinearToLog2(linearPixelColor.r, MidGreySdr.x,
                 MinRadiometricExposure, MaxRadiometricExposure);
             outputColorBuffer[index].g = Shaper.calculateLinearToLog2(linearPixelColor.g, MidGreySdr.x,
                 MinRadiometricExposure, MaxRadiometricExposure);
             outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
                 MinRadiometricExposure, MaxRadiometricExposure);
-
             outputColorBuffer[index].a = 1.0f;
         }
 
