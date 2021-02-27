@@ -89,7 +89,7 @@ public class HDRPipeline : MonoBehaviour
     private Texture2D hdriTexture2D;
 
     private bool useCpuMode = false;
-    private bool useBakedLUT = true;
+    private bool useBakedLUT = false;
     private bool debug = false;
 
     void Start()
@@ -143,6 +143,12 @@ public class HDRPipeline : MonoBehaviour
     void Update()
     {
         colorGamut.Update();
+    }
+
+    private void OnDestroy()
+    {
+        xCurveCoordsCBuffer.Release();
+        yCurveCoordsCBuffer.Release();
     }
 
     public void drawGamutCurveWidget()
