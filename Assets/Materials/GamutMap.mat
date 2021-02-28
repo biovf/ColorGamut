@@ -79,12 +79,12 @@ Material:
     - maxDisplayValue: 1
     - maxExposure: 6
     - maxLatitudeLimit: 0.869
-    - maxRadiometricExposure: 6
-    - maxRadiometricValue: 11.52
+    - maxRadiometricExposure: 5.7
+    - maxRadiometricValue: 9.357146
     - minDisplayExposure: -8.491853
     - minDisplayValue: 0.0005
     - minExposure: -6
-    - minRadiometricExposure: -6
+    - minRadiometricExposure: -7
     - minRadiometricValue: 0.0028125
     - usePerChannel: 0
     m_Colors:

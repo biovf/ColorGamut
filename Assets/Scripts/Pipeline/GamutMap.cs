@@ -185,8 +185,8 @@ public class GamutMap
         minDisplayValue = 0.05f / maxNits;      // in SDR we support a minimum of 0.05f nits which is an average black value for a LED display
         midGreySDR = new Vector2(18.0f / maxNits, 18.0f / maxNits);
         midRadiometricGrey = 0.18f;
-        minRadiometricExposure = -6.0f;//-6.0f;
-        maxRadiometricExposure = 6.0f;
+        minRadiometricExposure = -7.0f;//-6.0f;
+        maxRadiometricExposure = 5.7f;
 
         totalRadiometricExposure = maxRadiometricExposure - minRadiometricExposure;
 
@@ -196,8 +196,8 @@ public class GamutMap
         minRadiometricValue = Mathf.Pow(2.0f, minRadiometricExposure) * midGreySDR.x;
         maxRadiometricValue = Mathf.Pow(2.0f, maxRadiometricExposure) * midGreySDR.x;
 
-        chromaticityMaxLatitude = 0.45f;
-        curveCoordCoordinateMaxLatitude = 0.85f;                                 // value in camera encoded log2/EV
+        chromaticityMaxLatitude = 0.85f;
+        curveCoordCoordinateMaxLatitude = 0.95f;                                 // value in camera encoded log2/EV
         maxRadiometricLatitudeExposure = totalRadiometricExposure * curveCoordCoordinateMaxLatitude;
         maxRadiometricLatitude = Shaper.calculateLog2ToLinear(curveCoordCoordinateMaxLatitude, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
 

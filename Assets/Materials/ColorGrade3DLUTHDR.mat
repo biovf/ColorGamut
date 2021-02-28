@@ -40,7 +40,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _LUT:
-        m_Texture: {fileID: 8534537815417165676, guid: 419d4c36764c74580b71b2c65c003b90,
+        m_Texture: {fileID: 8534537815417165676, guid: eff868ee6f3874007ad576ccbb6c4fff,
           type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -73,10 +73,10 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _MaxExposureValue: 6
+    - _MaxExposureValue: 5.7
     - _Metallic: 0
     - _MidGreyX: 0.18
-    - _MinExposureValue: -6
+    - _MinExposureValue: -7
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
