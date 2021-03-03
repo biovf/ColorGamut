@@ -98,32 +98,60 @@
                 return min1 + (value - min0) * ((max1 - min1) / (max0 - min0));
             }
 
+            float4 mixColor(float4 baseCol, float4 color, float alpha)
+            {
+                return float4(lerp(baseCol.rgb, color.rgb, alpha * color.a), 1.0);
+            }
+
+            float4 drawGrid(float4 baseCol, float stepSize, float4 gridCol, float2 uv)
+            {
+                float2 dxy = float2(0.002, 0.002);
+                float mul = 1.0 / stepSize;
+                float2 g = abs(float2(-0.5, -0.5) + frac((uv + float2(stepSize, stepSize) * 0.5) * mul)); // g passes 0 at stepSize intervals
+                g = float2(1.0, 1.0) - smoothstep(float2(0.0, 0.0), dxy * mul * 1.5, g);
+                return mixColor(baseCol, gridCol, max(g.x, g.y));
+            }
 
             fixed4 frag(v2f i) : SV_Target
             {
+                float2 uv = (i.uv * 1.4) - 0.2;
+
                 half2 p0 = controlPoints[0].xy;
-                //p0.y = remap(p0.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p1 = controlPoints[1].xy;
-                //p1.y = remap(p1.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p2 = controlPoints[2].xy;
-                //p2.y = remap(p2.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p3 = controlPoints[3].xy;
-                //p3.y = remap(p3.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p4 = controlPoints[4].xy;
-                //p4.y = remap(p4.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p5 = controlPoints[5].xy;
-                //p5.y = remap(p5.y, 0.0, 1.5, 0.0, 1.0);
                 half2 p6 = controlPoints[6].xy;
+
+                half2 origin = half2(0.0f, 0.0f);
+                half2 yAxisMax = half2(0.0f, 2.0f);
+                half2 xAxisMax = half2(2.0f, 0.0f);
+                //p0.y = remap(p0.y, 0.0, 1.5, 0.0, 1.0);
+                //p1.y = remap(p1.y, 0.0, 1.5, 0.0, 1.0);
+                //p2.y = remap(p2.y, 0.0, 1.5, 0.0, 1.0);
+                //p3.y = remap(p3.y, 0.0, 1.5, 0.0, 1.0);
+                //p4.y = remap(p4.y, 0.0, 1.5, 0.0, 1.0);
+                //p5.y = remap(p5.y, 0.0, 1.5, 0.0, 1.0);
                 //p6.y = remap(p6.y, 0.0, 1.5, 0.0, 1.0);
 
                 half3 color = half3(1.0, 1.0, 1.0);
+                half3 axisColor = half3(1.0, 0.0, 0.0);
+                half3 curveColor = half3(0, 0.831, 1);
+                float dist = sdBezier(p0, p1, p2, uv);
+                color = lerp(color, curveColor, 1.0-smoothstep(0.0,0.02,abs(dist)) );
+                dist = sdBezier(p2, p3, p4, uv);
+                color = lerp(color, curveColor, 1.0-smoothstep(0.0,0.02,abs(dist)) );
+                dist = sdBezier(p4, p5, p6, uv);
+                color = lerp(color, curveColor, 1.0-smoothstep(0.0,0.02,abs(dist)) );
 
-                float dist = sdBezier(p0, p1, p2, i.uv);
-                color = lerp(color, half4(0.0, 0.0, 0.0, 1.0), 1.0-smoothstep(0.0,0.02,abs(dist)) );
-                dist = sdBezier(p2, p3, p4, i.uv);
-                color = lerp(color, half4(0.0, 0.0, 0.0, 1.0), 1.0-smoothstep(0.0,0.02,abs(dist)) );
-                dist = sdBezier(p4, p5, p6, i.uv);
-                color = lerp(color, half4(0.0, 0.0, 0.0, 1.0), 1.0-smoothstep(0.0,0.02,abs(dist)) );
+                /*dist = sdBezier(origin, (xAxisMax - origin)/2.0, xAxisMax, uv);
+                color = lerp(color, half3(0.0, 0.0, 0.0), 1.0 - smoothstep(0.0, 0.02, abs(dist)));
+                dist = sdBezier(origin, (yAxisMax - origin) / 2.0, yAxisMax, uv);
+                color = lerp(color, half3(0.0, 0.0, 0.0), 1.0 - smoothstep(0.0, 0.015, abs(dist)));*/
+                // From https://www.shadertoy.com/view/ltjcWW
+                color = drawGrid(half4(color, 1.0), 0.1, float4(0.0, 0.0, 0.0, 0.2), uv).rgb;
+                color = drawGrid(half4(color, 1.0), 1.0, float4(0.0, 0.0, 0.0, 0.8), uv).rgb;
 
                 return half4(color, 1.0);
             }
