@@ -35,11 +35,9 @@
                 o.uv = v.uv;
                 return o;
             }
-
-
             float4 controlPoints[7];
 
-            // Reference: https://www.shadertoy.com/view/ltXSDB
+           // Reference: https://www.shadertoy.com/view/ltXSDB
             //
             // Test if point p crosses line (a, b), returns sign of result
             half testCross(half2 a, half2 b, half2 p)
@@ -114,7 +112,10 @@
 
             fixed4 frag(v2f i) : SV_Target
             {
-                float2 uv = (i.uv * 1.4) - 0.2;
+                const half3 curveColor = half3(0, 0.831, 1.0);
+                half3 color = half3(1.0, 1.0, 1.0);
+
+                float2 uv = (i.uv * float2(1.2, 1.2)) - float2(0.1, 0.1);
 
                 half2 p0 = controlPoints[0].xy;
                 half2 p1 = controlPoints[1].xy;
@@ -122,33 +123,15 @@
                 half2 p3 = controlPoints[3].xy;
                 half2 p4 = controlPoints[4].xy;
                 half2 p5 = controlPoints[5].xy;
-                half2 p6 = controlPoints[6].xy;
+                half2 p6 = half2(1.0, 1.0);//controlPoints[6].xy;
 
-                half2 origin = half2(0.0f, 0.0f);
-                half2 yAxisMax = half2(0.0f, 2.0f);
-                half2 xAxisMax = half2(2.0f, 0.0f);
-                //p0.y = remap(p0.y, 0.0, 1.5, 0.0, 1.0);
-                //p1.y = remap(p1.y, 0.0, 1.5, 0.0, 1.0);
-                //p2.y = remap(p2.y, 0.0, 1.5, 0.0, 1.0);
-                //p3.y = remap(p3.y, 0.0, 1.5, 0.0, 1.0);
-                //p4.y = remap(p4.y, 0.0, 1.5, 0.0, 1.0);
-                //p5.y = remap(p5.y, 0.0, 1.5, 0.0, 1.0);
-                //p6.y = remap(p6.y, 0.0, 1.5, 0.0, 1.0);
-
-                half3 color = half3(1.0, 1.0, 1.0);
-                half3 axisColor = half3(1.0, 0.0, 0.0);
-                half3 curveColor = half3(0, 0.831, 1);
                 float dist = sdBezier(p0, p1, p2, uv);
-                color = lerp(color, curveColor, 1.0-smoothstep(0.0,0.02,abs(dist)) );
+                color = lerp(color, curveColor, 1.0-smoothstep(0.0, 0.02 * 0.8,abs(dist)) );
                 dist = sdBezier(p2, p3, p4, uv);
-                color = lerp(color, curveColor, 1.0-smoothstep(0.0,0.02,abs(dist)) );
+                color = lerp(color, curveColor, 1.0-smoothstep(0.0, 0.02,abs(dist)) );
                 dist = sdBezier(p4, p5, p6, uv);
-                color = lerp(color, curveColor, 1.0-smoothstep(0.0,0.02,abs(dist)) );
+                color = lerp(color, curveColor, 1.0-smoothstep(0.0, 0.02,abs(dist)) );
 
-                /*dist = sdBezier(origin, (xAxisMax - origin)/2.0, xAxisMax, uv);
-                color = lerp(color, half3(0.0, 0.0, 0.0), 1.0 - smoothstep(0.0, 0.02, abs(dist)));
-                dist = sdBezier(origin, (yAxisMax - origin) / 2.0, yAxisMax, uv);
-                color = lerp(color, half3(0.0, 0.0, 0.0), 1.0 - smoothstep(0.0, 0.015, abs(dist)));*/
                 // From https://www.shadertoy.com/view/ltjcWW
                 color = drawGrid(half4(color, 1.0), 0.1, float4(0.0, 0.0, 0.0, 0.2), uv).rgb;
                 color = drawGrid(half4(color, 1.0), 1.0, float4(0.0, 0.0, 0.0, 0.8), uv).rgb;
