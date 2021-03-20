@@ -8,9 +8,10 @@
         minRadiometricExposure ("Minimum Radiometric Exposure Value(EV)", Float) = -6.0
         maxRadiometricExposure ("Maximum Radiometric Exposure Value(EV)", Float) = 6.0
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
-        chromaticityMaxLatitude ("Max Chromaticity value", Float) = 0.85
-        gamutCompressionRatioPower("Gamut Compression Ratio", Float) = 1.0
-
+        chromaticityMaxLowerBoundLatitude   ("Max Chromaticity Lower Bound value", Float) = 0.85
+        gamutCompressionRatioPowerLowerBound("Gamut Compression Lower Bound Ratio", Float) = 1.0
+        chromaticityMaxHigherBoundLatitude ("Max Chromaticity Higher Bound value", Float) = 0.95
+        gamutCompressionRatioPowerHigherBound("Gamut Compression Higher Bound Ratio", Float) = 1.0
     }
     SubShader
     {
@@ -43,8 +44,11 @@
             float minRadiometricExposure;
             float maxRadiometricExposure;
             float maxRadiometricValue;
-            float chromaticityMaxLatitude;
-            half gamutCompressionRatioPower;
+            float chromaticityMaxLowerBoundLatitude;
+            float gamutCompressionRatioPowerLowerBound;
+
+            float chromaticityMaxHigherBoundLatitude;
+            float gamutCompressionRatioPowerHigherBound;
             float exposure;
 
             v2f vert(appdata v)
@@ -77,23 +81,52 @@
 
             float3 calculateGamutCompression(float4 inRadiometricLinearColor, float3 inputRatio)
             {
+                return inputRatio;
                 float3 ratio = inputRatio;
                 // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-                float gamutCompressionXCoordLinear = calculateLog2ToLinear(chromaticityMaxLatitude, greyPoint.x,
+                float gamutCompressionXCoordLinearLowerBound = calculateLog2ToLinear(chromaticityMaxLowerBoundLatitude, greyPoint.x,
+                    minRadiometricExposure, maxRadiometricExposure);
+                float gamutCompressionXCoordLinearHigherBound = calculateLog2ToLinear(chromaticityMaxHigherBoundLatitude, greyPoint.x,
                     minRadiometricExposure, maxRadiometricExposure);
 
-                if (inRadiometricLinearColor.r > gamutCompressionXCoordLinear ||
-                    inRadiometricLinearColor.g > gamutCompressionXCoordLinear ||
-                    inRadiometricLinearColor.b > gamutCompressionXCoordLinear)
+                    if (inRadiometricLinearColor.r > gamutCompressionXCoordLinearLowerBound ||
+                    inRadiometricLinearColor.g > gamutCompressionXCoordLinearLowerBound ||
+                    inRadiometricLinearColor.b > gamutCompressionXCoordLinearLowerBound)
                 {
-                    float maxRadiometricLinearChannel = max(inRadiometricLinearColor.r,
-                        max(inRadiometricLinearColor.g, inRadiometricLinearColor.b));
-                    float gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
-                    float gamutCompressionRatio = (maxRadiometricLinearChannel - gamutCompressionXCoordLinear) /
+                    float maxRadiometricLinearChannel = max(inRadiometricLinearColor.r, max(inRadiometricLinearColor.g, inRadiometricLinearColor.b));
+                    float gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinearLowerBound;
+                    float gamutCompressionRatio = (maxRadiometricLinearChannel - gamutCompressionXCoordLinearLowerBound) /
                                             gamutCompressionRange;
+                    float powerValue = 1.0f;
+                   /* if (inRadiometricLinearColor.r > gamutCompressionXCoordLinearHigherBound ||
+                        inRadiometricLinearColor.g > gamutCompressionXCoordLinearHigherBound ||
+                        inRadiometricLinearColor.b > gamutCompressionXCoordLinearHigherBound) 
+                    {
+                        powerValue = pow(gamutCompressionRatio, gamutCompressionRatioPowerHigherBound);
+                    }
+                    else {
+                        powerValue = pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound);
+                    }
+                    if(true)
+                        ratio = lerp(inputRatio, float3(1.0f, 1.0f, 1.0f), powerValue);
+                    else
+                        ratio = lerp(inputRatio, float3(1.0f, 1.0f, 1.0f), pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));*/
+                    //{\displaystyle Y = 0.2126R + 0.7152G + 0.0722B.}
 
-                    ratio = lerp(inputRatio, float3(1.0, 1.0, 1.0), pow(gamutCompressionRatio, gamutCompressionRatioPower));
+                    if (false) {
+                        ratio.r = lerp(inputRatio.r, 1.0,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
+                        ratio.g = lerp(inputRatio.g, 1.0,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
+                        ratio.b = lerp(inputRatio.b, 1.0,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
+                    }
+                    else {
+                        // TODO: expose luminance ratios because these ones are for sRGB
+                        float dechroma = dot(ratio, float3(0.2126, 0.7152, 0.0722));
+                        ratio.r = lerp(inputRatio.r, dechroma,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
+                        ratio.g = lerp(inputRatio.g, dechroma,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
+                        ratio.b = lerp(inputRatio.b, dechroma,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
+                    }
                 }
+                 
                 return ratio;
             }
 

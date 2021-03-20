@@ -40,7 +40,7 @@ public class GamutCurve
     private float minDisplayValue;
     private float minDisplayExposure;
     private float maxDisplayExposure;
-    private float maxLatitudeLimit;
+    private float curveCoordMaxLowerBoundLatitude;
     private float maxRadiometricLatitude;
     private float maxRadiometricLatitudeExposure;
     private Vector2 logMiddleGrey;
@@ -48,7 +48,7 @@ public class GamutCurve
 
 
     public GamutCurve(float minRadiometricExposure, float maxRadiometricExposure, float maxRadiometricDynamicRange, float maxDisplayValue, float minDisplayExposure,
-        float maxDisplayExposure, float maxRadiometricLatitude, float maxRadiometricLatitudeExposure, float maxLatitudeLimit)
+        float maxDisplayExposure, float maxRadiometricLatitude, float maxRadiometricLatitudeExposure, float curveCoordMaxLowerBoundLatitude)
     {
         this.minRadiometricExposure = minRadiometricExposure;
         this.maxRadiometricExposure = maxRadiometricExposure;
@@ -56,7 +56,7 @@ public class GamutCurve
         this.maxDisplayValue = maxDisplayValue;
         this.minDisplayExposure = minDisplayExposure;
         this.maxDisplayExposure = maxDisplayExposure;
-        this.maxLatitudeLimit = maxLatitudeLimit;
+        this.curveCoordMaxLowerBoundLatitude = curveCoordMaxLowerBoundLatitude;
         this.maxRadiometricLatitude = maxRadiometricLatitude;
         this.maxRadiometricLatitudeExposure = maxRadiometricLatitudeExposure;
 
@@ -89,7 +89,7 @@ public class GamutCurve
         Vector2 midP1Coords = new Vector2(0.0f, 0.0f); // Unknown at this point
         Vector2 shP0Coords = this.logMiddleGrey;
         Vector2 shP1Coords = new Vector2(0.0f, maxDisplayValue); // Unknown at this point
-        Vector2 shP2Coords = new Vector2(maxLatitudeLimit, maxDisplayValue);
+        Vector2 shP2Coords = new Vector2(curveCoordMaxLowerBoundLatitude, maxDisplayValue);
 
         // calculate y intersection when y = 0
         float b = calculateLineYIntercept(this.logMiddleGrey.x, this.logMiddleGrey.y, slope);

@@ -17,6 +17,7 @@ public struct CurveParams
     public float curveCoordMaxLatitude;
     public float chromaticitydMaxLatitude;
 
+
     public GamutMappingMode ActiveGamutMappingMode;
 
     public CurveParams(float inExposure, float inSlope, float inOriginX,
@@ -105,7 +106,7 @@ public class HDRPipeline : MonoBehaviour
             RenderTextureReadWrite.Linear);
         initialiseColorGamut();
 
-        curveRT = new RenderTexture(512, 512, 0, RenderTextureFormat.ARGB32);
+        curveRT = new RenderTexture(1024, 2048, 0, RenderTextureFormat.ARGB32);
         curveDrawMaterial = new Material(Shader.Find("Custom/DrawCurve"));
 
         var lutBakerShader = Shader.Find("Custom/LutBaker");
@@ -142,6 +143,10 @@ public class HDRPipeline : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyUp(KeyCode.U)) 
+        {
+            debug = true;
+        }
         colorGamut.Update();
     }
 
@@ -219,8 +224,10 @@ public class HDRPipeline : MonoBehaviour
                         chromaticityCompressionMat.SetFloat("minRadiometricExposure", colorGamut.MinRadiometricExposure);
                         chromaticityCompressionMat.SetFloat("maxRadiometricExposure", colorGamut.MaxRadiometricExposure);
                         chromaticityCompressionMat.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricDynamicRange);
-                        chromaticityCompressionMat.SetFloat("chromaticityMaxLatitude", colorGamut.ChromaticityMaxLatitude);
-                        chromaticityCompressionMat.SetFloat("gamutCompressionRatioPower", colorGamut.GamutCompressionRatioPower);
+                        chromaticityCompressionMat.SetFloat("chromaticityMaxLowerBoundLatitude", colorGamut.ChromaticityMaxLowerBoundLatitude);
+                        chromaticityCompressionMat.SetFloat("gamutCompressionRatioPowerLowerBound", colorGamut.GamutCompressionRatioPowerLowerBound);
+                        chromaticityCompressionMat.SetFloat("chromaticityMaxHigherBoundLatitude", colorGamut.ChromaticityMaxHigherBoundLatitude);
+                        chromaticityCompressionMat.SetFloat("gamutCompressionRatioPowerHigherBound", colorGamut.GamutCompressionRatioPowerHigherBound);
 
                         Graphics.Blit(hdriRenderTexture, renderBuffer, chromaticityCompressionMat);
                         Graphics.Blit(renderBuffer, hdriRenderTexture, fullScreenTextureMat);
@@ -287,7 +294,7 @@ public class HDRPipeline : MonoBehaviour
 
                 if (debug)
                 {
-                    colorGamut.SaveToDisk(colorGamut.toTexture2D(renderBuffer).GetPixels(), "Spiaggia_Chromaticity_Plus_LUT_Baked.exr",
+                    colorGamut.SaveToDisk(colorGamut.toTexture2D(renderBuffer).GetPixels(), "DebugImg.exr",
                         renderBuffer.width, renderBuffer.height);
                     debug = false;
                 }
