@@ -197,11 +197,6 @@
                 }
             }
 
-      
-        
-
-           
-
             float3 calculateGamutCompression(float4 inRadiometricLinearColor, float3 inputRatio)
             {
 
@@ -227,23 +222,6 @@
                         ratio.b = lerp(inputRatio.b, 1.0,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
                     }
                     else {
-
-                   /*     float logLuminanceFromRGB = calculateLinearToLog2(dot(inRadiometricLinearColor, luminanceWeights), 0.18, minRadiometricExposure, maxRadiometricExposure);
-                        float luminanceOutput = calculateLog2ToLinear(getYCoordinateLogXInput(logLuminanceFromRGB), 0.18, minRadiometricExposure, maxRadiometricExposure);
-
-                        float maxChroma = max(inRadiometricLinearColor.x, max(inRadiometricLinearColor.y, inRadiometricLinearColor.z));
-                        float3 maximalChroma = float3(inRadiometricLinearColor.r/maxChroma, inRadiometricLinearColor.g / maxChroma, inRadiometricLinearColor.b / maxChroma);
-                        float maximalChromaLuminance = dot(maximalChroma, luminanceWeights);
-                        float3 maximalReserves = float3(1.0, 1.0, 1.0) - maximalChroma;
-                        float maximalReservesLuminance = dot(maximalReserves, luminanceWeights);
-                        float luminanceDifference = saturate(luminanceOutput - maximalChromaLuminance);
-                        float luminanceDifferenceScalar = luminanceDifference / maximalReservesLuminance;
-                        float chromaScalar = (luminanceOutput - luminanceDifference) / maximalChromaLuminance;
-                        float3 reservesCompliment = luminanceDifferenceScalar * maximalReserves;
-                        float3 chromaScaled = chromaScalar * maximalChroma;
-
-                        ratio = chromaScaled + reservesCompliment;*/
-                        
                         
                         // TODO: expose luminance ratios because these ones are for sRGB
                         float dechroma = dot(inputRatio, float3(0.28, 0.65, 0.07));
@@ -252,9 +230,9 @@
 
                         if (true)
                         {
-                            ratio.r = lerp(inputRatio.r, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));//easeOutCubic(gamutCompressionRatio));
-                            ratio.g = lerp(inputRatio.g, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));//easeOutCubic(gamutCompressionRatio));
-                            ratio.b = lerp(inputRatio.b, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));//easeOutCubic(gamutCompressionRatio));
+                            ratio.r = lerp(inputRatio.r, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));
+                            ratio.g = lerp(inputRatio.g, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));
+                            ratio.b = lerp(inputRatio.b, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));
                         }
                         else {
                             ratio.r = lerp(inputRatio.r, dechromaRate, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
@@ -279,116 +257,25 @@
 
             float3 calculateLuminanceGamutCompression(float4 inRadiometricLinearColor, float3 inputRatio, float minCameraLuminance, float maxCameraLuminance)
             {
-
                 float3 luminanceWeights = float3(0.2126, 0.7152, 0.0722);
-                float3 ratio = float3(0.0, 0.0, 0.0);//inputRatio;
-                // Calculate gamut compression values by iterating through the Y values array and returning the closest x coord
-           /*     float gamutCompressionXCoordLinearLowerBound = calculateLog2ToLinear(chromaticityMaxLowerBoundLatitude, greyPoint.x,
-                    minRadiometricExposure, maxRadiometricExposure);
-
-                if (inRadiometricLinearColor.r > gamutCompressionXCoordLinearLowerBound ||
-                    inRadiometricLinearColor.g > gamutCompressionXCoordLinearLowerBound ||
-                    inRadiometricLinearColor.b > gamutCompressionXCoordLinearLowerBound)
-                {
-                    float maxRadiometricLinearChannel = max(inRadiometricLinearColor.r, max(inRadiometricLinearColor.g, inRadiometricLinearColor.b));
-
-                    float gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinearLowerBound;
-                    float gamutCompressionRatio = (maxRadiometricLinearChannel - gamutCompressionXCoordLinearLowerBound) /
-                        gamutCompressionRange;*/
-
-                   /* if (false) {
-                        ratio.r = lerp(inputRatio.r, 1.0, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-                        ratio.g = lerp(inputRatio.g, 1.0, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-                        ratio.b = lerp(inputRatio.b, 1.0, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-                    }
-                    else {*/
-                            
-                            
-                    //float radiometricOpenLuminance = dot(inRadiometricLinearColor, luminanceWeights);
-                    //// Luminance position of the camera log encoding
-                    //float cameraLuminance = saturate(radiometricOpenLuminance / maxCameraLuminance);//calculateLinearToLog2(radiometricOpenLuminance, 0.18, minRadiometricExposure, maxRadiometricExposure);
-
-                    //float maxOpenChroma = max(inRadiometricLinearColor.x, max(inRadiometricLinearColor.y, inRadiometricLinearColor.z)); // Full Radiometric Linear Range
-                    //// Radiometric Normalized Linear Range
-                    //float3 maximalCameraChroma = float3(inRadiometricLinearColor.r/ maxOpenChroma, inRadiometricLinearColor.g / maxOpenChroma, inRadiometricLinearColor.b / maxOpenChroma);
-                    //float maximalCameraChromaLuminance = dot(maximalCameraChroma, luminanceWeights);
-                    //float3 maximalCameraReserves = float3(1.0, 1.0, 1.0) - maximalCameraChroma;
-                    //float maximalCameraReservesLuminance = dot(maximalCameraReserves, luminanceWeights);
-
-                    //float luminanceCameraDifference = saturate(cameraLuminance - maximalCameraChromaLuminance);
-                    //float luminanceCameraDifferenceScalar = 0.0;
-                    //if(!Approximately(maximalCameraReservesLuminance, 0.0))
-                    //    luminanceCameraDifferenceScalar = luminanceCameraDifference / maximalCameraReservesLuminance;
-
-                    //float chromaCameraScalar = 0.0;
-                    //if(!Approximately(maximalCameraChromaLuminance, 0.0))
-                    //    chromaCameraScalar = (cameraLuminance - luminanceCameraDifference) / maximalCameraChromaLuminance;
-
-                    //float3 reservesCameraCompliment = luminanceCameraDifferenceScalar * maximalCameraReserves;
-                    //float3 chromaCameraScaled = chromaCameraScalar * maximalCameraChroma;
-
-                    //    ratio = chromaCameraScaled + reservesCameraCompliment;
-                    //    ratio *= maxCameraLuminance;
-                    //    //ratio *= maxRadiometricValue;
-
-
-             /*   float maxRadiometricLinearChannel = max(inRadiometricLinearColor.r, max(inRadiometricLinearColor.g, inRadiometricLinearColor.b));
-                float gamutCompressionXCoordLinearLowerBound = calculateLog2ToLinear(chromaticityMaxLowerBoundLatitude, greyPoint.x,
-                    minRadiometricExposure, maxRadiometricExposure);
-
-                float gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinearLowerBound;*/
-                // maximumCameraEncodingEmission
-                // maximumIncomingEmission
+                float3 ratio = float3(0.0, 0.0, 0.0);
 
                 float maxInputRatio = max(inputRatio.r, max(inputRatio.g, inputRatio.b));
                 float totalChromaRange = (1.0 - chromaticityMaxLowerBoundLatitude);
                 float gamutCompressionRatio = (maxInputRatio - chromaticityMaxLowerBoundLatitude) ;
 
-                //ratio = lerp(inputRatio, float3(1.0, 1.0, 1.0), gamutCompressionRatio);
                 float luminanceRatioValue = dot(luminanceWeights, inputRatio);
                 float3 luminanceRatio = float3(luminanceRatioValue, luminanceRatioValue, luminanceRatioValue);
                 ratio = ((1.0 - gamutCompressionRatio) * inputRatio) + ((gamutCompressionRatio)*luminanceRatio);
 
-                             // TODO: expose luminance ratios because these ones are for sRGB
-                    //    float dechroma = dot(inputRatio, float3(0.28, 0.65, 0.07));
-                    //    float3 dechromaRate = float3(gamutCompressionRatio, gamutCompressionRatio, gamutCompressionRatio);
-                    //    dechromaRate = dechromaRate * float3(0.2126, 0.7152, 0.0722);
-
-                    //    if (true)
-                    //    {
-                    //        ratio.r = lerp(inputRatio.r, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));//easeOutCubic(gamutCompressionRatio));
-                    //        ratio.g = lerp(inputRatio.g, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));//easeOutCubic(gamutCompressionRatio));
-                    //        ratio.b = lerp(inputRatio.b, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));//easeOutCubic(gamutCompressionRatio));
-                    //    }
-                    //    else {
-                    //        ratio.r = lerp(inputRatio.r, dechromaRate, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-                    //        ratio.g = lerp(inputRatio.g, dechromaRate, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-                    //        ratio.b = lerp(inputRatio.b, dechromaRate, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-                    //    }
-
-                    //}
-                //}
-
                 return ratio;
             }
-
-
-
 
             // Input is assumed to be radiometric linear
             // Output is encoded as Log2 camera intrinsic
             float4 luminanceCompression(float4 inRadiometricLinearColor)
             {
-                //float4 hdriPixelColor = float4(0.0, 0.0, 0.0, 1.0);
                 float4 hdriPixelColor = inRadiometricLinearColor * pow(2.0, exposure);
-
-                //hdriPixelColor.r = max(0.0f, hdriPixelColor.r);
-                //hdriPixelColor.g = max(0.0f, hdriPixelColor.g);
-                //hdriPixelColor.b = max(0.0f, hdriPixelColor.b);
-
-                //hdriPixelColor.r = min(maxRadiometricValue, hdriPixelColor.r);
-                //hdriPixelColor.g = min(maxRadiometricValue, hdriPixelColor.g);
-                //hdriPixelColor.b = min(maxRadiometricValue, hdriPixelColor.b);
 
                 float maxLinearPixelColor = max(hdriPixelColor.r, max(hdriPixelColor.g, hdriPixelColor.b));
                 float3 ratio = hdriPixelColor / maxLinearPixelColor;
@@ -396,7 +283,8 @@
                 float minCameraLuminance = calculateLog2ToLinear(minRadiometricExposure, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
                 float maxCameraLuminance = calculateLog2ToLinear(maxRadiometricExposure, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
 
-                hdriPixelColor.rgb = calculateLuminanceGamutCompression(hdriPixelColor, ratio, minCameraLuminance, maxCameraLuminance);
+                ratio = calculateGamutCompression(hdriPixelColor, ratio);
+                hdriPixelColor.rgb = maxLinearPixelColor * ratio;
                 
                 hdriPixelColor.r = calculateLinearToLog2(hdriPixelColor.r, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
                 hdriPixelColor.g = calculateLinearToLog2(hdriPixelColor.g, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
@@ -405,38 +293,6 @@
 
                 return hdriPixelColor;
             }
-
-            // Input is assumed to be radiometric linear
-            // Output is encoded as Log2 camera intrinsic
-            //float4 chromaticityCompression(float4 inRadiometricLinearColor)
-            //{
-            //    //float4 hdriPixelColor = float4(0.0, 0.0, 0.0, 1.0);
-            //    float4 hdriPixelColor = inRadiometricLinearColor * pow(2.0, exposure);
-
-            //    hdriPixelColor.r = max(0.0f, hdriPixelColor.r);
-            //    hdriPixelColor.g = max(0.0f, hdriPixelColor.g);
-            //    hdriPixelColor.b = max(0.0f, hdriPixelColor.b);
-
-            //    hdriPixelColor.r = min(maxRadiometricValue, hdriPixelColor.r);
-            //    hdriPixelColor.g = min(maxRadiometricValue, hdriPixelColor.g);
-            //    hdriPixelColor.b = min(maxRadiometricValue, hdriPixelColor.b);
-            // 
-            //    float maxLinearPixelColor = max(hdriPixelColor.r, max(hdriPixelColor.g, hdriPixelColor.b));
-            //    float3 ratio = hdriPixelColor / maxLinearPixelColor;
-
-            //    if (maxLinearPixelColor >= 0.0f)
-            //    {
-            //        ratio = calculateGamutCompression(hdriPixelColor, ratio);
-            //        hdriPixelColor.rgb = maxLinearPixelColor * ratio;
-            //    }
-
-            //    hdriPixelColor.r = calculateLinearToLog2(hdriPixelColor.r, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
-            //    hdriPixelColor.g = calculateLinearToLog2(hdriPixelColor.g, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
-            //    hdriPixelColor.b = calculateLinearToLog2(hdriPixelColor.b, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
-            //    hdriPixelColor.a = 1.0f;
-
-            //    return hdriPixelColor;
-            //}
 
             fixed4 frag(v2f i) : SV_Target
             {
