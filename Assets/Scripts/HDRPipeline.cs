@@ -53,6 +53,8 @@ public class HDRPipeline : MonoBehaviour
     public Texture3D colorGradeLUT;
     public Texture3D bakedLUT;
 
+    public bool heatMapToggle;
+
     private GamutMap colorGamut;
     private RenderTexture renderBuffer;
     private RenderTexture hdriRenderTexture;
@@ -116,6 +118,7 @@ public class HDRPipeline : MonoBehaviour
         xCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
         yCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
 
+        heatMapToggle = false;
         // LutBaker test
 
         float curTime = Time.realtimeSinceStartup;
@@ -212,7 +215,9 @@ public class HDRPipeline : MonoBehaviour
                     {
                         hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
                         Color[] hdriTexturePixels = hdriTexture2D.GetPixels();
-                        hdriTexturePixels = colorGamut.ApplyChromaticityCompressionCPU(hdriTexture2D.GetPixels());
+                        //hdriTexturePixels = colorGamut.ApplyChromaticityCompressionCPU(hdriTexture2D.GetPixels());
+                        hdriTexturePixels = colorGamut.luminanceCompression(hdriTexture2D.GetPixels());
+
                         hdriTexture2D.SetPixels(hdriTexturePixels);
                         hdriTexture2D.Apply();
                     }
@@ -226,8 +231,12 @@ public class HDRPipeline : MonoBehaviour
                         chromaticityCompressionMat.SetFloat("maxRadiometricValue", colorGamut.MaxRadiometricDynamicRange);
                         chromaticityCompressionMat.SetFloat("chromaticityMaxLowerBoundLatitude", colorGamut.ChromaticityMaxLowerBoundLatitude);
                         chromaticityCompressionMat.SetFloat("gamutCompressionRatioPowerLowerBound", colorGamut.GamutCompressionRatioPowerLowerBound);
-                        chromaticityCompressionMat.SetFloat("chromaticityMaxHigherBoundLatitude", colorGamut.ChromaticityMaxHigherBoundLatitude);
-                        chromaticityCompressionMat.SetFloat("gamutCompressionRatioPowerHigherBound", colorGamut.GamutCompressionRatioPowerHigherBound);
+
+                        xCurveCoordsCBuffer.SetData(colorGamut.getXValues().ToArray());
+                        yCurveCoordsCBuffer.SetData(colorGamut.getYValues().ToArray());
+                        chromaticityCompressionMat.SetBuffer(Shader.PropertyToID("xCurveCoordsCBuffer"), xCurveCoordsCBuffer);
+                        chromaticityCompressionMat.SetBuffer(Shader.PropertyToID("yCurveCoordsCBuffer"), yCurveCoordsCBuffer);
+                        chromaticityCompressionMat.SetVectorArray("controlPoints", controlPointsUniform);
 
                         Graphics.Blit(hdriRenderTexture, renderBuffer, chromaticityCompressionMat);
                         Graphics.Blit(renderBuffer, hdriRenderTexture, fullScreenTextureMat);
@@ -265,6 +274,7 @@ public class HDRPipeline : MonoBehaviour
                     gamutMapMat.SetFloat("maxDisplayValue", colorGamut.MaxDisplayValue);
                     gamutMapMat.SetInt("inputArraySize", colorGamut.getXValues().Count - 1);
                     gamutMapMat.SetInt("usePerChannel", activeTransferFunction);
+                    gamutMapMat.SetInt("heatmap", (heatMapToggle == true) ? 1 : 0);
 
                     xCurveCoordsCBuffer.SetData(colorGamut.getXValues().ToArray());
                     yCurveCoordsCBuffer.SetData(colorGamut.getYValues().ToArray());

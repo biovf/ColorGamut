@@ -74,13 +74,14 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     - exposure: 0
+    - heatmap: 0
     - inputArraySize: 1023
     - maxDisplayExposure: 2.473931
     - maxDisplayValue: 1
     - maxExposure: 6
     - maxLatitudeLimit: 0.869
-    - maxRadiometricExposure: 5.7
-    - maxRadiometricValue: 9.357146
+    - maxRadiometricExposure: 6
+    - maxRadiometricValue: 11.52
     - minDisplayExposure: -8.491853
     - minDisplayValue: 0.0005
     - minExposure: -6
@@ -91,3 +92,4 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - greyPoint: {r: 0.18, g: 0.18, b: 0, a: 0}
+  m_BuildTextureStacks: []

@@ -75,6 +75,7 @@ public class HDRPipelineEditor : Editor
     //#region DebugOptions
     private bool enableCPUMode = true;
     private bool saveGamutMapDebugImages = false;
+    private bool heatmapToggle = false;
     //#endregion
 
     private Rect curveRect;
@@ -85,7 +86,7 @@ public class HDRPipelineEditor : Editor
 
     //private float curveCoordMaxHigherBoundLatitude = 0.85f;
     private float curveChromaticityMaxHigherBoundLatitude = 0.85f;
-    private float gamutCompressionRatioPowerHigherBound = 2.0f;
+    //private float gamutCompressionRatioPowerHigherBound = 2.0f;
 
     private float minRadiometricExposure = -6.0f;
     private float maxRadiometricExposure = 6.0f;
@@ -135,11 +136,12 @@ public class HDRPipelineEditor : Editor
         gamutCompressionRatioPowerLowerBound = colorGamut.GamutCompressionRatioPowerLowerBound;
 
         //curveCoordMaxHigherBoundLatitude = colorGamut.CurveCoordMaxHigherBoundLatitude;
-        curveChromaticityMaxHigherBoundLatitude = colorGamut.ChromaticityMaxHigherBoundLatitude;
-        gamutCompressionRatioPowerHigherBound = colorGamut.GamutCompressionRatioPowerHigherBound;
+        //curveChromaticityMaxHigherBoundLatitude = colorGamut.ChromaticityMaxHigherBoundLatitude;
+        //gamutCompressionRatioPowerHigherBound = colorGamut.GamutCompressionRatioPowerHigherBound;
 
         minRadiometricExposure = colorGamut.MinRadiometricExposure;
         maxRadiometricExposure = colorGamut.MaxRadiometricExposure;
+        heatmapToggle = hdrPipeline.heatMapToggle;
 }
 
 
@@ -241,11 +243,11 @@ public class HDRPipelineEditor : Editor
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
         curveCoordMaxLowerBoundLatitude = EditorGUILayout.Slider("Curve Max Lower Bound Coordinate Latitude", curveCoordMaxLowerBoundLatitude, 0.1f, 1.0f);
         curveChromaticityMaxLowerBoundLatitude = EditorGUILayout.Slider("Curve Max Lower Bound Chromaticity Latitude", curveChromaticityMaxLowerBoundLatitude, 0.1f, 1.0f);
-        curveChromaticityMaxHigherBoundLatitude = EditorGUILayout.Slider("Curve Max Higher Bound Chromaticity Latitude",
-            ((curveChromaticityMaxHigherBoundLatitude <= curveChromaticityMaxLowerBoundLatitude) ? (curveChromaticityMaxLowerBoundLatitude + 0.01f) : curveChromaticityMaxHigherBoundLatitude), 0.1f, 1.0f);
+        //curveChromaticityMaxHigherBoundLatitude = EditorGUILayout.Slider("Curve Max Higher Bound Chromaticity Latitude",
+        //    ((curveChromaticityMaxHigherBoundLatitude <= curveChromaticityMaxLowerBoundLatitude) ? (curveChromaticityMaxLowerBoundLatitude + 0.01f) : curveChromaticityMaxHigherBoundLatitude), 0.1f, 1.0f);
 
         gamutCompressionRatioPowerLowerBound = EditorGUILayout.Slider("Gamut Compression Lower Bound Exponent", gamutCompressionRatioPowerLowerBound, 0.001f, 5.0f);
-        gamutCompressionRatioPowerHigherBound = EditorGUILayout.Slider("Gamut Compression Higher Bound Exponent", gamutCompressionRatioPowerHigherBound, 0.001f, 5.0f);
+        //gamutCompressionRatioPowerHigherBound = EditorGUILayout.Slider("Gamut Compression Higher Bound Exponent", gamutCompressionRatioPowerHigherBound, 0.001f, 5.0f);
         
         minRadiometricExposure = EditorGUILayout.Slider("Minimum Radiometric Exposure", minRadiometricExposure, -20.0f, 0.0f);
         maxRadiometricExposure = EditorGUILayout.Slider("Maximum Radiometric Exposure", maxRadiometricExposure, 0.0f, 20.0f);
@@ -263,6 +265,7 @@ public class HDRPipelineEditor : Editor
                 GUILayout.Button("Generate Image"))
             {
                 Debug.Log("Generating new image with new parameters");
+                colorGamut.setExposure(exposure);
                 colorGamut.setGamutCompression(isGamutCompressionActive);
                 colorGamut.setMinMaxRadiometricExposure(minRadiometricExposure, maxRadiometricExposure);
                 colorGamut.setGamutCompressionRatioPower(gamutCompressionRatioPowerLowerBound);
@@ -330,6 +333,7 @@ public class HDRPipelineEditor : Editor
         EditorGUILayout.Space();
 
         DrawDebugOptionsWidgets();
+        hdrPipeline.heatMapToggle = heatmapToggle;
 
         base.serializedObject.ApplyModifiedProperties();
     }
@@ -368,6 +372,7 @@ public class HDRPipelineEditor : Editor
 
     private void DrawDebugOptionsWidgets()
     {
+        heatmapToggle = EditorGUILayout.Toggle("Pixel Heatmap", heatmapToggle);
         showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         isGamutCompressionActive = EditorGUILayout.Toggle("Enable Gamut Compression", isGamutCompressionActive);
         isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);

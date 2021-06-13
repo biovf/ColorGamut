@@ -14,6 +14,7 @@
         maxRadiometricValue ("Maximum Radiometric Value", Float) = 12.0
         inputArraySize ("Number of curve array elements", Int) = 1024
         usePerChannel ("Use per channel gamut mapping", Int) = 0
+        heatmap ("HeatMap", Int) = 0
     }
     SubShader
     {
@@ -54,6 +55,7 @@
 
             int inputArraySize;
             int usePerChannel;
+            int heatmap;
 
             struct GamutCurveCoords
             {
@@ -201,7 +203,6 @@
                 calculateLog2ToLinear(inRadiometricLinearColor.g, greyPoint.x, minRadiometricExposure, maxRadiometricExposure),
                 calculateLog2ToLinear(inRadiometricLinearColor.b, greyPoint.x, minRadiometricExposure, maxRadiometricExposure));
 
-                //float3 colorExposed = linearHdriPixelColor * pow(2.0, exposure);
 
                 // Shape image
                 float3 log2HdriPixelArray = half3(0.0, 0.0, 0.0);
@@ -247,10 +248,37 @@
                 return hdriPixelColor;
             }
 
+            float max3(float3 xyz) 
+            {
+                return max(xyz.x, max(xyz.y, xyz.z));
+            }
+
+
             fixed4 frag(v2f i) : SV_Target
             {
                 half4 col = tex2D(_MainTex, i.uv);
-                return gamutMap(col);
+
+                col = gamutMap(col);
+                float maxCol = max3(col.rgb);
+                if(heatmap == 0)
+                {
+                    return col;
+                }
+                else {
+                    if (maxCol < controlPoints[2].y)
+                    {
+                        float outCol = (maxCol - controlPoints[0].y) / (controlPoints[2].y - controlPoints[0].y);
+                        return float4(outCol, 0.0, 0.0, 1.0);
+                    } else  if (maxCol < controlPoints[4].y)
+                    {
+                        float outCol = (maxCol - controlPoints[2].y) / (controlPoints[4].y - controlPoints[2].y);
+                        return float4(0.0, outCol, 0.0, 1.0);
+                    } else 
+                    {
+                        float outCol = (maxCol - controlPoints[4].y) / (controlPoints[6].y - controlPoints[4].y);
+                        return float4(0.0, 0.0, outCol, 1.0);
+                    }
+                }
             }
             ENDCG
         }

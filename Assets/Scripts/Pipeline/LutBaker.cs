@@ -78,7 +78,9 @@ public class LutBaker
             // Bake the chromaticity compression into the 2D array of colours
             // Input Data Format: Radiometric linear
             // Output Data Format: Log2 camera intrinsic
-            temp2DSlice = gamutMap.ApplyChromaticityCompressionCPU(temp2DSlice);
+            //temp2DSlice = gamutMap.ApplyChromaticityCompressionCPU(temp2DSlice);
+            temp2DSlice = gamutMap.luminanceCompression(temp2DSlice);
+
             // Write this array of colours back into the 2D texture
             slice2DFrom3DLut.SetPixels(temp2DSlice);
             slice2DFrom3DLut.Apply();

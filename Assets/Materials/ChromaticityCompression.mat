@@ -74,15 +74,17 @@ Material:
     - _ZWrite: 1
     - chromaticityMaxHigherBoundLatitude: 0.9
     - chromaticityMaxLatitude: 0.85
-    - chromaticityMaxLowerBoundLatitude: 0.85
-    - exposure: 0
+    - chromaticityMaxLowerBoundLatitude: 0.728
+    - exposure: 3.47
     - gamutCompressionRatioPower: 0.85
     - gamutCompressionRatioPowerHigherBound: 1
     - gamutCompressionRatioPowerLowerBound: 0.85
-    - maxRadiometricExposure: 5.7
-    - maxRadiometricValue: 9.357146
+    - inputArraySize: 1024
+    - maxRadiometricExposure: 6
+    - maxRadiometricValue: 11.52
     - minRadiometricExposure: -7
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - greyPoint: {r: 0.18, g: 0.18, b: 0, a: 0}
+  m_BuildTextureStacks: []
