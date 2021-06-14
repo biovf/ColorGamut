@@ -46,8 +46,6 @@
 
             half4 frag (v2f i) : SV_Target
             {
-                //half CELL_SIZE = 32.0;
-
                 half maxColor = (CELL_SIZE - 1.0);
                 half4 col = (tex2D(_MainTex, i.uv));            
 

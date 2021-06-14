@@ -69,7 +69,6 @@ public class HDRPipelineEditor : Editor
     #endregion
 
     private bool isColorGradingTabOpen = true;
-    // private ColorGrade colorGradingHDR;
     private GamutMap.CurveDataState guiWidgetsState = GamutMap.CurveDataState.NotCalculated;
     
     //#region DebugOptions
@@ -83,10 +82,7 @@ public class HDRPipelineEditor : Editor
     private float curveCoordMaxLowerBoundLatitude = 0.85f;
     private float curveChromaticityMaxLowerBoundLatitude = 0.85f;
     private float gamutCompressionRatioPowerLowerBound = 2.0f;
-
-    //private float curveCoordMaxHigherBoundLatitude = 0.85f;
     private float curveChromaticityMaxHigherBoundLatitude = 0.85f;
-    //private float gamutCompressionRatioPowerHigherBound = 2.0f;
 
     private float minRadiometricExposure = -6.0f;
     private float maxRadiometricExposure = 6.0f;
@@ -98,7 +94,6 @@ public class HDRPipelineEditor : Editor
             return;
         
         colorGamut = hdrPipeline.getGamutMap();
-        // colorGradingHDR = hdrPipeline.getColorGrading();
         if (colorGamut != null)
         {
             hdriNames = new List<string>();
@@ -134,10 +129,6 @@ public class HDRPipelineEditor : Editor
         curveCoordMaxLowerBoundLatitude = colorGamut.CurveCoordMaxLowerBoundLatitude;
         curveChromaticityMaxLowerBoundLatitude = colorGamut.ChromaticityMaxLowerBoundLatitude;
         gamutCompressionRatioPowerLowerBound = colorGamut.GamutCompressionRatioPowerLowerBound;
-
-        //curveCoordMaxHigherBoundLatitude = colorGamut.CurveCoordMaxHigherBoundLatitude;
-        //curveChromaticityMaxHigherBoundLatitude = colorGamut.ChromaticityMaxHigherBoundLatitude;
-        //gamutCompressionRatioPowerHigherBound = colorGamut.GamutCompressionRatioPowerHigherBound;
 
         minRadiometricExposure = colorGamut.MinRadiometricExposure;
         maxRadiometricExposure = colorGamut.MaxRadiometricExposure;
@@ -188,16 +179,9 @@ public class HDRPipelineEditor : Editor
             // Draw auxiliary information on the graph
             Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
             Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricDynamicRange, 1.0f), 4.0f); // Draw Y = 1 line
-            //Handles.DrawDottedLine(new Vector3(0.0f, 1.5f), new Vector3(colorGamut.MaxRadiometricValue, 1.5f), 4.0f); // Draw Y = 1.5 line
             Handles.DrawDottedLine(new Vector3(p4.x, 0.0f), new Vector3(p4.x, p4.y), 2.0f); // Draw vertical line from 0.18f
             Handles.DrawDottedLine(new Vector3(0.0f, p4.y), new Vector3(p4.x, p4.y), 2.0f); // Draw vertical line from 0.18f
-            //Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
             Handles.DrawDottedLine(new Vector3(curveCoordMaxLowerBoundLatitude, 0.0f), new Vector3(curveCoordMaxLowerBoundLatitude, 1.0f), 4.0f); // Draw vertical line for gamut compression start
-
-            //Handles.DrawDottedLine(new Vector3(curveChromaticityMaxLowerBoundLatitude, 0.0f), new Vector3(curveChromaticityMaxLowerBoundLatitude, 1.0f), 8.0f); // Draw vertical line for gamut compression start
-            //Handles.DrawDottedLine(new Vector3(curveChromaticityMaxHigherBoundLatitude, 0.0f), new Vector3(curveChromaticityMaxHigherBoundLatitude, 1.0f), 8.0f); // Draw vertical line for gamut compression start
-
-
 
             if (guiWidgetsState ==  GamutMap.CurveDataState.Dirty ||
                 guiWidgetsState ==  GamutMap.CurveDataState.NotCalculated)
@@ -237,17 +221,12 @@ public class HDRPipelineEditor : Editor
         _activeGamutMappingMode =
             (GamutMappingMode) EditorGUILayout.EnumPopup("Active Transfer Function", _activeGamutMappingMode);
         EditorGUILayout.Space();
-        // gamutCompressionRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", gamutCompressionRatioPower, 1, 7);
         
         exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
         curveCoordMaxLowerBoundLatitude = EditorGUILayout.Slider("Curve Max Lower Bound Coordinate Latitude", curveCoordMaxLowerBoundLatitude, 0.1f, 1.0f);
         curveChromaticityMaxLowerBoundLatitude = EditorGUILayout.Slider("Curve Max Lower Bound Chromaticity Latitude", curveChromaticityMaxLowerBoundLatitude, 0.1f, 1.0f);
-        //curveChromaticityMaxHigherBoundLatitude = EditorGUILayout.Slider("Curve Max Higher Bound Chromaticity Latitude",
-        //    ((curveChromaticityMaxHigherBoundLatitude <= curveChromaticityMaxLowerBoundLatitude) ? (curveChromaticityMaxLowerBoundLatitude + 0.01f) : curveChromaticityMaxHigherBoundLatitude), 0.1f, 1.0f);
-
         gamutCompressionRatioPowerLowerBound = EditorGUILayout.Slider("Gamut Compression Lower Bound Exponent", gamutCompressionRatioPowerLowerBound, 0.001f, 5.0f);
-        //gamutCompressionRatioPowerHigherBound = EditorGUILayout.Slider("Gamut Compression Higher Bound Exponent", gamutCompressionRatioPowerHigherBound, 0.001f, 5.0f);
         
         minRadiometricExposure = EditorGUILayout.Slider("Minimum Radiometric Exposure", minRadiometricExposure, -20.0f, 0.0f);
         maxRadiometricExposure = EditorGUILayout.Slider("Maximum Radiometric Exposure", maxRadiometricExposure, 0.0f, 20.0f);

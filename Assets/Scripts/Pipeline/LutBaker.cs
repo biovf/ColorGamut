@@ -85,15 +85,6 @@ public class LutBaker
             slice2DFrom3DLut.SetPixels(temp2DSlice);
             slice2DFrom3DLut.Apply();
 
-            //chromaticityCompMat.SetTexture("_MainTex", slice2DFrom3DLut);
-            //chromaticityCompMat.SetVector("greyPoint", new Vector4(gamutMap.MidGreySdr.x, gamutMap.MidGreySdr.y, 0.0f));
-            //chromaticityCompMat.SetFloat("minRadiometricExposure", gamutMap.MinRadiometricExposure);
-            //chromaticityCompMat.SetFloat("maxRadiometricExposure", gamutMap.MaxRadiometricExposure);
-            //chromaticityCompMat.SetFloat("maxRadiometricValue", gamutMap.MaxRadiometricDynamicRange);
-            //chromaticityCompMat.SetFloat("chromaticityMaxLatitude", gamutMap.ChromaticityMaxLatitude);
-            //chromaticityCompMat.SetFloat("gamutCompressionRatioPower", gamutMap.GamutCompressionRatioPower);
-            //Graphics.Blit(slice2DFrom3DLut, renderTexture2DSlicePong, chromaticityCompMat);
-
             // Bake the colour grading step
             hdrPipeline.colorGradingMat.SetTexture("_MainTex", slice2DFrom3DLut);
             hdrPipeline.colorGradingMat.SetTexture("_LUT", hdrPipeline.colorGradeLUT);

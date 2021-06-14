@@ -224,7 +224,7 @@
                     else {
                         
                         // TODO: expose luminance ratios because these ones are for sRGB
-                        float dechroma = dot(inputRatio, float3(0.28, 0.65, 0.07));
+                        float dechroma = dot(inputRatio, float3(0.139, 0.730, 0.131));
                         float3 dechromaRate = float3(gamutCompressionRatio, gamutCompressionRatio, gamutCompressionRatio);
                         dechromaRate = dechromaRate * float3(0.2126, 0.7152, 0.0722);
 
