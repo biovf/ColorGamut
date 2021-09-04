@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ChromaticityCompression
-  m_Shader: {fileID: 4800000, guid: 84a5efccf7b3c4f68bf9b3f79cd6a427, type: 3}
+  m_Name: Lich
+  m_Shader: {fileID: 4800000, guid: 634fa2442389d4843bdfb3679625c4b4, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -40,7 +40,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: bd000266b35516c4fbdae6c97a7001fd, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -72,16 +72,8 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - chromaticityMaxHigherBoundLatitude: 0.9
-    - chromaticityMaxLatitude: 0.85
-    - chromaticityMaxLowerBoundLatitude: 0.051
-    - exposure: 0.11
-    - gamutCompressionRatioPower: 0.85
-    - gamutCompressionRatioPowerHigherBound: 1
-    - gamutCompressionRatioPowerLowerBound: 0.85
-    - inputArraySize: 1024
+    - exposure: 0
     - maxRadiometricExposure: 6
-    - maxRadiometricValue: 11.52
     - minRadiometricExposure: -7
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

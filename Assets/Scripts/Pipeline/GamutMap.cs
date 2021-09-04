@@ -110,6 +110,8 @@ public class GamutMap
     public float GamutCompressionRatioPowerLowerBound => gamutCompressionRatioPowerLowerBound;
     private float gamutCompressionRatioPowerLowerBound;
 
+    public RenderTexture finalScreenImage;
+
     //public float CurveCoordMaxHigherBoundLatitude
     //{
     //    get => curveCoordMaxHigherBoundLatitude;
@@ -174,7 +176,7 @@ public class GamutMap
         this.fullScreenTextureMat = fullscreenTexMat;
     }
 
-    public void Start(HDRPipeline pipeline)
+    public void Start(Camera mainCamera)
     {
         activeGamutMappingMode = GamutMappingMode.Max_RGB;
 
@@ -225,7 +227,7 @@ public class GamutMap
             Debug.LogError("HDRIs list is empty");
 
         inputRadiometricLinearTexture = HDRIList[hdriIndex];
-        mainCamera = pipeline.gameObject.GetComponent<Camera>();
+        this.mainCamera = mainCamera;
 
         hdriPixelArray = new Color[inputRadiometricLinearTexture.width * inputRadiometricLinearTexture.height];
         hdriTextureTransformed =
@@ -463,6 +465,20 @@ public class GamutMap
             finalImageColour.g = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].g, TransferFunction.TransferFunctionType.sRGB_2PartFunction);
             finalImageColour.b = TransferFunction.ApplyInverseTransferFunction(hdriPixelArray[i].b, TransferFunction.TransferFunctionType.sRGB_2PartFunction);
             finalImageColour.a = 1.0f;
+
+            finalImageColour.r = finalImageColour.r < 0.0f ? 0.0f : finalImageColour.r;
+            finalImageColour.g = finalImageColour.g < 0.0f ? 0.0f : finalImageColour.g;
+            finalImageColour.b = finalImageColour.b < 0.0f ? 0.0f : finalImageColour.b;
+
+            if (!isFloatValid(finalImageColour.r) || !isFloatValid(finalImageColour.g) || 
+                !isFloatValid(finalImageColour.b) || !isFloatValid(finalImageColour.a) ||
+                finalImageColour.r < 0.0f || finalImageColour.g < 0.0f
+               || finalImageColour.b < 0.0f || finalImageColour.a < 0.0f)
+            {
+                Debug.Log("ApplyTransferFunction - Neg value");
+        
+            }
+
             finalImage.Add(finalImageColour);
         }
 
@@ -574,8 +590,6 @@ public class GamutMap
         return finalImageTexture;
     }
 
-
-
     public void JedHighlightCompression(Color linearHdriPixelColor, Color inRatio)
     {
         float[] xCoordsArray = xCameraIntrinsicValues.ToArray();
@@ -617,10 +631,7 @@ public class GamutMap
         tmp = 1.0f - tmp;
     }
 
-
-
     // TODO: Rename this method to become gamutPrismCompression
-    // 
     private Color calculateGamutCompression(Color linearHdriPixelColor, Color inRatio ,
         float[] xCoordsArray, float[] yCoordsArray, float[] tValuesArray)
     {
@@ -639,37 +650,44 @@ public class GamutMap
         {
 
             Vector3 luminanceWeights = new Vector3(0.2126f, 0.7152f, 0.0722f);
-            Vector3 linearHdriPixelVec3 = new Vector3(linearHdriPixelColor.r, linearHdriPixelColor.g, linearHdriPixelColor.b);
-            Vector3 maxLinearHdriPixelColor = new Vector3(linearHdriPixelColor.maxColorComponent, linearHdriPixelColor.maxColorComponent, linearHdriPixelColor.maxColorComponent);
-            float logLuminanceFromRGB = Shaper.calculateLinearToLog2(Vector3.Dot(linearHdriPixelVec3, luminanceWeights), 0.18f, minRadiometricExposure, maxRadiometricExposure);
-            float luminanceOutput = Shaper.calculateLog2ToLinear(parametricGamutCurve.getYCoordinateLogXInput(logLuminanceFromRGB, xCoordsArray, yCoordsArray, tValuesArray, controlPoints), 
-                0.18f, minRadiometricExposure, maxRadiometricExposure);
+            //Vector3 linearHdriPixelVec3 = new Vector3(linearHdriPixelColor.r, linearHdriPixelColor.g, linearHdriPixelColor.b);
+            //Vector3 maxLinearHdriPixelColor = new Vector3(linearHdriPixelColor.maxColorComponent, linearHdriPixelColor.maxColorComponent, linearHdriPixelColor.maxColorComponent);
+            //float logLuminanceFromRGB = Shaper.calculateLinearToLog2(Vector3.Dot(linearHdriPixelVec3, luminanceWeights), 0.18f, minRadiometricExposure, maxRadiometricExposure);
+            //float luminanceOutput = Shaper.calculateLog2ToLinear(parametricGamutCurve.getYCoordinateLogXInput(logLuminanceFromRGB, xCoordsArray, yCoordsArray, tValuesArray, controlPoints), 
+            //    0.18f, minRadiometricExposure, maxRadiometricExposure);
 
-            Vector3 maximalChroma = new Vector3(linearHdriPixelVec3.x / maxLinearHdriPixelColor.x, linearHdriPixelVec3.y / maxLinearHdriPixelColor.y, linearHdriPixelVec3.z / maxLinearHdriPixelColor.z);
-            float maximalChromaLuminance = Vector3.Dot(maximalChroma, luminanceWeights);
-            Vector3 maximalReserves = Vector3.one - maximalChroma;
-            float maximalReservesLuminance = Vector3.Dot(maximalReserves, luminanceWeights);
-            float luminanceDifference = Mathf.Clamp01(luminanceOutput - maximalChromaLuminance);
-            float luminanceDifferenceScalar = luminanceDifference / maximalReservesLuminance;
-            float chromaScalar = (luminanceOutput - luminanceDifference) / maximalChromaLuminance;
-            Vector3 reservesCompliment = luminanceDifferenceScalar * maximalReserves;
-            Vector3 chromaScaled = chromaScalar * maximalChroma;
+            //Vector3 maximalChroma = new Vector3(linearHdriPixelVec3.x / maxLinearHdriPixelColor.x, linearHdriPixelVec3.y / maxLinearHdriPixelColor.y, linearHdriPixelVec3.z / maxLinearHdriPixelColor.z);
+            //float maximalChromaLuminance = Vector3.Dot(maximalChroma, luminanceWeights);
+            //Vector3 maximalReserves = Vector3.one - maximalChroma;
+            //float maximalReservesLuminance = Vector3.Dot(maximalReserves, luminanceWeights);
+            //float luminanceDifference = Mathf.Clamp01(luminanceOutput - maximalChromaLuminance);
+            //float luminanceDifferenceScalar = luminanceDifference / maximalReservesLuminance;
+            //float chromaScalar = (luminanceOutput - luminanceDifference) / maximalChromaLuminance;
+            //Vector3 reservesCompliment = luminanceDifferenceScalar * maximalReserves;
+            //Vector3 chromaScaled = chromaScalar * maximalChroma;
 
-            chromaScaled = chromaScaled + reservesCompliment;
-            ratio = new Color(chromaScaled.x, chromaScaled.y, chromaScaled.z);
+            //chromaScaled = chromaScaled + reservesCompliment;
+            //ratio = new Color(chromaScaled.x, chromaScaled.y, chromaScaled.z);
 
             //Debug.Log("Linear HDRI Pixel Color " + linearHdriPixelColor.ToString());
             //Debug.Log("Gamut Compression X Coord Linear " + gamutCompressionXCoordLinear.ToString());
             //Debug.Log("-----------------------------------------");
 
-            //gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
-            //gamutCompressionRatio = (linearHdriPixelColor.maxColorComponent - gamutCompressionXCoordLinear) /
-            //                        gamutCompressionRange;
+            gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinear;
+            gamutCompressionRatio = (linearHdriPixelColor.maxColorComponent - gamutCompressionXCoordLinear) /
+                                    gamutCompressionRange;
 
-            //float dechroma = Vector3.Dot(new Vector3(ratio.r, ratio.g, ratio.b), new Vector3(0.2126f, 0.7152f, 0.0722f));
-            //ratio.r = Mathf.Lerp(inRatio.r, dechroma, Mathf.Pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-            //ratio.g = Mathf.Lerp(inRatio.g, dechroma, Mathf.Pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-            //ratio.b = Mathf.Lerp(inRatio.b, dechroma, Mathf.Pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
+            float dechroma = Vector3.Dot(new Vector3(ratio.r, ratio.g, ratio.b), new Vector3(0.33f, 0.34f, 0.33f));
+            Vector3 dechromaRate = new Vector3(gamutCompressionRatio, gamutCompressionRatio, gamutCompressionRatio);
+            dechromaRate = Vector3.Scale(dechromaRate, new Vector3(0.2126f, 0.7152f, 0.0722f));
+            //Debug.Log("Pixel Color " + linearHdriPixelColor.ToString() + " " + " dechroma " + dechroma + " gamutCompressionRatio " + gamutCompressionRatio);
+            //ratio.r = Mathf.Lerp(inRatio.r, 1.0f, Mathf.Pow(gamutCompressionRatio, 1.0f - dechroma));
+            //ratio.g = Mathf.Lerp(inRatio.g, 1.0f, Mathf.Pow(gamutCompressionRatio, 1.0f - dechroma));
+            //ratio.b = Mathf.Lerp(inRatio.b, 1.0f, Mathf.Pow(gamutCompressionRatio, 1.0f - dechroma));
+
+            ratio.r = Mathf.Lerp(inRatio.r, 1.0f, gamutCompressionRatio);
+            ratio.g = Mathf.Lerp(inRatio.g, 1.0f, gamutCompressionRatio);
+            ratio.b = Mathf.Lerp(inRatio.b, 1.0f, gamutCompressionRatio);
 
             //Vector3 inRatioVec = new Vector3(inRatio.r, inRatio.g, inRatio.b);
             //inRatioVec = Vector3.Lerp(inRatioVec, Vector3.one, Mathf.Pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
@@ -691,6 +709,74 @@ public class GamutMap
 
         return ratio;
     }
+
+    private Color calculateLogGamutCompression(Color logPixelColor, Color inRatio)
+    {
+        float gamutCompressionRange;
+        float gamutCompressionRatio;
+        Color ratio = inRatio;
+        float maxRadiometricLogValue = Shaper.calculateLinearToLog2(maxRadiometricValue, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+        if (logPixelColor.r > chromaticityMaxLowerBoundLatitude ||
+            logPixelColor.g > chromaticityMaxLowerBoundLatitude ||
+            logPixelColor.b > chromaticityMaxLowerBoundLatitude)
+        {
+
+            gamutCompressionRange = maxRadiometricLogValue - chromaticityMaxLowerBoundLatitude;
+            gamutCompressionRatio = (logPixelColor.maxColorComponent - chromaticityMaxLowerBoundLatitude) /
+                                    gamutCompressionRange;
+
+            ratio.r = Mathf.Lerp(inRatio.r, 1.0f, gamutCompressionRatio);
+            ratio.g = Mathf.Lerp(inRatio.g, 1.0f, gamutCompressionRatio);
+            ratio.b = Mathf.Lerp(inRatio.b, 1.0f, gamutCompressionRatio);
+        }
+
+        return ratio;
+    }
+
+    public Color[] ApplyChromaticityLogCompressionCPU(Color[] linearRadiometricInputPixels)
+    {
+        Vector3 colorVec = Vector3.zero;
+        Color[] outputColorBuffer = new Color[linearRadiometricInputPixels.Length];
+
+        float[] xCameraIntrinsicArray = xCameraIntrinsicValues.ToArray();
+        float[] yDisplayIntrinsicArray = yDisplayIntrinsicValues.ToArray();
+        float[] tValuesArray = tValues.ToArray();
+
+
+        Color linearPixelColor = new Color();
+        Color logPixelColor = new Color();
+        Color ratio = Color.white;
+        for (int index = 0; index < linearRadiometricInputPixels.Length; index++)
+        {
+            linearPixelColor = linearRadiometricInputPixels[index] * Mathf.Pow(2.0f, exposure);
+
+            logPixelColor.r = Shaper.calculateLinearToLog2(linearPixelColor.r, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+            logPixelColor.g = Shaper.calculateLinearToLog2(linearPixelColor.g, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+            logPixelColor.b = Shaper.calculateLinearToLog2(linearPixelColor.b, midGreySDR.x, minRadiometricExposure, maxRadiometricExposure);
+
+            float maxLogPixelColor = logPixelColor.maxColorComponent;
+            ratio = logPixelColor / maxLogPixelColor;
+
+            ratio = calculateLogGamutCompression(logPixelColor, ratio);
+            logPixelColor = maxLogPixelColor * ratio;
+
+            outputColorBuffer[index].r = logPixelColor.r;
+            outputColorBuffer[index].g = logPixelColor.g;
+            outputColorBuffer[index].b = logPixelColor.b;
+            outputColorBuffer[index].a = 1.0f;
+
+            Color toTest = outputColorBuffer[index];
+
+            if (!isFloatValid(toTest.r) || !isFloatValid(toTest.g) || !isFloatValid(toTest.b) || !isFloatValid(toTest.a) ||
+                toTest.r < 0.0f || toTest.g < 0.0f || toTest.b < 0.0f || toTest.a < 0.0f)
+            {
+                Debug.Log("ApplyChromaticityCompressionCPU - Neg value");
+            }
+        }
+
+        return outputColorBuffer;
+    }
+
 
     Vector3 sensorAbsoluteToRelative(Vector3 inputValue, float minExposure, float maxExposure, float midGrey) 
     {
@@ -847,6 +933,16 @@ public class GamutMap
         return outputColorBuffer;
     }
 
+    private bool isFloatValid(float val) 
+    {
+        bool result = !float.IsNaN(val) || !float.IsInfinity(val) || !float.IsNegativeInfinity(val) || !float.IsPositiveInfinity(val);
+        if (!result)
+            Debug.Log("invalid");
+
+        return result;
+
+    }
+
     public Color[] ApplyChromaticityCompressionCPU(Color[] linearRadiometricInputPixels)
     {
         Vector3 colorVec = Vector3.zero;
@@ -860,17 +956,18 @@ public class GamutMap
         Color ratio = Color.white;
         for (int index = 0; index < linearRadiometricInputPixels.Length; index++)
         {
+            linearPixelColor = linearRadiometricInputPixels[index];
             // Apply exposure
             linearPixelColor = linearPixelColor * Mathf.Pow(2.0f, exposure);
 
             // Secondary bottom nuance grade, lower end guardrails
-            linearPixelColor.r = Math.Max(0.0f, linearRadiometricInputPixels[index].r);
-            linearPixelColor.g = Math.Max(0.0f, linearRadiometricInputPixels[index].g);
-            linearPixelColor.b = Math.Max(0.0f, linearRadiometricInputPixels[index].b);
+            //linearPixelColor.r = Math.Max(0.0f, linearRadiometricInputPixels[index].r);
+            //linearPixelColor.g = Math.Max(0.0f, linearRadiometricInputPixels[index].g);
+            //linearPixelColor.b = Math.Max(0.0f, linearRadiometricInputPixels[index].b);
 
-            linearPixelColor.r = Math.Min(linearPixelColor.r, maxRadiometricValue);
-            linearPixelColor.g = Math.Min(linearPixelColor.g, maxRadiometricValue);
-            linearPixelColor.b = Math.Min(linearPixelColor.b, maxRadiometricValue);
+            //linearPixelColor.r = Math.Min(linearPixelColor.r, maxRadiometricValue);
+            //linearPixelColor.g = Math.Min(linearPixelColor.g, maxRadiometricValue);
+            //linearPixelColor.b = Math.Min(linearPixelColor.b, maxRadiometricValue);
 
             float maxLinearPixelColor = linearPixelColor.maxColorComponent;
             ratio = linearPixelColor / maxLinearPixelColor;
@@ -888,16 +985,37 @@ public class GamutMap
             outputColorBuffer[index].b = Shaper.calculateLinearToLog2(linearPixelColor.b, MidGreySdr.x,
                 MinRadiometricExposure, MaxRadiometricExposure);
             outputColorBuffer[index].a = 1.0f;
+
+            Color toTest = outputColorBuffer[index];
+
+            if (!isFloatValid(toTest.r) || !isFloatValid(toTest.g) || !isFloatValid(toTest.b) || !isFloatValid(toTest.a) ||
+                toTest.r < 0.0f || toTest.g < 0.0f || toTest.b < 0.0f || toTest.a < 0.0f)
+            {
+                Debug.Log("ApplyChromaticityCompressionCPU - Neg value");
+            }
         }
 
         return outputColorBuffer;
     }
 
-    public void saveInGameCapture(string saveFilePath)
+    public void saveScreenToDisk(string saveFilePath) 
+    {
+        if (finalScreenImage.IsCreated())
+        {
+            Texture2D imageToSave = toTexture2D(finalScreenImage);
+            SaveToDisk(imageToSave.GetPixels(), saveFilePath, imageToSave.width, imageToSave.height);
+        }
+        else 
+        {
+            Debug.LogError("Can't save image - error when creating the Render Texture");
+        }
+    }
+
+    public void exportInGameCaptureToResolve(string saveFilePath)
     {
         Vector3 colorVec = Vector3.zero;
-        //Color[] outputColorBuffer = ApplyChromaticityCompressionCPU(inputRadiometricLinearTexture.GetPixels());
-        Color[] outputColorBuffer = luminanceCompression(inputRadiometricLinearTexture.GetPixels());
+        Color[] outputColorBuffer = ApplyChromaticityLogCompressionCPU(inputRadiometricLinearTexture.GetPixels());
+        //Color[] outputColorBuffer = luminanceCompression(inputRadiometricLinearTexture.GetPixels());
 
         SaveToDisk(outputColorBuffer, saveFilePath, inputRadiometricLinearTexture.width, inputRadiometricLinearTexture.height);
     }

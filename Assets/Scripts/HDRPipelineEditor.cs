@@ -224,9 +224,9 @@ public class HDRPipelineEditor : Editor
         
         exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
         slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
-        curveCoordMaxLowerBoundLatitude = EditorGUILayout.Slider("Curve Max Lower Bound Coordinate Latitude", curveCoordMaxLowerBoundLatitude, 0.1f, 1.0f);
-        curveChromaticityMaxLowerBoundLatitude = EditorGUILayout.Slider("Curve Max Lower Bound Chromaticity Latitude", curveChromaticityMaxLowerBoundLatitude, 0.1f, 1.0f);
-        gamutCompressionRatioPowerLowerBound = EditorGUILayout.Slider("Gamut Compression Lower Bound Exponent", gamutCompressionRatioPowerLowerBound, 0.001f, 5.0f);
+        curveCoordMaxLowerBoundLatitude = EditorGUILayout.Slider("Curve Max Lower Bound Coordinate Latitude", curveCoordMaxLowerBoundLatitude, 0.0f, 1.0f);
+        curveChromaticityMaxLowerBoundLatitude = EditorGUILayout.Slider("Curve Max Lower Bound Chromaticity Latitude", curveChromaticityMaxLowerBoundLatitude, 0.0f, 1.0f);
+        //gamutCompressionRatioPowerLowerBound = EditorGUILayout.Slider("Gamut Compression Lower Bound Exponent", gamutCompressionRatioPowerLowerBound, 0.001f, 5.0f);
         
         minRadiometricExposure = EditorGUILayout.Slider("Minimum Radiometric Exposure", minRadiometricExposure, -20.0f, 0.0f);
         maxRadiometricExposure = EditorGUILayout.Slider("Maximum Radiometric Exposure", maxRadiometricExposure, 0.0f, 20.0f);
@@ -351,6 +351,19 @@ public class HDRPipelineEditor : Editor
 
     private void DrawDebugOptionsWidgets()
     {
+    
+        if (GUILayout.Button("Save Screen Capture to Disk"))
+        {
+            outPathGameCapture = EditorUtility.SaveFilePanel("Screen Capture...", "", "Capture", "exr");
+
+            if (string.IsNullOrEmpty(outPathGameCapture))
+            {
+                Debug.LogError("File path to save game capture is invalid");
+                return;
+            }
+            colorGamut.saveScreenToDisk(outPathGameCapture);
+        }
+
         heatmapToggle = EditorGUILayout.Toggle("Pixel Heatmap", heatmapToggle);
         showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
         isGamutCompressionActive = EditorGUILayout.Toggle("Enable Gamut Compression", isGamutCompressionActive);
@@ -373,7 +386,7 @@ public class HDRPipelineEditor : Editor
                 return;
             }
          
-            colorGamut.saveInGameCapture(outPathGameCapture);
+            colorGamut.exportInGameCaptureToResolve(outPathGameCapture);
         }
         else if (outPathGameCapture.Length < 1)
         {

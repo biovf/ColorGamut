@@ -136,7 +136,7 @@ public class HDRPipeline : MonoBehaviour
     private void initialiseColorGamut()
     {
         colorGamut = new GamutMap(fullScreenTextureMat, HDRIList);
-        colorGamut.Start(this);
+        colorGamut.Start(this.gameObject.GetComponent<Camera>());
     }
 
     void Update()
@@ -150,8 +150,8 @@ public class HDRPipeline : MonoBehaviour
 
     private void OnDestroy()
     {
-        xCurveCoordsCBuffer.Release();
-        yCurveCoordsCBuffer.Release();
+        xCurveCoordsCBuffer?.Release();
+        yCurveCoordsCBuffer?.Release();
     }
 
     public void drawGamutCurveWidget()
@@ -194,7 +194,7 @@ public class HDRPipeline : MonoBehaviour
                     {
                         hdriTexture2D = colorGamut.toTexture2D(hdriRenderTexture);
                         Color[] hdriTexturePixels = hdriTexture2D.GetPixels();
-                        hdriTexturePixels = colorGamut.luminanceCompression(hdriTexture2D.GetPixels());
+                        hdriTexturePixels = colorGamut.ApplyChromaticityLogCompressionCPU(hdriTexture2D.GetPixels());
 
                         hdriTexture2D.SetPixels(hdriTexturePixels);
                         hdriTexture2D.Apply();
@@ -289,6 +289,7 @@ public class HDRPipeline : MonoBehaviour
 
                 fullScreenTextureMat.SetTexture("_MainTex", renderBuffer);
                 Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
+                colorGamut.finalScreenImage = renderBuffer;
             }
         }
     }

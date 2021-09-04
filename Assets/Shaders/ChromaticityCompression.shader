@@ -143,7 +143,7 @@
             static float calculateLog2ToLinear(float logRadValue, float midGreyX, float minExposureValue,
                 float maxExposureValue)
             {
-                float logNormalisedValue = clamp(logRadValue, 0.0, 1.0) * (maxExposureValue - minExposureValue) +
+                float logNormalisedValue = clamp(logRadValue, 0.0 + 0.000001, 1.0) * (maxExposureValue - minExposureValue) +
                     minExposureValue;
                 return pow(2.0f, logNormalisedValue) * midGreyX;
             }
@@ -197,6 +197,13 @@
                 }
             }
 
+            float CosineInterpolate(float y1, float y2, float mu)
+            {
+                float mu2;
+                mu2 = (1 - cos(mu * 3.14)) / 2;
+                return (y1 * (1 - mu2) + y2 * mu2);
+            }
+
             float3 calculateGamutCompression(float4 inRadiometricLinearColor, float3 inputRatio)
             {
 
@@ -215,32 +222,47 @@
                     float gamutCompressionRange = maxRadiometricValue - gamutCompressionXCoordLinearLowerBound;
                     float gamutCompressionRatio = (maxRadiometricLinearChannel - gamutCompressionXCoordLinearLowerBound) /
                                             gamutCompressionRange;
-                  
-                    if (false) {
+
+                 /*   if (false) {
                         ratio.r = lerp(inputRatio.r, 1.0,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
                         ratio.g = lerp(inputRatio.g, 1.0,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
                         ratio.b = lerp(inputRatio.b, 1.0,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
                     }
-                    else {
+                    else {*/
                         
                         // TODO: expose luminance ratios because these ones are for sRGB
-                        float dechroma = dot(inputRatio, float3(0.139, 0.730, 0.131));
-                        float3 dechromaRate = float3(gamutCompressionRatio, gamutCompressionRatio, gamutCompressionRatio);
-                        dechromaRate = dechromaRate * float3(0.2126, 0.7152, 0.0722);
+                        //float3 testRatio = float3(0.139, 0.730, 0.131);
+                        //float3 testRatio = float3(0.33, 0.34, 0.33);
+                        float dechroma = dot(inputRatio, luminanceWeights);
+                        float3 dechromaF3 = float3(dechroma, dechroma, dechroma);
+                        float3 destination = lerp(dechromaF3, float3(1.0, 1.0, 1.0), gamutCompressionRatio);
+                        //float dechroma = saturate(dot(inputRatio, luminanceWeights));
+                     /*   float3 dechromaRate = float3(gamutCompressionRatio, gamutCompressionRatio, gamutCompressionRatio);
+                        dechromaRate = dechromaRate * float3(0.2126, 0.7152, 0.0722);*/
 
-                        if (true)
-                        {
-                            ratio.r = lerp(inputRatio.r, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));
+                        //if (true)
+                        //{
+                     /*       ratio.r = lerp(inputRatio.r, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));
                             ratio.g = lerp(inputRatio.g, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));
-                            ratio.b = lerp(inputRatio.b, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));
-                        }
-                        else {
+                            ratio.b = lerp(inputRatio.b, 1.0, (pow(gamutCompressionRatio, 1.0 - dechroma)));*/
+
+                        //float gamutComp2 = lerp(gamutCompressionRatio, 1.0, pow(gamutCompressionRatio, 2.0));
+
+                            ratio.r = lerp(inputRatio.r, 1.0f, pow(gamutCompressionRatio, 3.0));
+                            ratio.g = lerp(inputRatio.g, 1.0f, pow(gamutCompressionRatio, 3.0));
+                            ratio.b = lerp(inputRatio.b, 1.0f, pow(gamutCompressionRatio, 3.0));
+                            
+
+                        //ratio = (inputRatio * (float3(1.0, 1.0, 1.0) - gamutCompressionRatio)) + (float3(dechroma, dechroma, dechroma) * gamutCompressionRatio);
+
+                        //}
+                       /* else {
                             ratio.r = lerp(inputRatio.r, dechromaRate, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
                             ratio.g = lerp(inputRatio.g, dechromaRate, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-                            ratio.b = lerp(inputRatio.b, dechromaRate,  pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
-                        }
+                            ratio.b = lerp(inputRatio.b, dechromaRate, pow(gamutCompressionRatio, gamutCompressionRatioPowerLowerBound));
+                        }*/
                     
-                    }
+                    //}
                 }
                  
                 return ratio;
@@ -253,7 +275,6 @@
                 
                 return false;
             }
-
 
             float3 calculateLuminanceGamutCompression(float4 inRadiometricLinearColor, float3 inputRatio, float minCameraLuminance, float maxCameraLuminance)
             {
@@ -290,9 +311,62 @@
                 hdriPixelColor.g = calculateLinearToLog2(hdriPixelColor.g, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
                 hdriPixelColor.b = calculateLinearToLog2(hdriPixelColor.b, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
                 hdriPixelColor.a = 1.0f;
+                
+                if (isnan(hdriPixelColor.r) || isnan(hdriPixelColor.g) || isnan(hdriPixelColor.b) || isnan(hdriPixelColor.a) ||
+                    isinf(hdriPixelColor.r) || isinf(hdriPixelColor.g) || isinf(hdriPixelColor.b) || isinf(hdriPixelColor.a))
+                {
+                    return float4(0.0, 0.0, 1.0, 1.0);
+                }
 
                 return hdriPixelColor;
             }
+
+
+            float3 calculateLogGamutCompression(float4 camLogPixelColor, float3 inputRatio)
+            {
+                float3 ratio = inputRatio;
+                float maxRadiometricLogValue = calculateLinearToLog2(maxRadiometricValue, greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
+
+                if (camLogPixelColor.r > chromaticityMaxLowerBoundLatitude ||
+                    camLogPixelColor.g > chromaticityMaxLowerBoundLatitude ||
+                    camLogPixelColor.b > chromaticityMaxLowerBoundLatitude)
+                {
+                    float maxRadiometricChannel = max(camLogPixelColor.r, max(camLogPixelColor.g, camLogPixelColor.b));
+
+                    float gamutCompressionRange = maxRadiometricLogValue - chromaticityMaxLowerBoundLatitude;
+                    float gamutCompressionRatio = (maxRadiometricChannel - chromaticityMaxLowerBoundLatitude) /
+                        gamutCompressionRange;
+
+                    ratio.r = lerp(inputRatio.r, 1.0f, gamutCompressionRatio);
+                    ratio.g = lerp(inputRatio.g, 1.0f, gamutCompressionRatio);
+                    ratio.b = lerp(inputRatio.b, 1.0f, gamutCompressionRatio);
+  
+                }
+
+                return ratio;
+            }
+
+
+            float4 luminanceLogCompression(float4 inRadiometricLinearColor)
+            {
+                float4 camLogPixelColor = calculateLinearToLog2(inRadiometricLinearColor * pow(2.0, exposure), greyPoint.x, minRadiometricExposure, maxRadiometricExposure);
+
+                float maxLinearLogColor = max(camLogPixelColor.r, max(camLogPixelColor.g, camLogPixelColor.b));
+                float3 ratio = camLogPixelColor / maxLinearLogColor;
+
+                ratio = calculateLogGamutCompression(camLogPixelColor, ratio);
+                camLogPixelColor.rgb = maxLinearLogColor * ratio;
+                camLogPixelColor.a = 1.0f;
+
+                if (isnan(camLogPixelColor.r) || isnan(camLogPixelColor.g) || isnan(camLogPixelColor.b) || isnan(camLogPixelColor.a) ||
+                    isinf(camLogPixelColor.r) || isinf(camLogPixelColor.g) || isinf(camLogPixelColor.b) || isinf(camLogPixelColor.a))
+                {
+                    return float4(0.0, 0.0, 1.0, 1.0);
+                }
+
+                return camLogPixelColor;
+            }
+
 
             fixed4 frag(v2f i) : SV_Target
             {
