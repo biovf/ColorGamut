@@ -39,8 +39,10 @@ public class Lich_Path : MonoBehaviour
         xCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
         yCurveCoordsCBuffer = new ComputeBuffer(1024, sizeof(float));
 
+        Color[] testColor = { new Color(0.5f, 0.3f, 0.76f) };
+        lichDebug(testColor, 0.8f);
         //lichCPU(0.0f);
-        lichCPU(0.5f);
+        lichCPU(0.1f);
         //lichCPU(0.5f);
         //lichCPU(0.8f);
 
@@ -84,6 +86,62 @@ public class Lich_Path : MonoBehaviour
         fullScreenTextureMat.SetTexture("_MainTex", gamutMapRT);
         Graphics.Blit(gamutMapRT, dest, fullScreenTextureMat);
     }
+
+    public void lichDebug(Color[] testColor, float luminanceRelativeTarget)
+    {
+        Color[] hdriPixelArray = testColor;
+        int hdriPixelArrayLen = hdriPixelArray.Length;
+        Color logRGBInput;
+        Vector3 logRGBInputVec = Vector3.zero;
+        for (int i = 0; i < hdriPixelArrayLen; i++)
+        {
+            logRGBInput.r = Shaper.calculateLinearToLog2(hdriPixelArray[i].r, colorGamut.MidGreySdr.x, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+            logRGBInput.g = Shaper.calculateLinearToLog2(hdriPixelArray[i].g, colorGamut.MidGreySdr.x, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+            logRGBInput.b = Shaper.calculateLinearToLog2(hdriPixelArray[i].b, colorGamut.MidGreySdr.x, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+            logRGBInputVec = new Vector3(logRGBInput.r, logRGBInput.g, logRGBInput.b);
+
+            Vector3 luminanceWeights = new Vector3(0.2126f, 0.7152f, 0.0722f);
+            // Troy Sobotka, 2021, "EVILS - Exposure Value Invariant Luminance Scaling"
+            // https://colab.research.google.com/drive/1iPJzNNKR7PynFmsqSnQm3bCZmQ3CvAJ-#scrollTo=psU43hb-BLzB
+
+            float maxRGBInput = Mathf.Max(logRGBInput.r, Mathf.Max(logRGBInput.g, logRGBInput.b));
+            Vector3 maxChroma = Vector3.Max(logRGBInputVec / maxRGBInput, Vector3.zero);
+            Debug.Log("maxChroma: " + maxChroma.ToString("G8"));
+
+            float luminanceMaxChroma = Vector3.Dot(maxChroma, luminanceWeights);
+            Debug.Log("luminanceMaxChroma: " + luminanceMaxChroma.ToString("G8"));
+
+            Vector3 energyLeft = Vector3.one - maxChroma;
+            Debug.Log("energyLeft: " + energyLeft.ToString("G8"));
+
+            float luminanceEnergyLeft = Vector3.Dot(energyLeft, luminanceWeights);
+            Debug.Log("luminanceEnergyLeft: " + luminanceEnergyLeft.ToString("G8"));
+
+            float luminanceDifferenceMaxDisplayAndMaxChroma = Mathf.Max(luminanceRelativeTarget - luminanceMaxChroma, 0.0f);
+            Debug.Log("luminanceDifferenceMaxDisplayAndMaxChroma: " + luminanceDifferenceMaxDisplayAndMaxChroma.ToString("G8"));
+
+            float scaledLuminanceDifference = luminanceDifferenceMaxDisplayAndMaxChroma / Mathf.Max(luminanceEnergyLeft, 0.0001f);
+            Debug.Log("scaledLuminanceDifference: " + scaledLuminanceDifference.ToString("G8"));
+
+            float chromaScale = (luminanceRelativeTarget - luminanceDifferenceMaxDisplayAndMaxChroma) / Mathf.Max(luminanceMaxChroma, 0.0001f);
+            Debug.Log("chromaScale: " + chromaScale.ToString("G8"));
+
+            Vector3 reserves_compliment = scaledLuminanceDifference * energyLeft;
+            Debug.Log("reserves_compliment: " + reserves_compliment.ToString("G8"));
+
+            Vector3 chroma_scaled = chromaScale * maxChroma;
+            Debug.Log("chroma_scaled: " + chroma_scaled.ToString("G8"));
+
+            Vector3 outputColour = chroma_scaled + reserves_compliment;
+            hdriPixelArray[i] = new Color(outputColour.x, outputColour.y, outputColour.z);
+        }
+
+        foreach (Color c in hdriPixelArray) 
+        {
+            Debug.Log(hdriPixelArray.ToString());
+        }
+    }
+
 
     public void lichCPU(float luminanceRelativeTarget) 
     {
