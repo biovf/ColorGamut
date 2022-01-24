@@ -159,7 +159,7 @@ MonoBehaviour:
   gamutMapMat: {fileID: 2100000, guid: 3ad70d92c2f5144ae96f0934284760e7, type: 2}
   lichMat: {fileID: 2100000, guid: cf6431906acc36d4b81692ac793cec6d, type: 2}
   HDRIList:
-  - {fileID: 2800000, guid: ae9cfec960c3e5d4fbbc69f6923585ac, type: 3}
+  - {fileID: 2800000, guid: b67eaba6ce775414d8d8f8a3ff10ae6d, type: 3}
 --- !u!20 &963194227
 Camera:
   m_ObjectHideFlags: 0
