@@ -75,7 +75,7 @@ Material:
     - chromaticityMaxHigherBoundLatitude: 0.9
     - chromaticityMaxLatitude: 0.85
     - chromaticityMaxLowerBoundLatitude: 0.85
-    - exposure: 0
+    - exposure: 0.18
     - gamutCompressionRatioPower: 0.85
     - gamutCompressionRatioPowerHigherBound: 1
     - gamutCompressionRatioPowerLowerBound: 0.85
@@ -86,3 +86,4 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - greyPoint: {r: 0.18, g: 0.18, b: 0, a: 0}
+  m_BuildTextureStacks: []

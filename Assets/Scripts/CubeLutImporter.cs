@@ -2,14 +2,14 @@
 using System.Globalization;
 using System.IO;
 using System.Text;
-using UnityEditor.Experimental.AssetImporters;
+
 using UnityEngine;
 
 
-[ScriptedImporter(0, "cube")]
-public class CubeLutImporter : ScriptedImporter
+[UnityEditor.AssetImporters.ScriptedImporter(0, "cube")]
+public class CubeLutImporter : UnityEditor.AssetImporters.ScriptedImporter
 {
-    public override void OnImportAsset(AssetImportContext ctx)
+    public override void OnImportAsset(UnityEditor.AssetImporters.AssetImportContext ctx)
     {
         string filename = Path.GetFileNameWithoutExtension(ctx.assetPath);
         
@@ -49,7 +49,7 @@ public class CubeLutImporter : ScriptedImporter
         return filtered.ToString();
     }
 
-    bool ParseCubeData(AssetImportContext ctx, out int lutSize, out Color[] pixels)
+    bool ParseCubeData(UnityEditor.AssetImporters.AssetImportContext ctx, out int lutSize, out Color[] pixels)
     {
         // Quick & dirty error utility
         bool Error(string msg)
