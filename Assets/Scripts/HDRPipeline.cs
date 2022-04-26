@@ -37,6 +37,7 @@ public struct CurveParams
 
 public class HDRPipeline : MonoBehaviour
 {
+    public RenderTexture frame;
     // Gamut Mapping public member variables
     public Material fullScreenTextureMat;
     [FormerlySerializedAs("gamutMap")]
@@ -56,7 +57,7 @@ public class HDRPipeline : MonoBehaviour
     private GamutMap colorGamut;
     private RenderTexture renderBuffer;
     private RenderTexture hdriRenderTexture;
-    private RenderTexture gamutMapRT;
+    public RenderTexture gamutMapRT;
 
     private int activeTransferFunction = 0;
 
@@ -89,7 +90,7 @@ public class HDRPipeline : MonoBehaviour
 
     private Texture2D hdriTexture2D;
 
-    private bool useCpuMode = false;
+    private bool useCpuMode = true;
     private bool useBakedLUT = false;
     private bool debug = false;
 
@@ -303,6 +304,10 @@ public class HDRPipeline : MonoBehaviour
                 Graphics.Blit(renderBuffer, dest, fullScreenTextureMat);
             }
         }
+        if(frame == null)
+            Graphics.Blit(renderBuffer, frame, fullScreenTextureMat);
+        //Graphics.Blit(dest, frame, fullScreenTextureMat);
+
     }
 
     public void RenderColorGrade(Texture src, RenderTexture dest, Texture3D LUT)
