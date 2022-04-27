@@ -575,7 +575,7 @@ public class GamutMap
         SetCurveDataState(CurveDataState.Dirty);
     }
 
-    Texture2D toTexture2D(RenderTexture rTex)
+    static Texture2D toTexture2D(RenderTexture rTex)
     {
         Texture2D tex = new Texture2D(rTex.width, rTex.height, TextureFormat.RGBAHalf, false, true);
         RenderTexture.active = rTex;
@@ -585,6 +585,7 @@ public class GamutMap
 
         return tex;
     }
+
 
     public Vector2[] getControlPoints()
     {

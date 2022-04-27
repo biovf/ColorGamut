@@ -41,9 +41,9 @@ public class HDRPipeline : MonoBehaviour
 
     private RenderTexture renderBuffer;
     private RenderTexture hdriRenderTexture;
-    private RenderTexture gamutMapRT;
+    public RenderTexture gamutMapRT;
     
-    private bool useCpuMode = true;
+    private bool useCpuMode = false;
     private int activeTransferFunction = 0;
 
     public bool CPUMode
@@ -127,6 +127,7 @@ public class HDRPipeline : MonoBehaviour
         drawGamutCurveWidget();
         
          Graphics.Blit(HDRIList[0], hdriRenderTexture, fullScreenTextureMat);
+    
         
          if (useCpuMode && (colorGamut.CurveState == GamutMap.CurveDataState.NotCalculated ||
              colorGamut.CurveState == GamutMap.CurveDataState.Dirty))
