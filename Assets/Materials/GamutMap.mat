@@ -2,14 +2,15 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!21 &2100000
 Material:
-  serializedVersion: 6
+  serializedVersion: 8
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: GamutMap
   m_Shader: {fileID: 4800000, guid: 7e0a1e9c711b248738bf98c5ba67e368, type: 3}
-  m_ShaderKeywords: 
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -55,6 +56,7 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    m_Ints: []
     m_Floats:
     - Exposure: 6
     - _BumpScale: 1
@@ -76,12 +78,12 @@ Material:
     - exposure: 0
     - inputArraySize: 1023
     - maxExposure: 6
-    - maxRadiometricValue: 11.52
+    - maxRadiometricValue: 23.04
     - minExposure: -6
     - minRadiometricValue: 0.0028125
     - usePerChannel: 0
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - greyPoint: {r: 0.18, g: 0.18, b: 0, a: 0}
+    - greyPoint: {r: 0.36, g: 0.36, b: 0, a: 0}
   m_BuildTextureStacks: []

@@ -134,7 +134,6 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
-  - component: {fileID: 963194229}
   - component: {fileID: 963194230}
   - component: {fileID: 963194231}
   - component: {fileID: 963194233}
@@ -206,30 +205,11 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0, y: 0.02, z: -8.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &963194229
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3a61a7c3f7c0d1243a0d7bd05329e2b6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  colorGamutMat: {fileID: 2100000, guid: 763f07c427001ba4ebdbae681f8e2e40, type: 2}
-  fullScreenTextureMat: {fileID: 2100000, guid: 5cbf7aaf86b85504eb1f09fa1f3225d1,
-    type: 2}
-  fullScreenTextureAndSweepMat: {fileID: 2100000, guid: 18a6e64ab6eb44d8182ae4e5b00e40e0,
-    type: 2}
-  sweepTexture: {fileID: 2800000, guid: 9b902f315eb77e4459055c6d0e3dad23, type: 3}
-  HDRIList:
-  - {fileID: 2800000, guid: 6f4fa7cff76a44224bb110d440e13610, type: 3}
 --- !u!114 &963194230
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -262,8 +242,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55ef5f57a8d5bd5469a2d538256d74f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fullScreenTextureMat: {fileID: 2100000, guid: 0d7db7ef8e0997e4e84248ec251356b2,
-    type: 2}
+  fullScreenTextureMat: {fileID: 0}
 --- !u!114 &963194233
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -286,6 +265,7 @@ MonoBehaviour:
   colorGradeLUT: {fileID: 8534537815417165676, guid: 40f6a44842f56404799d3a1fbfd5ae0c,
     type: 3}
   gamutMapRT: {fileID: 0}
+  displayMode: 1
 --- !u!850595691 &1480143580
 LightingSettings:
   m_ObjectHideFlags: 0
@@ -293,7 +273,7 @@ LightingSettings:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Settings.lighting
-  serializedVersion: 3
+  serializedVersion: 4
   m_GIWorkflowMode: 1
   m_EnableBakedLightmaps: 0
   m_EnableRealtimeLightmaps: 0
@@ -306,7 +286,7 @@ LightingSettings:
   m_LightmapMaxSize: 1024
   m_BakeResolution: 40
   m_Padding: 2
-  m_TextureCompression: 1
+  m_LightmapCompression: 3
   m_AO: 0
   m_AOMaxDistance: 1
   m_CompAOExponent: 1
@@ -347,3 +327,4 @@ LightingSettings:
   m_PVRFilteringAtrousPositionSigmaDirect: 0.5
   m_PVRFilteringAtrousPositionSigmaIndirect: 2
   m_PVRFilteringAtrousPositionSigmaAO: 1
+  m_PVRTiledBaking: 0

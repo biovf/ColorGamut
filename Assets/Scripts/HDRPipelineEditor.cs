@@ -1,462 +1,521 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
+﻿//using System.Collections.Generic;
+//using UnityEngine;
+//using UnityEditor;
 
 
 
 
-[CustomEditor(typeof(HDRPipeline))]
-public class HDRPipelineEditor : Editor
-{
-    HDRPipeline hdrPipeline;
-    private GamutMap colorGamut;
-    private float exposure = 0.0f;
-    private int gamutCompressionRatioPower = 2;
-    private GamutMappingMode _activeGamutMappingMode = GamutMappingMode.Max_RGB;
+//[CustomEditor(typeof(HDRPipeline))]
+//public class HDRPipelineEditor : Editor
+//{
+//    HDRPipeline hdrPipeline;
+//    private GamutMap colorGamut;
+//    private float exposure = 0.0f;
+//    private int gamutCompressionRatioPower = 2;
+//    private GamutMappingMode _activeGamutMappingMode = GamutMappingMode.Max_RGB;
 
-    #region Parametric Curve Parameters
+//    #region Parametric Curve Parameters
 
-    private float slope;
-    private float originPointX;
-    private float originPointY;
-    private float greyPointX;
-    private float greyPointY;
+//    private float slope;
+//    private float originPointX;
+//    private float originPointY;
+//    private float greyPointX;
+//    private float greyPointY;
 
-    #endregion
+//    #endregion
 
     
-    private List<string> hdriNames;
-    private int hdriIndex = 0;
+//    private List<string> hdriNames;
+//    private int hdriIndex = 0;
 
-    private bool showSweep = false;
-    private bool isGamutCompressionActive = true;
-    private bool isMultiThreaded = false;
-    private bool showPixelsOutOfGamut = false;
+//    private bool showSweep = false;
+//    private bool isGamutCompressionActive = true;
+//    private bool isMultiThreaded = false;
+//    private bool showPixelsOutOfGamut = false;
 
-    private Vector2[] controlPoints;
-    private GamutCurve _parametricGamutCurve;
+//    private Vector2[] controlPoints;
+//    private GamutCurve _parametricGamutCurve;
 
-    private List<float> xValues;
-    private List<float> yValues;
-    private List<Vector3> debugPoints = new List<Vector3>();
+//    private List<float> xValues;
+//    private List<float> yValues;
+//    private List<Vector3> debugPoints = new List<Vector3>();
 
-    // Color grading member variables
-    private Vector3 cubeWidgetSize = new Vector3(0.01f, 0.01f, 0.01f);
+//    // Color grading member variables
+//    private Vector3 cubeWidgetSize = new Vector3(0.01f, 0.01f, 0.01f);
     
-    #region CubeLut Variables
+//    #region CubeLut Variables
 
-    private bool useShaperFunction = true;
-    private bool useDisplayP3 = false;
-    private bool foldoutStateCubeLut = false;
-    private int lutDimension = 33;
-    private float maxRadiometricValue = 1.0f;
-    private string outPathCubeLut = "";
-    private string defaultCubeLutFileName;
-    #endregion
+//    private bool useShaperFunction = true;
+//    private bool useDisplayP3 = false;
+//    private bool foldoutStateCubeLut = false;
+//    private int lutDimension = 33;
+//    private float maxRadiometricValue = 1.0f;
+//    private string outPathCubeLut = "";
+//    private string defaultCubeLutFileName;
+//    #endregion
 
-    #region Lut Texture Variables
-    private bool generateHDRLut = false;
-    private bool useShaperFunctionTexLut = true;
-    private bool useDisplayP3TexLut = false;
-    private bool foldoutState1DLut = false;
-    private int lutDimensionTexLut = 32;
-    private float maxRadiometricValueTexLut = 1.0f;
-    private string outPathTextureLut = "";
-    private string defaultTextureFileName;
-    #endregion
+//    #region Lut Texture Variables
+//    private bool generateHDRLut = false;
+//    private bool useShaperFunctionTexLut = true;
+//    private bool useDisplayP3TexLut = false;
+//    private bool foldoutState1DLut = false;
+//    private int lutDimensionTexLut = 32;
+//    private float maxRadiometricValueTexLut = 1.0f;
+//    private string outPathTextureLut = "";
+//    private string defaultTextureFileName;
+//    #endregion
 
-    #region EXR Capture Variables 
-    private bool foldoutStateSaveExr = false;
-    private string outPathGameCapture = "";
-    #endregion
+//    #region EXR Capture Variables 
+//    private bool foldoutStateSaveExr = false;
+//    private string outPathGameCapture = "";
+//    #endregion
 
-    private bool isColorGradingTabOpen = true;
-    private ColorGrade colorGradingHDR;
-    private bool shapeImage = true;
-    private GamutMap.CurveDataState guiWidgetsState = GamutMap.CurveDataState.NotCalculated;
+//    private bool isColorGradingTabOpen = true;
+//    private ColorGrade colorGradingHDR;
+//    private bool shapeImage = true;
+//    private GamutMap2.CurveDataState guiWidgetsState = GamutMap2.CurveDataState.NotCalculated;
     
-    #region DebugOptions
-    private bool enableCPUMode = false;
-    private bool saveGamutMapDebugImages = false;
-    #endregion
+//    #region DebugOptions
+//    private bool enableCPUMode = true;
+//    private bool saveGamutMapDebugImages = false;
+//    #endregion
 
-    private Rect curveRect;
-    private float scaleFactor = 1.0f; 
+//    private Rect curveRect;
+//    private float scaleFactor = 1.0f; 
 
-    public void OnEnable()
-    {
-        hdrPipeline = (HDRPipeline) target;
-        if (!hdrPipeline.isActiveAndEnabled)
-            return;
+//    public void OnEnable()
+//    {
+//        hdrPipeline = (HDRPipeline) target;
+//        if (!hdrPipeline.isActiveAndEnabled)
+//            return;
         
-        colorGamut = hdrPipeline.getColorGamut();
-        colorGradingHDR = hdrPipeline.getColorGrading();
-        if (colorGamut != null)
-        {
-            hdriNames = new List<string>();
-            if (hdrPipeline.HDRIList != null)
-            {
-                for (int i = 0; i < hdrPipeline.HDRIList.Count; i++)
-                {
-                    hdriNames.Add(new string(hdrPipeline.HDRIList[i].ToString().ToCharArray()));
-                }
-            }
+//        colorGamut = hdrPipeline.getColorGamut();
+//        colorGradingHDR = hdrPipeline.getColorGrading();
+//        if (colorGamut != null)
+//        {
+//            hdriNames = new List<string>();
+//            if (hdrPipeline.HDRIList != null)
+//            {
+//                for (int i = 0; i < hdrPipeline.HDRIList.Count; i++)
+//                {
+//                    hdriNames.Add(new string(hdrPipeline.HDRIList[i].ToString().ToCharArray()));
+//                }
+//            }
 
-            _activeGamutMappingMode = colorGamut.ActiveGamutMappingMode;
-            // colorGamut.setInputTexture(hdrPipeline.HDRIList[hdriIndex]);
-        }
+//            _activeGamutMappingMode = colorGamut.ActiveGamutMappingMode;
+//            // colorGamut.setInputTexture(hdrPipeline.HDRIList[hdriIndex]);
+//        }
         
-        // Initialise parameters for the curve with sensible values
-        if (guiWidgetsState ==  GamutMap.CurveDataState.NotCalculated)
-            colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
-                out greyPointY);
+//        // Initialise parameters for the curve with sensible values
+//        if (guiWidgetsState ==  GamutMap.CurveDataState.NotCalculated)
+//            colorGamut.getParametricCurveValues(out slope, out originPointX, out originPointY, out greyPointX,
+//                out greyPointY);
         
-        // Color grading initialisation
-        defaultTextureFileName = "LUT" + lutDimensionTexLut +
-                                 (useShaperFunctionTexLut == true ? "PQ" : "Linear") +
-                                 (useDisplayP3TexLut == true ? "DisplayP3" : "sRGB") +
-                                 "MaxRange" + maxRadiometricValueTexLut.ToString();
+//        // Color grading initialisation
+//        defaultTextureFileName = "LUT" + lutDimensionTexLut +
+//                                 (useShaperFunctionTexLut == true ? "PQ" : "Linear") +
+//                                 (useDisplayP3TexLut == true ? "DisplayP3" : "sRGB") +
+//                                 "MaxRange" + maxRadiometricValueTexLut.ToString();
         
-        defaultCubeLutFileName = "CubeLut" + lutDimension.ToString() +
-                                 (useShaperFunction == true ? "PQ" : "Linear") +
-                                 (useDisplayP3 == true ? "DisplayP3" : "sRGB") +
-                                 "MaxRange" + maxRadiometricValue.ToString();
+//        defaultCubeLutFileName = "CubeLut" + lutDimension.ToString() +
+//                                 (useShaperFunction == true ? "PQ" : "Linear") +
+//                                 (useDisplayP3 == true ? "DisplayP3" : "sRGB") +
+//                                 "MaxRange" + maxRadiometricValue.ToString();
         
-        hdrPipeline.CPUMode = enableCPUMode;
+//        hdrPipeline.CPUMode = enableCPUMode;
 
-    }
+//    }
 
-    public void OnDisable()
-    {
+//    public void OnDisable()
+//    {
         
-    }
+//    }
 
-    private void OnValidate()
-    {
-        // Debug.Log("Values changing");
-    }
+//    private void OnValidate()
+//    {
+//        // Debug.Log("Values changing");
+//    }
 
-    private void recalculateCurveParameters()
-    {
-        _parametricGamutCurve = colorGamut.getParametricCurve();
-        xValues = colorGamut.getXValues();
-        yValues = colorGamut.getYValues();
+//    private void recalculateCurveParameters()
+//    {
+//        _parametricGamutCurve = colorGamut.getParametricCurve();
+//        xValues = colorGamut.getXValues();
+//        yValues = colorGamut.getYValues();
 
-        debugPoints.Clear();
-        for (int i = 0; i < xValues.Count; i++)
-        {
-            debugPoints.Add(new Vector3(xValues[i], yValues[i]));
-        }
-    }
+//        debugPoints.Clear();
+//        for (int i = 0; i < xValues.Count; i++)
+//        {
+//            debugPoints.Add(new Vector3(xValues[i], yValues[i]));
+//        }
+//    }
     
-    void OnSceneGUI()
-    {
-        if (!hdrPipeline.isActiveAndEnabled)
-            return;
+//    void OnSceneGUI()
+//    {
+//        if (!hdrPipeline.isActiveAndEnabled)
+//            return;
         
-        if (Application.isPlaying)
-        {
-            if (debugPoints == null || debugPoints.Count == 0)
-                guiWidgetsState =  GamutMap.CurveDataState.NotCalculated;
+//        if (Application.isPlaying)
+//        {
+//            if (debugPoints == null || debugPoints.Count == 0)
+//                guiWidgetsState =  GamutMap.CurveDataState.NotCalculated;
             
-            if (colorGamut == null)
-            {
-                hdrPipeline = (HDRPipeline) target;
-                colorGamut = hdrPipeline.getColorGamut();
-            }
+//            if (colorGamut == null)
+//            {
+//                hdrPipeline = (HDRPipeline) target;
+//                colorGamut = hdrPipeline.getColorGamut();
+//            }
             
-            controlPoints = colorGamut.getControlPoints();
-            Vector2 p0 = controlPoints[0];
-            Vector2 p1 = controlPoints[1];
-            Vector2 p2 = controlPoints[2];
-            Vector2 p3 = controlPoints[3];
-            Vector2 p4 = controlPoints[4];
-            Vector2 p5 = controlPoints[5];
-            Vector2 p6 = controlPoints[6];
+//            controlPoints = colorGamut.getControlPoints();
+//            Vector2 p0 = controlPoints[0];
+//            Vector2 p1 = controlPoints[1];
+//            Vector2 p2 = controlPoints[2];
+//            Vector2 p3 = controlPoints[3];
+//            Vector2 p4 = controlPoints[4];
+//            Vector2 p5 = controlPoints[5];
+//            Vector2 p6 = controlPoints[6];
 
-            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(colorGamut.MaxRadiometricValue, 0.0f)); // Draw X Axis
-            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f)); // Draw Y axis
-            // Draw auxiliary information on the graph
-            Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
-            Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f),
-                4.0f); // Draw Y = 1 line
-            Handles.DrawDottedLine(new Vector3(0.0f, 1.5f), new Vector3(colorGamut.MaxRadiometricValue, 1.5f),
-            4.0f); // Draw Y = 1.5 line
-            Handles.DrawDottedLine(new Vector3(0.18f, 0.0f), new Vector3(0.18f, 1.5f), 2.0f); // Draw vertical line from 0.18f
-            Handles.DrawDottedLine(new Vector3(0.0f, 0.18f), new Vector3(0.18f, 0.18f), 2.0f); // Draw vertical line from 0.18f
-            Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
-            Handles.DrawDottedLine(new Vector3(0.0f, 0.5f), new Vector3(0.5f, 0.5f), 4.0f); // Draw vertical line from 0.18f
+//            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(colorGamut.MaxRadiometricValue, 0.0f)); // Draw X Axis
+//            Handles.DrawLine(new Vector3(0.0f, 0.0f), new Vector3(0.0f, 5.0f)); // Draw Y axis
+//            // Draw auxiliary information on the graph
+//            Handles.DrawDottedLine(new Vector3(1.0f, 0.0f), new Vector3(1.0f, 5.0f), 4.0f); // Draw X = 1 line
+//            Handles.DrawDottedLine(new Vector3(0.0f, 1.0f), new Vector3(colorGamut.MaxRadiometricValue, 1.0f),
+//                4.0f); // Draw Y = 1 line
+//            Handles.DrawDottedLine(new Vector3(0.0f, 1.5f), new Vector3(colorGamut.MaxRadiometricValue, 1.5f),
+//            4.0f); // Draw Y = 1.5 line
+//            Handles.DrawDottedLine(new Vector3(0.18f, 0.0f), new Vector3(0.18f, 1.5f), 2.0f); // Draw vertical line from 0.18f
+//            Handles.DrawDottedLine(new Vector3(0.0f, 0.18f), new Vector3(0.18f, 0.18f), 2.0f); // Draw vertical line from 0.18f
+//            Handles.DrawDottedLine(new Vector3(0.5f, 0.0f), new Vector3(0.5f, 0.5f), 4.0f);
+//            Handles.DrawDottedLine(new Vector3(0.0f, 0.5f), new Vector3(0.5f, 0.5f), 4.0f); // Draw vertical line from 0.18f
             
-            if (guiWidgetsState ==  GamutMap.CurveDataState.Dirty ||
-                guiWidgetsState ==  GamutMap.CurveDataState.NotCalculated)
-            {
-                recalculateCurveParameters();
-                guiWidgetsState =  GamutMap.CurveDataState.Calculated;
-            }
+//            if (guiWidgetsState ==  GamutMap.CurveDataState.Dirty ||
+//                guiWidgetsState ==  GamutMap.CurveDataState.NotCalculated)
+//            {
+//                recalculateCurveParameters();
+//                guiWidgetsState =  GamutMap.CurveDataState.Calculated;
+//            }
 
-            Handles.DrawPolyLine(debugPoints.ToArray());
-            Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
-            Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
-            Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
-        }
-    }
+//            Handles.DrawPolyLine(debugPoints.ToArray());
+//            Handles.DrawWireCube(new Vector3(p1.x, p1.y), cubeWidgetSize);
+//            Handles.DrawWireCube(new Vector3(p3.x, p3.y), cubeWidgetSize);
+//            Handles.DrawWireCube(new Vector3(p5.x, p5.y), cubeWidgetSize);
+//        }
+//    }
 
-    public override void OnInspectorGUI()
-    {
-        base.serializedObject.UpdateIfRequiredOrScript();
-        base.serializedObject.Update();
-        base.DrawDefaultInspector();
+//    public override void OnInspectorGUI()
+//    {
+//        base.serializedObject.UpdateIfRequiredOrScript();
+//        base.serializedObject.Update();
+//        base.DrawDefaultInspector();
     
-        hdrPipeline = (HDRPipeline) target;
-        colorGamut = hdrPipeline.getColorGamut();
-        colorGradingHDR = hdrPipeline.getColorGrading();
+//        hdrPipeline = (HDRPipeline) target;
+//        colorGamut = hdrPipeline.getColorGamut();
+//        colorGradingHDR = hdrPipeline.getColorGrading();
         
-        if (!hdrPipeline.isActiveAndEnabled)
-            return;
+//        if (!hdrPipeline.isActiveAndEnabled)
+//            return;
         
-        if (hdriNames != null && hdriNames.Count > 0)
-        {
-            hdriIndex = EditorGUILayout.Popup("HDRI to use", hdriIndex, hdriNames.ToArray());
-        }
+//        if (hdriNames != null && hdriNames.Count > 0)
+//        {
+//            hdriIndex = EditorGUILayout.Popup("HDRI to use", hdriIndex, hdriNames.ToArray());
+//        }
 
-        EditorGUILayout.Space();
-        EditorGUILayout.Space();
+//        EditorGUILayout.Space();
+//        EditorGUILayout.Space();
 
-        _activeGamutMappingMode =
-            (GamutMappingMode) EditorGUILayout.EnumPopup("Active Transfer Function", _activeGamutMappingMode);
-        EditorGUILayout.Space();
-        // gamutCompressionRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", gamutCompressionRatioPower, 1, 7);
+//        _activeGamutMappingMode =
+//            (GamutMappingMode) EditorGUILayout.EnumPopup("Active Transfer Function", _activeGamutMappingMode);
+//        EditorGUILayout.Space();
+//        // gamutCompressionRatioPower = EditorGUILayout.IntSlider("Bleaching Ratio Power", gamutCompressionRatioPower, 1, 7);
         
-        exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MINExposureValue, colorGamut.MAXExposureValue);
-        slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
-        originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
-        originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
-        greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
-        greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
-        EditorGUILayout.Space();
+//        exposure = EditorGUILayout.Slider("Exposure Value (EV)", exposure, colorGamut.MinRadiometricExposure, colorGamut.MaxRadiometricExposure);
+//        slope = EditorGUILayout.Slider("Slope", slope, colorGamut.SlopeMin, colorGamut.SlopeMax);
+//        originPointX = EditorGUILayout.Slider("Origin X", originPointX, 0.0f, 1.0f);
+//        originPointY = EditorGUILayout.Slider("Origin Y", originPointY, 0.0f, 1.0f);
+//        greyPointX = EditorGUILayout.Slider("greyPointX", greyPointX, 0.0f, 1.0f);
+//        greyPointY = EditorGUILayout.Slider("greyPointY", greyPointY, 0.0f, 1.0f);
+//        EditorGUILayout.Space();
 
-        if (Application.isPlaying)
-        {
-            if (GUI.changed)
-            {
-                Debug.Log("GUI Changed");
-                guiWidgetsState =  GamutMap.CurveDataState.Dirty;
-            }
+//        if (Application.isPlaying)
+//        {
+//            if (GUI.changed)
+//            {
+//                //Debug.Log("GUI Changed");
+//                guiWidgetsState =  GamutMap.CurveDataState.Dirty;
+//            }
 
-            if (enableCPUMode == true && guiWidgetsState == GamutMap.CurveDataState.Dirty && 
-                GUILayout.Button("Generate Image"))
-            {
-                Debug.Log("Generating new image with new parameters");
-                RecalculateImageInCpuMode();
-            } else if (enableCPUMode == false && guiWidgetsState == GamutMap.CurveDataState.Dirty 
-               /* && GUILayout.Button("Recalculate Curve Parameters")*/)
-            {
-                RecalculateCurveParameters();
-                colorGamut.setActiveTransferFunction(_activeGamutMappingMode);
-                colorGamut.setExposure(exposure);
-                guiWidgetsState = GamutMap.CurveDataState.Calculated;
+//            if (enableCPUMode == true && guiWidgetsState == GamutMap.CurveDataState.Dirty && 
+//                GUILayout.Button("Generate Image"))
+//            {
+//                Debug.Log("Generating new image with new parameters");
+//                RecalculateImageInCpuMode();
+//            } else if (enableCPUMode == false && guiWidgetsState == GamutMap.CurveDataState.Dirty 
+//               /* && GUILayout.Button("Recalculate Curve Parameters")*/)
+//            {
+//                RecalculateCurveParameters();
+//                colorGamut.setActiveTransferFunction(_activeGamutMappingMode);
+//                colorGamut.setExposure(exposure);
+//                guiWidgetsState = GamutMap.CurveDataState.Calculated;
 
-            }
-        }
+//            }
+//        }
 
         
-        EditorGUILayout.LabelField("Transfer Function Export ");
-        if (GUILayout.Button("Export transfer function to Resolve"))
-        {
-            defaultCubeLutFileName = "CubeLut" + lutDimension.ToString();
-            outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName,"cube" );
+//        EditorGUILayout.LabelField("Transfer Function Export ");
+//        if (GUILayout.Button("Export transfer function LUT to Resolve"))
+//        {
+//            defaultCubeLutFileName = "CubeLut" + lutDimension.ToString();
+//            outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName,"cube" );
 
-            if (string.IsNullOrEmpty(outPathCubeLut))
-            {
-                Debug.LogError("File path to save cube Lut file is invalid");
-                return;
-            }
+//            if (string.IsNullOrEmpty(outPathCubeLut))
+//            {
+//                Debug.LogError("File path to save cube Lut file is invalid");
+//                return;
+//            }
 
-            colorGamut.exportTransferFunction(outPathCubeLut);
-        }
+//            colorGamut.exportTransferFunction(outPathCubeLut);
+//        }
+
+//        EditorGUILayout.LabelField("Export LUTs ");
+//        if (GUILayout.Button("Export LUTs"))
+//        {
+//            defaultCubeLutFileName = "CubeLut" + lutDimension.ToString();
+//            outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName, "cube");
+
+//            if (string.IsNullOrEmpty(outPathCubeLut))
+//            {
+//                Debug.LogError("File path to save cube Lut file is invalid");
+//                return;
+//            }
+//            Vector3 minDisplayValueVec = Vector3.zero;
+//            Vector3 maxDisplayValueVec = Vector3.one;
+
+//            Color[] chromaCompressionArray = hdrPipeline.lutBaker.BakeChromaticityCompressionLut(hdrPipeline.colorGradeLUT, 33);
+//            //float[] chromaCompression = new float[chromaCompressionArray.Length * 3];
+//            //for (int i = 0, j = 0; j < chromaCompressionArray.Length; i+=3, j++)
+//            //{
+//            //    chromaCompression[i] = chromaCompressionArray[j].r;
+//            //    chromaCompression[i+1] = chromaCompressionArray[j].g;
+//            //    chromaCompression[i+2] = chromaCompressionArray[j].b;
+//            //}
+//            //CubeLutExporter.saveLutAsCube(chromaCompression, outPathCubeLut, 33, minDisplayValueVec, maxDisplayValueVec, true);
+
+//            Color[] completePipeArray = hdrPipeline.lutBaker.BakeCompletePipelineLut(hdrPipeline.colorGradeLUT, 33);
+//            //float[] completePipe = new float[chromaCompressionArray.Length * 3];
+//            //for (int i = 0, j = 0; j < chromaCompressionArray.Length; i += 3, j++)
+//            //{
+//            //    chromaCompression[i] = chromaCompressionArray[j].r;
+//            //    chromaCompression[i + 1] = chromaCompressionArray[j].g;
+//            //    chromaCompression[i + 2] = chromaCompressionArray[j].b;
+//            //}
+
+//            //Color[] completePipelineArray = hdrPipeline.lutBaker.BakeCompletePipelineLut(hdrPipeline.colorGradeLUT, 33);
+//            //colorGamut.exportTransferFunction(outPathCubeLut);
+
+//            Color[] finalLUT = new Color[chromaCompressionArray.Length];
+//            for (int i = 0; i < chromaCompressionArray.Length; i++)
+//            {
+//                //finalLUT[i] = new Color(Mathf.Abs(completePipeArray[i].r - chromaCompressionArray[i].r),
+//                //                        Mathf.Abs(completePipeArray[i].g - chromaCompressionArray[i].g),
+//                //                        Mathf.Abs(completePipeArray[i].b - chromaCompressionArray[i].b));
+//                finalLUT[i] = completePipeArray[i];
+//                finalLUT[i] = Shaper.calculateLinearToLog2(finalLUT[i],
+//                                                          hdrPipeline.getColorGamut().MidGreySdr.x,
+//                                                          hdrPipeline.getColorGamut().MinRadiometricExposure,
+//                                                          hdrPipeline.getColorGamut().MaxRadiometricExposure);
+//            }
+//            float[] finalLUTArray = new float[finalLUT.Length * 3];
+//            for (int i = 0, j = 0; j < chromaCompressionArray.Length; i += 3, j++)
+//            {
+//                finalLUTArray[i] = finalLUT[j].r;
+//                finalLUTArray[i + 1] = finalLUT[j].g;
+//                finalLUTArray[i + 2] = finalLUT[j].b;
+//            }
+//            CubeLutExporter.saveLutAsCube(finalLUTArray, outPathCubeLut, 33, minDisplayValueVec, maxDisplayValueVec, true);
+
+//        }
+
+//        DrawSaveGameCaptureWidgets();
+//        // DrawGradingLUTWidgets();
+//        // DrawCubeLUTWidgets();
+
+//        DrawGamutMapCurveWidget();
         
-        DrawSaveGameCaptureWidgets();
-        // DrawGradingLUTWidgets();
-        // DrawCubeLUTWidgets();
+//        EditorGUILayout.Separator();
+//        EditorGUILayout.LabelField("Debug Options");
+//        EditorGUILayout.Space();
 
-        DrawGamutMapCurveWidget();
+//        DrawDebugOptionsWidgets();
+
+//        base.serializedObject.ApplyModifiedProperties();
+//    }
+
+//    private void DrawGamutMapCurveWidget()
+//    {
+//        hdrPipeline.ScaleFactor = EditorGUILayout.Slider("Curve Scale Factor", hdrPipeline.ScaleFactor, 0.0f, 10.0f);
+//        curveRect = GUILayoutUtility.GetRect(128, 256);
+
+//        if (hdrPipeline.CurveRT != null && hdrPipeline.CurveRT.IsCreated() && 
+//            colorGamut != null && colorGamut.getXValues() != null && colorGamut.getYValues() != null)
+//        {
+//            GUI.DrawTexture(curveRect, hdrPipeline.CurveRT);
+//        }
         
-        EditorGUILayout.Separator();
-        EditorGUILayout.LabelField("Debug Options");
-        EditorGUILayout.Space();
+//        Handles.DrawSolidRectangleWithOutline(curveRect, Color.clear, Color.white * 0.4f);
+//    }
 
-        DrawDebugOptionsWidgets();
+//    private void RecalculateCurveParameters() 
+//    {
+//        CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
+//         originPointY, _activeGamutMappingMode, isGamutCompressionActive);
+//        colorGamut.setCurveParams(curveParams);
+//    }
 
-        base.serializedObject.ApplyModifiedProperties();
-    }
+//    private void RecalculateImageInCpuMode()
+//    {
+//        CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
+//            originPointY, _activeGamutMappingMode, isGamutCompressionActive);
+//        colorGamut.setCurveParams(curveParams);
+//        hdrPipeline.ApplyGamutMap();
+//        guiWidgetsState = GamutMap.CurveDataState.Calculating;
+//    }
 
-    private void DrawGamutMapCurveWidget()
-    {
-        hdrPipeline.ScaleFactor = EditorGUILayout.Slider("Curve Scale Factor", hdrPipeline.ScaleFactor, 0.0f, 10.0f);
-        curveRect = GUILayoutUtility.GetRect(128, 256);
+//    private void DrawDebugOptionsWidgets()
+//    {
+//        showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
+//        isGamutCompressionActive = EditorGUILayout.Toggle("Enable Gamut Compression", isGamutCompressionActive);
+//        isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
+//        showPixelsOutOfGamut = EditorGUILayout.Toggle("Show Pixels Out of Gamut", showPixelsOutOfGamut);
+//        // @TODO Needs to be properly rewritten
+//        // if (EditorGUILayout.Toggle("Enable CPU mode", enableCPUMode))
+//        // {
+//        //     enableCPUMode = true;
+//        //     if (enableCPUMode != hdrPipeline.CPUMode)
+//        //     {
+//        //         RecalculateImageInCpuMode();
+//        //     }
+//        //     hdrPipeline.CPUMode = enableCPUMode;
+//        // }
+//        // else
+//        // {
+//        //     enableCPUMode = false;
+//        // }
 
-        if (hdrPipeline.CurveRT != null && hdrPipeline.CurveRT.IsCreated() && 
-            colorGamut != null && colorGamut.getXValues() != null && colorGamut.getYValues() != null)
-        {
-            GUI.DrawTexture(curveRect, hdrPipeline.CurveRT);
-        }
+//        // saveGamutMapDebugImages = EditorGUILayout.Toggle("Save gamut mapping debug images to disk", saveGamutMapDebugImages);
+//    }
+
+//    private void DrawSaveGameCaptureWidgets()
+//    {
+//        EditorGUILayout.Space(10.0f);
+//        EditorGUILayout.LabelField("Export of In-Game Capture ");
         
-        Handles.DrawSolidRectangleWithOutline(curveRect, Color.clear, Color.white * 0.4f);
-    }
+//        shapeImage = EditorGUILayout.Toggle("Apply Shaper to exported capture", shapeImage);
 
-    private void RecalculateCurveParameters() 
-    {
-        CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
-         originPointY, _activeGamutMappingMode, isGamutCompressionActive);
-        colorGamut.setCurveParams(curveParams);
-    }
+//        if (GUILayout.Button("Export Game Capture to Resolve"))
+//        {
+//            outPathGameCapture = EditorUtility.SaveFilePanel("In Game capture EXR...", "", "Capture", "exr");
 
-    private void RecalculateImageInCpuMode()
-    {
-        CurveParams curveParams = new CurveParams(exposure, slope, originPointX,
-            originPointY, _activeGamutMappingMode, isGamutCompressionActive);
-        colorGamut.setCurveParams(curveParams);
-        hdrPipeline.ApplyGamutMap();
-        guiWidgetsState = GamutMap.CurveDataState.Calculating;
-    }
-
-    private void DrawDebugOptionsWidgets()
-    {
-        showSweep = EditorGUILayout.Toggle("Enable Color Sweep", colorGamut.getShowSweep());
-        isGamutCompressionActive = EditorGUILayout.Toggle("Enable Gamut Compression", isGamutCompressionActive);
-        isMultiThreaded = EditorGUILayout.Toggle("Enable MultiThreading", isMultiThreaded);
-        showPixelsOutOfGamut = EditorGUILayout.Toggle("Show Pixels Out of Gamut", showPixelsOutOfGamut);
-        // @TODO Needs to be properly rewritten
-        // if (EditorGUILayout.Toggle("Enable CPU mode", enableCPUMode))
-        // {
-        //     enableCPUMode = true;
-        //     if (enableCPUMode != hdrPipeline.CPUMode)
-        //     {
-        //         RecalculateImageInCpuMode();
-        //     }
-        //     hdrPipeline.CPUMode = enableCPUMode;
-        // }
-        // else
-        // {
-        //     enableCPUMode = false;
-        // }
-
-        // saveGamutMapDebugImages = EditorGUILayout.Toggle("Save gamut mapping debug images to disk", saveGamutMapDebugImages);
-    }
-
-    private void DrawSaveGameCaptureWidgets()
-    {
-        EditorGUILayout.Space(10.0f);
-        EditorGUILayout.LabelField("Export of In-Game Capture ");
-        
-        shapeImage = EditorGUILayout.Toggle("Apply Shaper to exported capture", shapeImage);
-
-        if (GUILayout.Button("Export Game Capture to Resolve"))
-        {
-            outPathGameCapture = EditorUtility.SaveFilePanel("In Game capture EXR...", "", "Capture", "exr");
-
-            if (string.IsNullOrEmpty(outPathGameCapture))
-            {
-                Debug.LogError("File path to save game capture is invalid");
-                return;
-            }
+//            if (string.IsNullOrEmpty(outPathGameCapture))
+//            {
+//                Debug.LogError("File path to save game capture is invalid");
+//                return;
+//            }
          
-            colorGradingHDR.saveInGameCapture(outPathGameCapture, shapeImage);
-        }
-        else if (outPathGameCapture.Length < 1)
-        {
-            outPathGameCapture = Application.dataPath;
-        }
+//            colorGradingHDR.saveInGameCapture(outPathGameCapture, shapeImage);
+//        }
+//        else if (outPathGameCapture.Length < 1)
+//        {
+//            outPathGameCapture = Application.dataPath;
+//        }
 
-        outPathGameCapture = EditorGUILayout.TextField("Save to", outPathGameCapture);
-    }
+//        outPathGameCapture = EditorGUILayout.TextField("Save to", outPathGameCapture);
+//    }
 
-    private void DrawGradingLUTWidgets()
-    {
-        EditorGUILayout.Space(10.0f);
-        EditorGUILayout.LabelField("Color Grading LUT Texture ");
-        foldoutState1DLut = EditorGUILayout.Foldout(foldoutState1DLut, "Generate Texture LUT Options", true);
-        if (foldoutState1DLut)
-        {
-            generateHDRLut = EditorGUILayout.Toggle("HDR", generateHDRLut);
-            if (generateHDRLut == true)
-            {
-                useShaperFunctionTexLut = EditorGUILayout.Toggle("Use Shaper Function", useShaperFunctionTexLut);
-                if (useShaperFunctionTexLut)
-                {
-                    maxRadiometricValueTexLut =
-                        EditorGUILayout.FloatField("Max Radiometric Value", maxRadiometricValueTexLut);
-                }
+//    private void DrawGradingLUTWidgets()
+//    {
+//        EditorGUILayout.Space(10.0f);
+//        EditorGUILayout.LabelField("Color Grading LUT Texture ");
+//        foldoutState1DLut = EditorGUILayout.Foldout(foldoutState1DLut, "Generate Texture LUT Options", true);
+//        if (foldoutState1DLut)
+//        {
+//            generateHDRLut = EditorGUILayout.Toggle("HDR", generateHDRLut);
+//            if (generateHDRLut == true)
+//            {
+//                useShaperFunctionTexLut = EditorGUILayout.Toggle("Use Shaper Function", useShaperFunctionTexLut);
+//                if (useShaperFunctionTexLut)
+//                {
+//                    maxRadiometricValueTexLut =
+//                        EditorGUILayout.FloatField("Max Radiometric Value", maxRadiometricValueTexLut);
+//                }
 
-                useDisplayP3TexLut = EditorGUILayout.Toggle("Convert to Display-P3", useDisplayP3TexLut);
-                // TODO explore the GUILayoutOptions to show that the floating point number is actually a FP value
-            }
+//                useDisplayP3TexLut = EditorGUILayout.Toggle("Convert to Display-P3", useDisplayP3TexLut);
+//                // TODO explore the GUILayoutOptions to show that the floating point number is actually a FP value
+//            }
 
-            lutDimensionTexLut = EditorGUILayout.IntField("LUT Dimension", lutDimensionTexLut);
-        }
+//            lutDimensionTexLut = EditorGUILayout.IntField("LUT Dimension", lutDimensionTexLut);
+//        }
 
-        if (GUILayout.Button("Generate LUT Texture"))
-        {
-            if (generateHDRLut)
-            {
-                defaultTextureFileName = "HDR_Lut" + lutDimensionTexLut +
-                                         (useShaperFunctionTexLut == true ? "PQ" : "Linear") +
-                                         (useDisplayP3TexLut == true ? "DisplayP3" : "sRGB") +
-                                         "MaxRange" + maxRadiometricValueTexLut.ToString();
-            }
-            else
-            {
-                defaultTextureFileName = "SDR_Lut" + lutDimensionTexLut;
-            }
+//        if (GUILayout.Button("Generate LUT Texture"))
+//        {
+//            if (generateHDRLut)
+//            {
+//                defaultTextureFileName = "HDR_Lut" + lutDimensionTexLut +
+//                                         (useShaperFunctionTexLut == true ? "PQ" : "Linear") +
+//                                         (useDisplayP3TexLut == true ? "DisplayP3" : "sRGB") +
+//                                         "MaxRange" + maxRadiometricValueTexLut.ToString();
+//            }
+//            else
+//            {
+//                defaultTextureFileName = "SDR_Lut" + lutDimensionTexLut;
+//            }
 
-            outPathTextureLut = EditorUtility.SaveFilePanel("Save LUT Texture to...", "", defaultTextureFileName, 
-                (generateHDRLut ? "exr" : "png"));
+//            outPathTextureLut = EditorUtility.SaveFilePanel("Save LUT Texture to...", "", defaultTextureFileName, 
+//                (generateHDRLut ? "exr" : "png"));
 
-            if (string.IsNullOrEmpty(outPathTextureLut))
-            {
-                Debug.LogError("File path to save Lut texture is invalid");
-                return;
-            }
+//            if (string.IsNullOrEmpty(outPathTextureLut))
+//            {
+//                Debug.LogError("File path to save Lut texture is invalid");
+//                return;
+//            }
 
-            colorGradingHDR.generateTextureLut(outPathTextureLut, lutDimensionTexLut, generateHDRLut, useShaperFunctionTexLut, useDisplayP3TexLut,
-                maxRadiometricValueTexLut);
-        }
-    }
+//            colorGradingHDR.generateTextureLut(outPathTextureLut, lutDimensionTexLut, generateHDRLut, useShaperFunctionTexLut, useDisplayP3TexLut,
+//                maxRadiometricValueTexLut);
+//        }
+//    }
 
-    private void DrawCubeLUTWidgets()
-    {
-        EditorGUILayout.Space(10.0f);
-        EditorGUILayout.LabelField("Color Grading .cube LUT File");
-        foldoutStateCubeLut = EditorGUILayout.Foldout(foldoutStateCubeLut, "Generate .cube LUT Options", true);
-        if (foldoutStateCubeLut)
-        {
-            useShaperFunction = EditorGUILayout.Toggle("Use Shaper Function", useShaperFunction);
-            if (useShaperFunction)
-            {
-                maxRadiometricValue = EditorGUILayout.FloatField("Max Radiometric Value", maxRadiometricValue);
-            }
+//    private void DrawCubeLUTWidgets()
+//    {
+//        EditorGUILayout.Space(10.0f);
+//        EditorGUILayout.LabelField("Color Grading .cube LUT File");
+//        foldoutStateCubeLut = EditorGUILayout.Foldout(foldoutStateCubeLut, "Generate .cube LUT Options", true);
+//        if (foldoutStateCubeLut)
+//        {
+//            useShaperFunction = EditorGUILayout.Toggle("Use Shaper Function", useShaperFunction);
+//            if (useShaperFunction)
+//            {
+//                maxRadiometricValue = EditorGUILayout.FloatField("Max Radiometric Value", maxRadiometricValue);
+//            }
 
-            useDisplayP3 = EditorGUILayout.Toggle("Convert to Display-P3", useDisplayP3);
-            lutDimension = EditorGUILayout.IntField("LUT Dimension", lutDimension);
-        }
+//            useDisplayP3 = EditorGUILayout.Toggle("Convert to Display-P3", useDisplayP3);
+//            lutDimension = EditorGUILayout.IntField("LUT Dimension", lutDimension);
+//        }
 
-        if (GUILayout.Button("Generate .cube LUT File"))
-        {
-            defaultCubeLutFileName = "CubeLut" + lutDimension.ToString() +
-                                     (useShaperFunction == true ? "PQ" : "Linear") +
-                                     (useDisplayP3 == true ? "DisplayP3" : "sRGB") +
-                                     "MaxRange" + maxRadiometricValue.ToString();
-            outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName, 
-                     "cube" );
+//        if (GUILayout.Button("Generate .cube LUT File"))
+//        {
+//            defaultCubeLutFileName = "CubeLut" + lutDimension.ToString() +
+//                                     (useShaperFunction == true ? "PQ" : "Linear") +
+//                                     (useDisplayP3 == true ? "DisplayP3" : "sRGB") +
+//                                     "MaxRange" + maxRadiometricValue.ToString();
+//            outPathCubeLut = EditorUtility.SaveFilePanel("Save .cube LUT file to...", "", defaultCubeLutFileName, 
+//                     "cube" );
 
-            if (string.IsNullOrEmpty(outPathCubeLut))
-            {
-                Debug.LogError("File path to save cube Lut file is invalid");
-                return;
-            }
+//            if (string.IsNullOrEmpty(outPathCubeLut))
+//            {
+//                Debug.LogError("File path to save cube Lut file is invalid");
+//                return;
+//            }
 
-            colorGradingHDR.generateCubeLut(outPathCubeLut, lutDimension, useShaperFunction, useDisplayP3, maxRadiometricValue);
-        }
-    }
+//            colorGradingHDR.generateCubeLut(outPathCubeLut, lutDimension, useShaperFunction, useDisplayP3, maxRadiometricValue);
+//        }
+//    }
     
-}
+//}

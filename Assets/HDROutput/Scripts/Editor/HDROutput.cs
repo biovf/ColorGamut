@@ -197,13 +197,13 @@ namespace HDROutput
 				RenderTexture frameRT = mainCamera.GetComponent<HDRPipeline>().gamutMapRT;
 
 				//Debug.Log("frameRT is " + (frameRT == null ? "Null" : "NotNull"));
-				if (frameRT != null)
-				{
-					Texture2D tex = toTexture2D(frameRT);
-					_texture = (Texture)tex;
-					_plugin.SetSourceTexture(_texture != null ? _texture.GetNativeTexturePtr() : System.IntPtr.Zero);
+				//if (frameRT != null)
+				//{
+				//	Texture2D tex = toTexture2D(frameRT);
+				//	_texture = (Texture)tex;
+				//	//_plugin.SetSourceTexture(_texture != null ? _texture.GetNativeTexturePtr() : System.IntPtr.Zero);
 
-				}
+				//}
 			}
 
 			if (_texture != null)
